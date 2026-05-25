@@ -3,1473 +3,1382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>速成打字王國 | TypeQuest Kingdom</title>
+    <title>速成大冒險 | Quick Input Adventure V42</title>
     
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <script src="https://cdn.tailwindcss.com/3.4.17?plugins=forms"></script>
+    <!-- Core Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <!-- Tailwind Config -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
+                        'brand': { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7' },
                         'magic': { 950: '#1e1b4b', 900: '#2e1065', 800: '#4c1d95', 600: '#7c3aed', 500: '#8b5cf6', 300: '#c4b5fd', 100: '#ede9fe' },
                         'gold': { 400: '#facc15', 500: '#eab308', 600: '#ca8a04' },
+                        'danger': { 900: '#450a0a', 500: '#ef4444' }
                     },
                     fontFamily: {
+                        'serif': ['"Noto Serif TC"', '"Songti TC"', 'serif'],
                         'sans': ['"Noto Sans TC"', 'sans-serif'],
+                        'mono': ['"Noto Sans Mono"', 'monospace'],
                     },
+                    animation: {
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'damage-flash': 'damageFlash 0.3s ease-in-out',
+                        'float-up': 'floatUp 1s ease-out forwards',
+                        'coin-spin': 'coinSpin 1s linear infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                        'float-slow': 'floatUp 3s ease-in-out infinite',
+                        'lunge': 'lunge 0.2s ease-out',
+                    },
+                    keyframes: {
+                        shake: { '10%, 90%': { transform: 'translate3d(-2px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(4px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-6px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(6px, 0, 0)' } },
+                        pulseGlow: { '0%, 100%': { opacity: 1, filter: 'brightness(1)' }, '50%': { opacity: 0.8, filter: 'brightness(1.3)' } },
+                        damageFlash: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(239, 68, 68, 0.3)' } },
+                        floatUp: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        coinSpin: { '0%': { transform: 'rotateY(0deg)' }, '100%': { transform: 'rotateY(360deg)' } },
+                        wiggle: { '0%, 100%': { transform: 'rotate(-3deg)' }, '50%': { transform: 'rotate(3deg)' } },
+                        lunge: { '0%': { transform: 'translateX(0)' }, '50%': { transform: 'translateX(20px)' }, '100%': { transform: 'translateX(0)' } }
+                    }
                 }
             }
         }
     </script>
     <style>
-        /* CSS Variables - Theme */
-        :root {
-            --primary: #8b5cf6;
-            --primary-dark: #4c1d95;
-            --primary-light: #c4b5fd;
-            --accent: #facc15;
-            --accent-dark: #eab308;
-            --success: #4ade80;
-            --danger: #f87171;
-            --purple-300: #c4b5fd;
-            --purple-400: #a78bfa;
-            --purple-500: #8b5cf6;
-            --purple-600: #7c3aed;
-            --purple-800: #4c1d95;
-            --purple-900: #2e1065;
-            --purple-950: #1e1b4b;
-            --orange-400: #fb923c;
-            --blue-400: #38bdf8;
-            --green-400: #4ade80;
-            --red-400: #f87171;
-        }
-        
-        html, body { height: 100%; margin: 0; font-family: 'Noto Sans TC', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700&display=swap');
+        html, body, #root { height: 100%; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; touch-action: manipulation; background-color: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .keyboard-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
         .perspective-road { transform: perspective(500px) rotateX(40deg); transform-origin: 50% 100%; }
-        .typing-char { transition: all 0.2s ease; }
-        .typing-char.correct { color: #4ade80; transform: scale(1.1); }
-        .typing-char.wrong { color: #f87171; animation: shake 0.3s ease; }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); }
-            20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-            40%, 60% { transform: translate3d(6px, 0, 0); }
-        }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .animate-float { animation: float 2s ease-in-out infinite; }
-        @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); } 50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.8); } }
-        .animate-glow { animation: glow 2s ease-in-out infinite; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slideIn { animation: slideIn 0.3s ease-out; }
-        @keyframes comboFlash { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 0.8; } }
-        .combo-flash { animation: comboFlash 0.5s ease-out; }
-        @keyframes screenShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        .screen-shake { animation: screenShake 0.3s ease; }
-        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 10px 2px rgba(139, 92, 246, 0.6); } 50% { box-shadow: 0 0 25px 5px rgba(139, 92, 246, 0.9); } }
-        .pulse-glow { animation: pulseGlow 1s ease-in-out infinite; }
-        @keyframes progressPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .progress-pulse { animation: progressPulse 1s ease-in-out infinite; }
-        .combo-milestone { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .energy-bar-fill { transition: width 0.3s ease-out; }
-        .mode-card:hover { transform: scale(1.02); }
-        .mode-card { transition: transform 0.2s ease; }
-
-        /* Touch target for accessibility (44x44px min for special ed) */
-        .touch-target {
-            min-height: 44px;
-            min-width: 44px;
-            padding: 10px 16px;
-        }
-        
-        /* Ensure input has proper touch target */
-        input[type="text"] {
-            min-height: 48px;
-        }
+        .blind-blur { filter: blur(4px); user-select: none; opacity: 0.5; }
     </style>
 </head>
-<body class="bg-gradient-to-b from-magic-950 to-magic-900 min-h-screen text-white overflow-hidden">
-    <div id="app"></div>
+<body>
+    <div id="root"></div>
 
-    <script type="module">
-        // =============================================
-        // 核心系統 (Core Systems)
-        // =============================================
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
+        const { icons } = lucide;
         
-        // Event Bus
-        const EventBus = {
-            listeners: new Map(),
-            on(event, callback) {
-                if (!this.listeners.has(event)) this.listeners.set(event, new Set());
-                this.listeners.get(event).add(callback);
-                return () => this.off(event, callback);
+        const { 
+            Settings, Volume2, ArrowLeft, Play, User, Trophy, Star, Zap, LayoutGrid, Rocket, Heart, AlertTriangle, 
+            CheckCircle, RefreshCw, Keyboard, MousePointer2, Box, Home, Trees, Cloud, Moon, Flag, Timer, Leaf, 
+            Smile, Coffee, BookOpen, Sword, Shield, Ghost, Sparkles, Skull, Flame, Plus, Crown, Gift, Hammer, 
+            Droplets, Wind, Eye: EyeIcon, Save, Upload, Download, X, Coins, GraduationCap, Lock, Unlock, ShoppingBag, 
+            Tent, BedDouble, Dumbbell, Gem, Gauge, EyeOff, MicOff, Shuffle, Snowflake, BarChart3, Activity, Target,
+            Dices, Book, Gavel, FlaskConical, UserCircle2, Wand2
+        } = icons;
+
+        const LucideIcon = ({ icon, size = 24, className = "" }) => icon ? <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icon.map(([tag, attrs], i) => React.createElement(tag, { ...attrs, key: i }))}</svg> : null;
+
+        // --- 🎵 Audio Engine ---
+        const AudioEngine = {
+            ctx: null,
+            init: function() { 
+                if (!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+                if (this.ctx.state === 'suspended') { this.ctx.resume(); }
             },
-            once(event, callback) {
-                const wrapper = (data) => { this.off(event, wrapper); callback(data); };
-                this.on(event, wrapper);
-            },
-            emit(event, data) {
-                if (this.listeners.has(event)) {
-                    this.listeners.get(event).forEach(cb => { try { cb(data); } catch (e) { console.error(e); } });
-                }
-            },
-            off(event, callback) {
-                if (this.listeners.has(event)) this.listeners.get(event).delete(callback);
-            },
-        };
-        
-        const EVENTS = {
-            GAME_START: 'game:start', GAME_END: 'game:end',
-            QUESTION_SHOW: 'question:show', QUESTION_CORRECT: 'question:correct', QUESTION_WRONG: 'question:wrong',
-            LEVEL_COMPLETE: 'level:complete', LEVEL_FAILED: 'level:failed',
-            DIFFICULTY_CHANGE: 'difficulty:change', COMBO_UPDATE: 'combo:update', COMBO_MILESTONE: 'combo:milestone',
-            MODE_CHANGE: 'mode:change', TIME_TICK: 'time:tick', SKILL_ACTIVATE: 'skill:activate',
-        };
-        
-        // State Machine
-        const StateMachine = {
-            currentState: 'HOME',
-            states: {
-                HOME: {}, MENU: {}, MODE_SELECT: {}, PLAYING: {}, LEVEL_COMPLETE: {}, SETTINGS: {}, GAME_OVER: {},
-            },
-            transition(to) { this.currentState = to; EventBus.emit(EVENTS.STATE_CHANGE, { from: this.currentState, to }); },
-            getState() { return this.currentState; },
-        };
-        
-        // Adaptive Difficulty Engine
-        const DIFFICULTY_LEVELS = {
-            1: { name: '輕鬆', timeLimit: null, hintLevel: 3 },
-            2: { name: '簡單', timeLimit: 20, hintLevel: 2 },
-            3: { name: '普通', timeLimit: 15, hintLevel: 1 },
-            4: { name: '困難', timeLimit: 10, hintLevel: 0 },
-            5: { name: '專家', timeLimit: 5, hintLevel: 0 },
-        };
-        
-        const AdaptiveEngine = {
-            currentLevel: 3,
-            metrics: { recentAccuracy: [], recentTimes: [], consecutiveErrors: 0, consecutiveSuccess: 0, frustrationLevel: 0 },
-            recordAnswer({ correct, time }) {
-                this.metrics.recentAccuracy.push(correct);
-                this.metrics.recentTimes.push(time);
-                if (this.metrics.recentAccuracy.length > 10) this.metrics.recentAccuracy.shift();
-                if (this.metrics.recentTimes.length > 10) this.metrics.recentTimes.shift();
-                if (correct) { this.metrics.consecutiveErrors = 0; this.metrics.consecutiveSuccess++; }
-                else { this.metrics.consecutiveErrors++; this.metrics.consecutiveSuccess = 0; }
-                this.metrics.frustrationLevel = Math.min(100, this.metrics.consecutiveErrors * 20);
-                this._checkAndAdapt();
-            },
-            _checkAndAdapt() {
-                const acc = this.metrics.recentAccuracy.filter(x => x).length / Math.max(1, this.metrics.recentAccuracy.length);
-                if (acc < 0.6 || this.metrics.consecutiveErrors >= 3) {
-                    this.currentLevel = Math.max(1, this.currentLevel - 1);
-                    EventBus.emit(EVENTS.DIFFICULTY_CHANGE, { from: this.currentLevel + 1, to: this.currentLevel });
-                } else if (acc > 0.95 && this.metrics.consecutiveSuccess >= 5) {
-                    this.currentLevel = Math.min(5, this.currentLevel + 1);
-                    EventBus.emit(EVENTS.DIFFICULTY_CHANGE, { from: this.currentLevel - 1, to: this.currentLevel });
-                }
-            },
-            getCurrentDifficulty() { return { level: this.currentLevel, ...DIFFICULTY_LEVELS[this.currentLevel] }; },
-            reset() { this.metrics = { recentAccuracy: [], recentTimes: [], consecutiveErrors: 0, consecutiveSuccess: 0, frustrationLevel: 0 }; },
-            setLevel(lvl) { this.currentLevel = lvl; },
-        };
-        
-        // Storage Manager
-        const StorageManager = {
-            PREFIX: 'tk_',
-            set(key, value) { try { localStorage.setItem(this.PREFIX + key, JSON.stringify(value)); return true; } catch (e) { return false; } },
-            get(key, defaultValue = null) { try { const d = localStorage.getItem(this.PREFIX + key); return d ? JSON.parse(d) : defaultValue; } catch (e) { return defaultValue; } },
-        };
-        
-        // Progress Tracker
-        const ProgressTracker = {
-            player: null,
-            session: { correctCount: 0, wrongCount: 0, startTime: 0, streak: 0, maxStreak: 0 },
-            init() { this.player = StorageManager.get('player', this._defaultPlayer()); return this.player; },
-            _defaultPlayer() {
-                return {
-                    id: 'p_' + Date.now(), name: '打字王', avatar: 'hero',
-                    progress: { totalStars: 0, completedLevels: [], highScores: {} },
-                    stats: { totalQuestions: 0, correctAnswers: 0, bestWPM: 0, longestStreak: 0, gamesPlayed: 0 },
-                    badges: [], settings: { difficulty: 3, soundEnabled: true },
-                };
-            },
-            startSession() { this.session = { correctCount: 0, wrongCount: 0, startTime: Date.now(), streak: 0, maxStreak: 0 }; },
-            recordCorrect() {
-                this.session.correctCount++;
-                this.session.streak++;
-                if (this.session.streak > this.session.maxStreak) this.session.maxStreak = this.session.streak;
-                return { streak: this.session.streak };
-            },
-            recordWrong() { this.session.wrongCount++; this.session.streak = 0; return { streak: 0 }; },
-            getSessionSummary() {
-                const total = this.session.correctCount + this.session.wrongCount;
-                const elapsed = (Date.now() - this.session.startTime) / 1000;
-                const wpm = elapsed > 0 ? Math.round((this.session.correctCount / elapsed) * 60) : 0;
-                return { correct: this.session.correctCount, wrong: this.session.wrongCount, total, accuracy: total > 0 ? this.session.correctCount / total : 0, maxStreak: this.session.maxStreak, wpm, elapsed };
-            },
-            savePlayer() { StorageManager.set('player', this.player); },
-        };
-        
-        // Audio System
-        const AudioSystem = {
-            ctx: null, enabled: true, volume: 0.1,
-            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx?.state === 'suspended') this.ctx.resume(); },
-            playTone(freq, type = 'sine', duration = 0.2, vol = 0.1) {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
+            playTone: function(freq, type, duration, vol = 0.1, slideTo = null) {
+                if (!this.ctx) this.init();
                 const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
+                const osc = this.ctx.createOscillator(); 
                 const gain = this.ctx.createGain();
                 osc.type = type; osc.frequency.setValueAtTime(freq, t);
-                gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(vol, t + 0.02);
+                if (slideTo) { osc.frequency.exponentialRampToValueAtTime(slideTo, t + duration); }
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(vol, t + 0.02); 
                 gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(); osc.stop(t + duration);
             },
-            correct() { this.playTone(880, 'sine', 0.15, this.volume); setTimeout(() => this.playTone(1108, 'sine', 0.2, this.volume), 50); },
-            wrong() { this.playTone(150, 'triangle', 0.3, this.volume * 1.5); },
-            levelUp() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.25, this.volume), i * 80)); },
-            click() { this.playTone(1200, 'sine', 0.03, 0.02); },
-            combo5() { this.playTone(660, 'square', 0.1, 0.15); setTimeout(() => this.playTone(880, 'square', 0.1, 0.15), 100); },
-            combo10() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.playTone(f, 'square', 0.15, 0.12), i * 80)); },
-            combo20() { [523, 659, 784, 1047, 1318].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.2, 0.15), i * 60)); },
-        };
-        
-        // =============================================
-        // 評分系統 (Score System)
-        // =============================================
-        const ScoreSystem = {
-            getGrade(accuracy) {
-                if (accuracy >= 0.95) return 'S';
-                if (accuracy >= 0.9) return 'A';
-                if (accuracy >= 0.8) return 'B';
-                if (accuracy >= 0.7) return 'C';
-                if (accuracy >= 0.6) return 'D';
-                return 'F';
-            },
-            getGradeColor(grade) {
-                const colors = { S: 'text-yellow-400', A: 'text-green-400', B: 'text-blue-400', C: 'text-purple-400', D: 'text-orange-400', F: 'text-red-400' };
-                return colors[grade] || 'text-white';
-            },
-            calculateScore(correct, wrong, maxStreak, timeBonus = 0) {
-                const baseScore = correct * 100;
-                const streakBonus = maxStreak * 50;
-                return baseScore + streakBonus + timeBonus;
-            },
-            getWPM(correct, elapsedSeconds) {
-                if (elapsedSeconds <= 0) return 0;
-                return Math.round((correct / elapsedSeconds) * 60);
-            },
-        };
-        
-        // =============================================
-        // Combo System
-        // =============================================
-        const ComboSystem = {
-            currentCombo: 0,
-            maxCombo: 50,
-            milestones: [5, 10, 20, 30, 50],
-            milestoneMessages: {
-                5: { text: '🔥 熱辣辣！', color: 'text-orange-400', sound: 'combo5' },
-                10: { text: '💥 火力全開！', color: 'text-yellow-400', sound: 'combo10' },
-                20: { text: '⚡ 雷神之怒！', color: 'text-blue-400', sound: 'combo20' },
-                30: { text: '🌟 傳奇！', color: 'text-purple-400', sound: 'combo20' },
-                50: { text: '👑 天下無敵！', color: 'text-yellow-300', sound: 'combo20' },
-            },
-            add() {
-                this.currentCombo++;
-                EventBus.emit(EVENTS.COMBO_UPDATE, { combo: this.currentCombo, max: this.maxCombo });
-                if (this.milestones.includes(this.currentCombo)) {
-                    const msg = this.milestoneMessages[this.currentCombo];
-                    EventBus.emit(EVENTS.COMBO_MILESTONE, { combo: this.currentCombo, message: msg.text, color: msg.color });
-                    if (AudioSystem[msg.sound]) AudioSystem[msg.sound]();
-                }
-                return this.currentCombo;
-            },
-            reset() { this.currentCombo = 0; EventBus.emit(EVENTS.COMBO_UPDATE, { combo: 0, max: this.maxCombo }); },
-            getComboMultiplier() { return 1 + Math.floor(this.currentCombo / 10) * 0.5; },
-        };
-        
-        // =============================================
-        // 10種遊戲模式定義
-        // =============================================
-        const GAME_MODES = {
-            foundation: {
-                id: 'foundation', name: '基礎關卡', icon: '🏰', description: '線性關卡學習',
-                timed: false, hasHints: true, comboEnabled: true, challenges: []
-            },
-            timeAttack: {
-                id: 'timeAttack', name: '限時挑戰', icon: '⏱️', description: '60秒盡量答多題',
-                timed: true, timeLimit: 60, hasHints: false, comboEnabled: true, challenges: ['scoreBased']
-            },
-            vocabulary: {
-                id: 'vocabulary', name: '詞彙學習', icon: '📖', description: '先記憶後輸入',
-                timed: false, hasHints: true, comboEnabled: false, memorizationPhase: true, challenges: []
-            },
-            sprint: {
-                id: 'sprint', name: '速打模式', icon: '🚀', description: '50題追求最快時間',
-                timed: false, targetCount: 50, hasHints: false, comboEnabled: true, challenges: ['speedBased']
-            },
-            challenge: {
-                id: 'challenge', name: '挑戰模式', icon: '🎯', description: '完成特定目標',
-                timed: false, hasHints: false, comboEnabled: true, challenges: ['perfect', 'combo10', 'accuracy90']
-            },
-            practice: {
-                id: 'practice', name: '練習模式', icon: '📝', description: '無壓力學習',
-                timed: false, infiniteHints: true, hasHints: true, comboEnabled: false, challenges: []
-            },
-            boss: {
-                id: 'boss', name: 'BOSS 戰', icon: '👹', description: '多階段史詩戰鬥',
-                timed: false, hasHints: false, comboEnabled: true, isBossMode: true, challenges: []
-            },
-            free: {
-                id: 'free', name: '自由練習', icon: '🎲', description: '自訂題目', comingSoon: true,
-                timed: false, customQuestions: true, hasHints: true, comboEnabled: false, challenges: []
-            },
+            correct: function() { this.playTone(880, 'sine', 0.2, 0.1); setTimeout(() => this.playTone(1108, 'sine', 0.3, 0.1), 50); },
+            wrong: function() { this.playTone(150, 'triangle', 0.3, 0.15, 100); },
+            click: function() { this.playTone(1200, 'sine', 0.03, 0.02); },
+            attack: function() { this.playTone(200, 'triangle', 0.15, 0.1, 50); }, 
+            crit: function() { this.playTone(600, 'square', 0.1, 0.05, 1200); }, 
+            hit: function() { this.playTone(100, 'triangle', 0.2, 0.15, 50); },
+            skill: function() { this.playTone(300, 'sine', 0.4, 0.1, 600); },
+            levelUp: function() { [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.3, 0.1), i * 80)); },
+            win: function() { [523, 659, 784, 1046, 784, 1046].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.2, 0.1), i * 120)); },
+            lose: function() { [392, 370, 349, 330].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.4, 0.1), i * 300)); },
+            coin: function() { this.playTone(1318, 'sine', 0.1, 0.05); setTimeout(() => this.playTone(1975, 'sine', 0.2, 0.05), 80); },
+            heal: function() { this.playTone(400, 'sine', 0.6, 0.1, 800); },
+            freeze: function() { this.playTone(800, 'sine', 0.5, 0.1); setTimeout(() => this.playTone(400, 'sine', 0.5, 0.1), 100); },
+            execute: function() { this.playTone(150, 'sawtooth', 0.2, 0.3); setTimeout(() => this.playTone(50, 'square', 0.4, 0.4), 100); },
+            magic: function() { this.playTone(600, 'sine', 0.3, 0.1); setTimeout(() => this.playTone(1200, 'sine', 0.3, 0.1, 200), 50); },
+            powerUp: function() { this.playTone(440, 'sine', 0.1, 0.1); setTimeout(() => this.playTone(554, 'sine', 0.1, 0.1), 60); setTimeout(() => this.playTone(659, 'sine', 0.2, 0.1), 120); }
         };
 
-        // =============================================
-        // GameModeManager - 統一管理 10 種遊戲模式切換
-        // =============================================
-        const GameModeManager = {
-            currentMode: null,
-            modeState: {},
-            
-            // 初始化指定模式
-            initMode(modeId, level, config = {}) {
-                const modeDef = GAME_MODES[modeId];
-                if (!modeDef) {
-                    console.error(`[GameModeManager] 未知模式: ${modeId}`);
-                    return false;
-                }
-                
-                this.currentMode = modeId;
-                this.modeState = {
-                    phase: 'playing',
-                    correctCount: 0,
-                    wrongCount: 0,
-                    startTime: Date.now(),
-                    streak: 0,
-                    maxStreak: 0,
-                };
-                
-                // 觸發模式切換事件
-                EventBus.emit(EVENTS.MODE_CHANGE, { 
-                    mode: modeId, 
-                    modeName: modeDef.name,
-                    config: modeDef 
-                });
-                
-                return true;
-            },
-            
-            // 獲取當前模式定義
-            getCurrentModeDef() {
-                return this.currentMode ? GAME_MODES[this.currentMode] : null;
-            },
-            
-            // 獲取當前即時評級（答題過程中）
-            getLiveGrade() {
-                const total = this.modeState.correctCount + this.modeState.wrongCount;
-                if (total === 0) return { grade: '-', accuracy: 0, color: 'text-gray-400' };
-                
-                const accuracy = this.modeState.correctCount / total;
-                const grade = ScoreSystem.getGrade(accuracy);
-                const color = ScoreSystem.getGradeColor(grade);
-                
-                return { grade, accuracy, color };
-            },
-            
-            // 記錄答題結果
-            recordAnswer(correct) {
-                if (correct) {
-                    this.modeState.correctCount++;
-                    this.modeState.streak++;
-                    if (this.modeState.streak > this.modeState.maxStreak) {
-                        this.modeState.maxStreak = this.modeState.streak;
-                    }
-                } else {
-                    this.modeState.wrongCount++;
-                    this.modeState.streak = 0;
-                }
-                return this.getLiveGrade();
-            },
-            
-            // 獲取模式統計
-            getStats() {
-                const elapsed = (Date.now() - this.modeState.startTime) / 1000;
-                const total = this.modeState.correctCount + this.modeState.wrongCount;
-                return {
-                    correct: this.modeState.correctCount,
-                    wrong: this.modeState.wrongCount,
-                    total,
-                    accuracy: total > 0 ? this.modeState.correctCount / total : 0,
-                    maxStreak: this.modeState.maxStreak,
-                    elapsed,
-                    wpm: elapsed > 0 ? Math.round((this.modeState.correctCount / elapsed) * 60) : 0,
-                };
-            },
-            
-            // 結束當前模式
-            endMode() {
-                const summary = this.getStats();
-                this.currentMode = null;
-                this.modeState = {};
-                return summary;
-            },
-            
-            // 檢查是否為特殊模式
-            isSpecialMode(modeId) {
-                const specialModes = ['timeAttack', 'sprint', 'vocabulary', 'boss'];
-                return specialModes.includes(modeId);
-            },
-            
-            // 獲取模式列表（用於 UI 渲染）
-            getModeList() {
-                return Object.values(GAME_MODES);
-            },
-        };
-
-        // =============================================
-        // Boss Mode 系統 - 多階段 HP 血條戰鬥
-        // =============================================
-        const BossSystem = {
-            bossData: null,
-            currentPhase: 0,
-            maxPhases: 3,
-            bossHP: 100,
-            bossMaxHP: 100,
-            playerHP: 100,
-            playerMaxHP: 100,
-            enemiesDefeated: 0,
-            phaseThreshold: 10, // 每階段需要擊敗多少敵人
-            
-            // Boss 定義
-            BOSS_TEMPLATES: {
-                goblin: {
-                    name: '哥布林之王',
-                    icon: '👹',
-                    phases: [
-                        { name: '第一形態', hp: 100, difficulty: 1, color: 'green' },
-                        { name: '第二形態', hp: 150, difficulty: 2, color: 'yellow' },
-                        { name: '最終形態', hp: 200, difficulty: 3, color: 'red' },
-                    ],
-                    damagePerWrong: 10,
-                    damagePerCorrect: 20,
-                },
-                dragon: {
-                    name: '打字龍',
-                    icon: '🐉',
-                    phases: [
-                        { name: '噴火階段', hp: 120, difficulty: 2, color: 'orange' },
-                        { name: '旋風階段', hp: 180, difficulty: 3, color: 'purple' },
-                        { name: '毀滅階段', hp: 250, difficulty: 4, color: 'red' },
-                    ],
-                    damagePerWrong: 15,
-                    damagePerCorrect: 25,
-                },
-            },
-            
-            // 初始化 Boss 戰
-            initBoss(bossType = 'goblin') {
-                const template = this.BOSS_TEMPLATES[bossType] || this.BOSS_TEMPLATES.goblin;
-                this.bossData = { ...template };
-                this.currentPhase = 0;
-                this.bossMaxHP = template.phases[0].hp;
-                this.bossHP = this.bossMaxHP;
-                this.playerHP = 100;
-                this.playerMaxHP = 100;
-                this.enemiesDefeated = 0;
-                this.phaseThreshold = 10;
-                
-                EventBus.emit('boss:init', {
-                    boss: this.bossData,
-                    phase: this.currentPhase,
-                    bossHP: this.bossHP,
-                    bossMaxHP: this.bossMaxHP,
-                    playerHP: this.playerHP,
-                    playerMaxHP: this.playerMaxHP,
-                });
-                
-                return this.bossData;
-            },
-            
-            // 答題正確時對 Boss 造成傷害
-            damageBoss() {
-                const phase = this.bossData?.phases[this.currentPhase];
-                const damage = phase ? 20 + (this.currentPhase * 5) : 20;
-                this.bossHP = Math.max(0, this.bossHP - damage);
-                this.enemiesDefeated++;
-                
-                EventBus.emit('boss:damage', { 
-                    damage, 
-                    bossHP: this.bossHP, 
-                    bossMaxHP: this.bossMaxHP,
-                    enemiesDefeated: this.enemiesDefeated 
-                });
-                
-                // 檢查是否需要進入下一階段
-                this._checkPhaseTransition();
-                
-                return { bossHP: this.bossHP, damage };
-            },
-            
-            // 答題錯誤時玩家受傷
-            playerTakeDamage(wrongCount = 1) {
-                const damage = (this.bossData?.damagePerWrong || 10) * wrongCount;
-                this.playerHP = Math.max(0, this.playerHP - damage);
-                
-                EventBus.emit('boss:playerDamage', { 
-                    damage, 
-                    playerHP: this.playerHP, 
-                    playerMaxHP: this.playerMaxHP 
-                });
-                
-                if (this.playerHP <= 0) {
-                    this._handleDefeat();
-                }
-                
-                return { playerHP: this.playerHP, damage };
-            },
-            
-            // 檢查階段轉換
-            _checkPhaseTransition() {
-                const phase = this.bossData?.phases[this.currentPhase];
-                if (!phase) return;
-                
-                // 每擊敗 phaseThreshold 個敵人進入下一階段
-                if (this.enemiesDefeated >= (this.currentPhase + 1) * this.phaseThreshold) {
-                    this._advancePhase();
-                }
-                
-                // Boss HP 歸零也進入下一階段
-                if (this.bossHP <= 0 && this.currentPhase < this.maxPhases - 1) {
-                    this._advancePhase();
-                }
-            },
-            
-            // 進入下一階段
-            _advancePhase() {
-                this.currentPhase++;
-                
-                if (this.currentPhase >= this.maxPhases) {
-                    this._handleVictory();
-                    return;
-                }
-                
-                const nextPhase = this.bossData.phases[this.currentPhase];
-                this.bossMaxHP = nextPhase.hp;
-                this.bossHP = this.bossMaxHP;
-                
-                EventBus.emit('boss:phaseChange', {
-                    phase: this.currentPhase,
-                    phaseName: nextPhase.name,
-                    bossHP: this.bossHP,
-                    bossMaxHP: this.bossMaxHP,
-                    color: nextPhase.color,
-                });
-                
-                AudioSystem.levelUp();
-            },
-            
-            // 勝利處理
-            _handleVictory() {
-                EventBus.emit('boss:victory', {
-                    totalEnemies: this.enemiesDefeated,
-                    playerHP: this.playerHP,
-                    playerMaxHP: this.playerMaxHP,
-                });
-            },
-            
-            // 失敗處理
-            _handleDefeat() {
-                EventBus.emit('boss:defeat', {
-                    phase: this.currentPhase,
-                    enemiesDefeated: this.enemiesDefeated,
-                });
-            },
-            
-            // 獲取當前階段資訊
-            getPhaseInfo() {
-                if (!this.bossData) return null;
-                return {
-                    current: this.currentPhase,
-                    total: this.maxPhases,
-                    name: this.bossData.phases[this.currentPhase]?.name || '未知',
-                    color: this.bossData.phases[this.currentPhase]?.color || 'gray',
-                    progress: this.enemiesDefeated,
-                    threshold: (this.currentPhase + 1) * this.phaseThreshold,
-                };
-            },
-            
-            // 獲取 Boss HP 百分比
-            getBossHPPercent() {
-                return this.bossMaxHP > 0 ? (this.bossHP / this.bossMaxHP) * 100 : 0;
-            },
-            
-            // 獲取玩家 HP 百分比
-            getPlayerHPPercent() {
-                return this.playerMaxHP > 0 ? (this.playerHP / this.playerMaxHP) * 100 : 0;
-            },
-            
-            // 重置 Boss 系統
-            reset() {
-                this.bossData = null;
-                this.currentPhase = 0;
-                this.bossHP = 100;
-                this.playerHP = 100;
-                this.enemiesDefeated = 0;
-            },
-        };
-
-        // 為 EventBus 添加 Boss 相關事件
-        EVENTS.BOSS_PHASE_CHANGE = 'boss:phaseChange';
-        EVENTS.BOSS_DAMAGE = 'boss:damage';
-        EVENTS.BOSS_VICTORY = 'boss:victory';
-        EVENTS.BOSS_DEFEAT = 'boss:defeat';
-        EVENTS.BOSS_INIT = 'boss:init';
+        // --- 📚 Data & Utils ---
+        const KEYBOARD_MAP = { 'A': '日', 'B': '月', 'C': '金', 'D': '木', 'E': '水', 'F': '火', 'G': '土', 'H': '竹', 'I': '戈', 'J': '十', 'K': '大', 'L': '中', 'M': '一', 'N': '弓', 'O': '人', 'P': '心', 'Q': '手', 'R': '口', 'S': '尸', 'T': '廿', 'U': '山', 'V': '女', 'W': '田', 'X': '難', 'Y': '卜', 'Z': '重' };
         
-        // =============================================
-        // 題庫數據
-        // =============================================
-        const QUESTIONS = {
-            'cangjie-l1': [
-                { id: 'q1', text: '日', code: 'A', hint: '日字部首' },
-                { id: 'q2', text: '月', code: 'B', hint: '月字部首' },
-                { id: 'q3', text: '金', code: 'C', hint: '金字部首' },
-                { id: 'q4', text: '木', code: 'D', hint: '木字部首' },
-                { id: 'q5', text: '水', code: 'E', hint: '水字部首' },
-                { id: 'q6', text: '火', code: 'F', hint: '火字部首' },
-                { id: 'q7', text: '土', code: 'G', hint: '土字部首' },
-                { id: 'q8', text: '竹', code: 'H', hint: '竹字部首' },
-                { id: 'q9', text: '戈', code: 'I', hint: '戈字部首' },
-                { id: 'q10', text: '十', code: 'J', hint: '十字部首' },
-            ],
-            'cangjie-l2': [
-                { id: 'q1', text: '大', code: 'K', hint: '大字部首' },
-                { id: 'q2', text: '中', code: 'L', hint: '中字部首' },
-                { id: 'q3', text: '一', code: 'M', hint: '一字部首' },
-                { id: 'q4', text: '弓', code: 'N', hint: '弓字部首' },
-                { id: 'q5', text: '人', code: 'O', hint: '人字部首' },
-                { id: 'q6', text: '心', code: 'P', hint: '心字部首' },
-                { id: 'q7', text: '手', code: 'Q', hint: '手字部首' },
-                { id: 'q8', text: '口', code: 'R', hint: '口字部首' },
-                { id: 'q9', text: '尸', code: 'S', hint: '尸字部首' },
-                { id: 'q10', text: '廿', code: 'T', hint: '廿字部首' },
-            ],
-            'cangjie-l3': [
-                { id: 'q1', text: '山', code: 'U', hint: '山字部首' },
-                { id: 'q2', text: '女', code: 'V', hint: '女字部首' },
-                { id: 'q3', text: '田', code: 'W', hint: '田字部首' },
-                { id: 'q4', text: '卜', code: 'Y', hint: '卜字部首' },
-                { id: 'q5', text: '難', code: 'X', hint: '難字部首' },
-                { id: 'q6', text: '時', code: 'AGDI', hint: '日土木戈' },
-                { id: 'q7', text: '朋', code: 'BB', hint: '月月' },
-                { id: 'q8', text: '林', code: 'DD', hint: '木木' },
-                { id: 'q9', text: '字', code: 'JND', hint: '十弓木' },
-                { id: 'q10', text: '王', code: 'MG', hint: '一土' },
-            ],
-            'fruits-l1': [
-                { id: 'q1', text: '蘋果', code: 'BNLMMI' },
-                { id: 'q2', text: '香蕉', code: 'LKOW' },
-                { id: 'q3', text: '橙', code: 'MAJ' },
-                { id: 'q4', text: '西瓜', code: 'IHOJ' },
-                { id: 'q5', text: '葡萄', code: 'MWLMF' },
-                { id: 'q6', text: '柚子', code: 'PMBC' },
-                { id: 'q7', text: '荔枝', code: 'DWHQ' },
-                { id: 'q8', text: '檸檬', code: 'JTHQ' },
-                { id: 'q9', text: '菠蘿', code: 'ELMG' },
-                { id: 'q10', text: '草莓', code: 'ELHK' },
-            ],
-            'animals-l1': [
-                { id: 'q1', text: '狗', code: 'HOK' },
-                { id: 'q2', text: '貓', code: 'HNF' },
-                { id: 'q3', text: '鳥', code: 'HAF' },
-                { id: 'q4', text: '魚', code: 'NWF' },
-                { id: 'q5', text: '馬', code: 'XHO' },
-                { id: 'q6', text: '牛', code: 'QK' },
-                { id: 'q7', text: '羊', code: 'UF' },
-                { id: 'q8', text: '豬', code: 'QHG' },
-                { id: 'q9', text: '蛇', code: 'NMI' },
-                { id: 'q10', text: '龍', code: 'LPHF' },
-            ],
-            'daily-l1': [
-                { id: 'q1', text: '你好', code: 'ONFHVI' },
-                { id: 'q2', text: '香港', code: 'ILKS' },
-                { id: 'q3', text: '老師', code: 'JKSJ' },
-                { id: 'q4', text: '學生', code: 'XND' },
-                { id: 'q5', text: '學校', code: 'XOU' },
-                { id: 'q6', text: '圖書館', code: 'BWKNR' },
-                { id: 'q7', text: '電腦', code: 'FKQU' },
-                { id: 'q8', text: '打字', code: 'DQLF' },
-                { id: 'q9', text: '遊戲', code: 'KBUC' },
-                { id: 'q10', text: '學習', code: 'HNGNI' },
-            ],
-        };
-        
-        const LEVELS = [
-            { id: 'cangjie-l1', name: '倉頡基礎 L1', description: '學習日、月、金、木部首', icon: '🔤', category: '倉頡', color: 'purple', questions: 'cangjie-l1' },
-            { id: 'cangjie-l2', name: '倉頡基礎 L2', description: '學習大、中、一、弓部首', icon: '📚', category: '倉頡', color: 'indigo', questions: 'cangjie-l2' },
-            { id: 'cangjie-l3', name: '倉頡基礎 L3', description: '學習山、女、田、卜部首', icon: '🏔️', category: '倉頡', color: 'blue', questions: 'cangjie-l3' },
-            { id: 'fruits-l1', name: '水果王國', description: '打字水果名稱', icon: '🍎', category: '詞彙', color: 'red', questions: 'fruits-l1' },
-            { id: 'animals-l1', name: '動物王國', description: '打字動物名稱', icon: '🐕', category: '詞彙', color: 'green', questions: 'animals-l1' },
-            { id: 'daily-l1', name: '日常用語', description: '打字日常用字', icon: '🏠', category: '詞彙', color: 'blue', questions: 'daily-l1' },
+        const CHAPTERS = [
+            { id: '01', code: 'A', name: '日' }, { id: '02', code: 'B', name: '月' }, { id: '03', code: 'C', name: '金' }, { id: '04', code: 'D', name: '木' },
+            { id: '05', code: 'E', name: '水' }, { id: '06', code: 'F', name: '火' }, { id: '07', code: 'G', name: '土' }, { id: '08', code: 'H', name: '竹' },
+            { id: '09', code: 'I', name: '戈' }, { id: '10', code: 'J', name: '十' }, { id: '11', code: 'K', name: '大' }, { id: '12', code: 'L', name: '中' },
+            { id: '13', code: 'M', name: '一' }, { id: '14', code: 'N', name: '弓' }, { id: '15', code: 'O', name: '人' }, { id: '16', code: 'P', name: '心' },
+            { id: '17', code: 'Q', name: '手' }, { id: '18', code: 'R', name: '口' }, { id: '19', code: 'S', name: '尸' }, { id: '20', code: 'T', name: '廿' },
+            { id: '21', code: 'U', name: '山' }, { id: '22', code: 'V', name: '女' }, { id: '23', code: 'W', name: '田' }, { id: '24', code: 'Y', name: '卜' },
+            { id: '25', code: 'X', name: '難' }
         ];
-        
-        // =============================================
-        // Type Engine（增強版）
-        // =============================================
-        const TypeEngine = {
-            questions: [], currentIndex: 0, currentQuestion: null,
-            isPlaying: false, questionStartTime: 0,
-            mode: 'foundation', modeConfig: {},
-            timerInterval: null, timeRemaining: 0,
-            initLevel(questions, mode = 'foundation', config = {}) {
-                this.questions = [...questions].sort(() => Math.random() - 0.5);
-                this.currentIndex = 0;
-                this.isPlaying = true;
-                this.mode = mode;
-                this.modeConfig = config;
-                this.questionStartTime = Date.now();
-                if (mode === 'timeAttack' && config.timeLimit) {
-                    this.timeRemaining = config.timeLimit;
-                    this._startTimer();
-                }
-                this._showNext();
-            },
-            _startTimer() {
-                this.timerInterval = setInterval(() => {
-                    this.timeRemaining--;
-                    EventBus.emit(EVENTS.TIME_TICK, { remaining: this.timeRemaining });
-                    if (this.timeRemaining <= 0) {
-                        this._handleTimeUp();
-                    }
-                }, 1000);
-            },
-            _handleTimeUp() {
-                if (this.timerInterval) clearInterval(this.timerInterval);
-                this.isPlaying = false;
-                EventBus.emit(EVENTS.GAME_END, { reason: 'timeUp', summary: ProgressTracker.getSessionSummary() });
-            },
-            _showNext() {
-                if (this.currentIndex >= this.questions.length) {
-                    if (this.mode === 'sprint' && this.currentIndex < 50) {
-                        // 繼續補充題目
-                        this.questions = [...this.questions, ...this._getMoreQuestions(50 - this.currentIndex)];
-                        this.currentQuestion = this.questions[this.currentIndex];
-                        this.questionStartTime = Date.now();
-                        EventBus.emit(EVENTS.QUESTION_SHOW, { question: this.currentQuestion, index: this.currentIndex, total: this.questions.length });
-                        return;
-                    }
-                    this.isPlaying = false;
-                    if (this.timerInterval) clearInterval(this.timerInterval);
-                    AudioSystem.levelUp();
-                    EventBus.emit(EVENTS.LEVEL_COMPLETE, ProgressTracker.getSessionSummary());
-                    return;
-                }
-                this.currentQuestion = this.questions[this.currentIndex];
-                this.questionStartTime = Date.now();
-                EventBus.emit(EVENTS.QUESTION_SHOW, { question: this.currentQuestion, index: this.currentIndex, total: this.mode === 'sprint' ? 50 : this.questions.length });
-            },
-            _getMoreQuestions(count) {
-                const allQuestions = Object.values(QUESTIONS).flat();
-                return allQuestions.sort(() => Math.random() - 0.5).slice(0, count);
-            },
-            checkAnswer(input) {
-                if (!this.isPlaying) return null;
-                const time = Date.now() - this.questionStartTime;
-                const expected = this.currentQuestion?.code || '';
-                const correct = input.toUpperCase() === expected.toUpperCase();
-                if (correct) {
-                    AudioSystem.correct();
-                    const streakData = ProgressTracker.recordCorrect();
-                    if (this.modeConfig.comboEnabled !== false) ComboSystem.add();
-                    AdaptiveEngine.recordAnswer({ correct: true, time });
-                    EventBus.emit(EVENTS.QUESTION_CORRECT, { question: this.currentQuestion, time });
-                    this.currentIndex++;
-                    this._showNext();
-                } else {
-                    AudioSystem.wrong();
-                    ProgressTracker.recordWrong();
-                    if (this.modeConfig.comboEnabled !== false) ComboSystem.reset();
-                    AdaptiveEngine.recordAnswer({ correct: false, time });
-                    EventBus.emit(EVENTS.QUESTION_WRONG, { question: this.currentQuestion, attempts: 1 });
-                }
-                return { correct, expected, time };
-            },
-            stop() {
-                this.isPlaying = false;
-                this.questions = [];
-                this.currentQuestion = null;
-                if (this.timerInterval) clearInterval(this.timerInterval);
-            },
+
+        const THEMES = {
+            FOREST: { bg: 'bg-gradient-to-b from-sky-300 to-blue-100', road: 'from-slate-700 to-slate-900', decor: Trees }
         };
-        
-        // =============================================
-        // UI 組件
-        // =============================================
-        const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
-        
-        createApp({
-            setup() {
-                const state = ref('HOME');
-                const currentLevel = ref(null);
-                const currentQuestion = ref(null);
-                const questionIndex = ref(0);
-                const questionTotal = ref(0);
-                const userInput = ref('');
-                const inputRef = ref(null);
-                const sessionSummary = ref(null);
-                const difficulty = ref(AdaptiveEngine.getCurrentDifficulty());
-                const showHint = ref(false);
-                const feedback = ref(null);
-                const combo = ref(0);
-                const comboMilestone = ref(null);
-                const timeRemaining = ref(0);
-                const selectedMode = ref(null);
-                const player = ref(ProgressTracker.init());
-                
-                // Vocab mode state
-                const vocabPhase = ref('memorize'); // 'memorize' | 'input'
-                const vocabTimer = ref(0);
-                const vocabQuestion = ref(null);
-                
-                let vocabTimerInterval = null;
-                
-                // Boss 模式狀態
-                const bossHP = ref(100);
-                const bossMaxHP = ref(100);
-                const bossPlayerHP = ref(100);
-                const bossPlayerMaxHP = ref(100);
-                const bossPhase = ref(0);
-                const bossPhaseName = ref('');
-                const bossName = ref('');
-                const bossIcon = ref('');
-                const isBossMode = ref(false);
-                
-                // Vocab mode 專用
-                const showCode = ref(true);
-                const vocabCountdown = ref(3);
-                
-                onMounted(() => {
-                    EventBus.on(EVENTS.QUESTION_SHOW, (data) => {
-                        currentQuestion.value = data.question;
-                        questionIndex.value = data.index;
-                        questionTotal.value = data.total;
-                        userInput.value = '';
-                        feedback.value = null;
-                        showHint.value = false;
-                        setTimeout(() => inputRef.value?.focus(), 100);
-                    });
-                    
-                    // 答對事件 - Boss 模式時對 Boss 造成傷害
-                    EventBus.on(EVENTS.QUESTION_CORRECT, () => {
-                        if (isBossMode.value) {
-                            const result = BossSystem.damageBoss();
-                            bossHP.value = result.bossHP;
-                            bossMaxHP.value = BossSystem.bossMaxHP;
-                            bossPlayerHP.value = BossSystem.playerHP;
-                            bossPlayerMaxHP.value = BossSystem.playerMaxHP;
-                            bossPhase.value = BossSystem.currentPhase;
-                            bossPhaseName.value = BossSystem.bossData?.phases[BossSystem.currentPhase]?.name || '';
-                        }
-                    });
-                    
-                    EventBus.on(EVENTS.QUESTION_WRONG, () => {
-                        feedback.value = { type: 'wrong', message: '再試一次！' };
-                        document.querySelector('.game-container')?.classList.add('screen-shake');
-                        setTimeout(() => document.querySelector('.game-container')?.classList.remove('screen-shake'), 300);
-                        setTimeout(() => { feedback.value = null; }, 1000);
-                        
-                        // 答錯時如果是 Boss 模式，玩家受傷
-                        if (isBossMode.value) {
-                            const result = BossSystem.playerTakeDamage();
-                            bossPlayerHP.value = result.playerHP;
-                            if (bossPlayerHP.value <= 0) {
-                                state.value = 'GAME_OVER';
-                            }
-                        }
-                    });
-                    
-                    EventBus.on(EVENTS.LEVEL_COMPLETE, (data) => {
-                        sessionSummary.value = data;
-                        updatePlayerStats();
-                        state.value = 'LEVEL_COMPLETE';
-                        if (isBossMode.value) {
-                            BossSystem.reset();
-                            isBossMode.value = false;
-                        }
-                    });
-                    
-                    EventBus.on(EVENTS.GAME_END, (data) => {
-                        if (data.reason === 'timeUp') {
-                            sessionSummary.value = data.summary;
-                            state.value = 'LEVEL_COMPLETE';
-                        }
-                    });
-                    
-                    EventBus.on(EVENTS.DIFFICULTY_CHANGE, () => {
-                        difficulty.value = AdaptiveEngine.getCurrentDifficulty();
-                    });
-                    
-                    EventBus.on(EVENTS.COMBO_UPDATE, (data) => {
-                        combo.value = data.combo;
-                    });
-                    
-                    EventBus.on(EVENTS.COMBO_MILESTONE, (data) => {
-                        comboMilestone.value = data;
-                        setTimeout(() => { comboMilestone.value = null; }, 2000);
-                    });
-                    
-                    EventBus.on(EVENTS.TIME_TICK, (data) => {
-                        timeRemaining.value = data.remaining;
-                    });
-                    
-                    // Boss 模式事件
-                    EventBus.on('boss:init', (data) => {
-                        bossName.value = data.boss.name;
-                        bossIcon.value = data.boss.icon;
-                        bossHP.value = data.bossHP;
-                        bossMaxHP.value = data.bossMaxHP;
-                        bossPlayerHP.value = data.playerHP;
-                        bossPlayerMaxHP.value = data.playerMaxHP;
-                        bossPhase.value = data.phase;
-                    });
-                    
-                    EventBus.on('boss:phaseChange', (data) => {
-                        bossPhase.value = data.phase;
-                        bossPhaseName.value = data.phaseName;
-                        bossHP.value = data.bossHP;
-                        bossMaxHP.value = data.bossMaxHP;
-                    });
-                    
-                    EventBus.on('boss:victory', (data) => {
-                        sessionSummary.value = {
-                            correct: BossSystem.enemiesDefeated,
-                            wrong: 0,
-                            total: BossSystem.enemiesDefeated,
-                            accuracy: 1,
-                            maxStreak: combo.value,
-                            wpm: 0,
-                            elapsed: 0,
-                            bossMode: true,
-                        };
-                        state.value = 'LEVEL_COMPLETE';
-                    });
-                    
-                    EventBus.on('boss:defeat', (data) => {
-                        sessionSummary.value = {
-                            correct: data.enemiesDefeated,
-                            wrong: 0,
-                            total: data.enemiesDefeated,
-                            accuracy: 0.5,
-                            maxStreak: 0,
-                            wpm: 0,
-                            elapsed: 0,
-                            bossMode: true,
-                            defeated: true,
-                        };
-                        state.value = 'LEVEL_COMPLETE';
-                    });
-                });
-                
-                const startLevel = (level, mode = 'foundation') => {
-                    currentLevel.value = level;
-                    const questions = QUESTIONS[level.questions] || [];
-                    if (questions.length === 0) return;
-                    
-                    AdaptiveEngine.reset();
-                    ProgressTracker.startSession();
-                    ComboSystem.reset();
-                    
-                    const config = {
-                        comboEnabled: mode !== 'practice' && mode !== 'vocabulary',
-                    };
-                    
-                    if (mode === 'timeAttack') config.timeLimit = 60;
-                    
-                    // 如果是 Boss 模式，初始化 Boss 系統
-                    if (mode === 'boss') {
-                        isBossMode.value = true;
-                        BossSystem.initBoss('goblin');
-                        bossName.value = BossSystem.bossData.name;
-                        bossIcon.value = BossSystem.bossData.icon;
-                        bossHP.value = BossSystem.bossHP;
-                        bossMaxHP.value = BossSystem.bossMaxHP;
-                        bossPlayerHP.value = BossSystem.playerHP;
-                        bossPlayerMaxHP.value = BossSystem.playerMaxHP;
-                        bossPhase.value = BossSystem.currentPhase;
-                        bossPhaseName.value = BossSystem.bossData.phases[0].name;
-                    }
-                    
-                    TypeEngine.initLevel(questions, mode, config);
-                    state.value = 'PLAYING';
-                    selectedMode.value = mode;
-                };
-                
-                const submitAnswer = () => {
-                    if (!userInput.value.trim()) return;
-                    const result = TypeEngine.checkAnswer(userInput.value);
-                    if (result?.correct) {
-                        feedback.value = { type: 'correct', message: '✓' };
-                        setTimeout(() => { feedback.value = null; }, 800);
-                        // Boss damage hook
-                        if (isBossMode.value) {
-                            const dmg = 10 + (combo.value * 2);
-                            BossSystem.damageBoss(dmg);
-                            bossHP.value = BossSystem.bossHP;
-                            bossMaxHP.value = BossSystem.bossMaxHP;
-                            bossPlayerHP.value = BossSystem.playerHP;
-                            bossPhase.value = BossSystem.currentPhase;
-                            bossPhaseName.value = BossSystem.bossData.phases[BossSystem.currentPhase]?.name || '';
-                        }
-                    } else {
-                        feedback.value = { type: 'wrong', message: '✗' };
-                        setTimeout(() => { feedback.value = null; }, 800);
-                        // Boss mode: player takes damage on wrong answer
-                        if (isBossMode.value) {
-                            BossSystem.playerTakeDamage(10);
-                            bossPlayerHP.value = BossSystem.playerHP;
-                            if (BossSystem.playerHP <= 0) {
-                                state.value = 'GAME_OVER';
-                            }
-                        }
-                    }
-                    userInput.value = '';
-                };
-                
-                
-            const updatePlayerStats = () => {
-                const summary = ProgressTracker.getSessionSummary();
-                player.value.stats.totalQuestions += summary.total;
-                player.value.stats.correctAnswers += summary.correct;
-                if (summary.maxStreak > player.value.stats.longestStreak) {
-                    player.value.stats.longestStreak = summary.maxStreak;
-                }
-                if (summary.wpm > player.value.stats.bestWPM) {
-                    player.value.stats.bestWPM = summary.wpm;
-                }
-                player.value.stats.gamesPlayed++;
-                ProgressTracker.savePlayer();
-            };
+
+        const AVATARS = {
+            hero: { id: 'hero', name: '蒼穹劍士', icon: Sword, color: 'text-cyan-400', bg: 'bg-cyan-500', glow: 'shadow-cyan-500/50' },
+            heroine: { id: 'heroine', name: '緋紅魔導', icon: Wand2, color: 'text-rose-400', bg: 'bg-rose-500', glow: 'shadow-rose-500/50' }
+        };
+
+        const MONSTER_TYPES = [
+            { name: '史萊姆', hpMod: 0.8, atkMod: 0.8, speedMod: 0.8, color: 'text-green-400', icon: Ghost, effect: 'confusion', effectName: '混亂' },
+            { name: '蝙蝠', hpMod: 0.6, atkMod: 1.2, speedMod: 1.5, color: 'text-purple-400', icon: Wind, effect: 'blind', effectName: '致盲' },
+            { name: '石像鬼', hpMod: 1.5, atkMod: 1.0, speedMod: 0.6, color: 'text-stone-400', icon: Shield, effect: 'silence', effectName: '封印' },
+            { name: '暗影刺客', hpMod: 0.8, atkMod: 1.5, speedMod: 1.2, color: 'text-red-400', icon: Sword, effect: 'blind', effectName: '致盲' },
+            { name: '字靈龍', hpMod: 2.5, atkMod: 1.5, speedMod: 1.0, color: 'text-yellow-400', icon: Crown, isBoss: true, effect: 'silence', effectName: '龍威' },
+            { name: '深淵領主', hpMod: 3.0, atkMod: 1.8, speedMod: 0.8, color: 'text-rose-500', icon: Skull, isBoss: true, effect: 'confusion', effectName: '恐懼' },
+        ];
+
+        // --- 🎲 Decoy Generator ---
+        const generateDecoys = (q, count = 2) => {
+            const sameChapter = QUESTIONS.filter(x => x.mainCode === q.mainCode && x.code !== q.code);
+            const others = QUESTIONS.filter(x => x.mainCode !== q.mainCode);
+            const pool = sameChapter.length >= count ? sameChapter : [...sameChapter, ...others];
+            return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+        };
+
+        // --- 📦 META Upgrades ---
+        const META_UPGRADES = {
+            hp:    { name: '生命強化', baseCost: 200, costMult: 1.8, effectVal: 10,  icon: Heart,    desc: '每級 +10 最大HP' },
+            atk:   { name: '攻擊強化', baseCost: 300, costMult: 2.0, effectVal: 5,   icon: Sword,   desc: '每級 +5 攻擊力' },
+            exp:   { name: '經驗加成', baseCost: 500, costMult: 2.2, effectVal: 0.05, icon: Star,    desc: '每級 +5% 經驗獲取' },
+        };
+
+        // --- 🏺 RPG Artifacts ---
+        const RPG_ARTIFACTS = [
+            { id: 'wand_1',    name: '新手法杖',   cost: 0,   unlockCost: 0,    icon: Wand2,        desc: 'ATK+5',           effect: p => ({ ...p, atk: p.atk + 5 }) },
+            { id: 'robe_1',    name: '布衣',       cost: 0,   unlockCost: 0,    icon: Sparkles,     desc: 'HP+20',           effect: p => ({ ...p, maxHp: p.maxHp + 20, hp: p.hp + 20 }) },
+            { id: 'ring_1',    name: '幸運戒指',   cost: 0,   unlockCost: 0,    icon: Gem,          desc: '經驗+10%',        effect: p => ({ ...p, expMult: p.expMult + 0.1 }) },
+            { id: 'boots_1',   name: '輕便鞋',     cost: 0,   unlockCost: 0,    icon: Gem,          desc: '回避+5%',         effect: p => ({ ...p, dodge: p.dodge + 0.05 }) },
+            { id: 'crit_ring', name: '暴擊之刃',   cost: 150, unlockCost: 500,  icon: Zap,          desc: '會心率+15%',      effect: p => ({ ...p, critChance: p.critChance + 0.15 }) },
+            { id: 'lifesteal_necklace', name: '吸血項鏈', cost: 300, unlockCost: 800, icon: Droplets, desc: '吸血+15%',         effect: p => ({ ...p, lifesteal: p.lifesteal + 0.15 }) },
+            { id: 'thorns_armor', name: '反傷甲',  cost: 250, unlockCost: 600,  icon: Shield,       desc: '反傷20%',         effect: p => ({ ...p, thorns: p.thorns + 0.2 }) },
+            { id: 'shield_badge', name: '護盾徽章', cost: 200, unlockCost: 400,  icon: Shield,       desc: '初始護盾30',      effect: p => ({ ...p, shield: p.shield + 30 }) },
+            { id: 'cdr_boots', name: '疾風靴',     cost: 350, unlockCost: 900,  icon: Wind,         desc: '冷卻-20%',        effect: p => ({ ...p, cdr: p.cdr + 1 }) },
+            { id: 'gold_bag',  name: '金袋',       cost: 100, unlockCost: 300,  icon: Coins,        desc: '金幣+20%',        effect: p => ({ ...p, goldMult: (p.goldMult || 1) + 0.2 }) },
+            { id: 'combo_charm', name: '連擊護符', cost: 400, unlockCost: 1200, icon: Flame,         desc: '連擊加成+50%',    effect: p => ({ ...p, comboMult: (p.comboMult || 1) + 0.5 }) },
+            { id: 'phoenix_ash', name: '鳳凰灰燼', cost: 0,  unlockCost: 2000,  icon: Flame,         desc: '復活一次',        effect: p => ({ ...p, revive: true }) },
+            { id: 'treasure_map', name: '寶圖',   cost: 0,   unlockCost: 1500,  icon: BookOpen,      desc: '額外獎勵',        effect: p => ({ ...p, extraReward: true }) },
+        ];
+
+        // --- 🗺️ Quest System (placeholder) ---
+        const QUESTS = [
+            { id: 'q1', name: '初識倉頡', desc: '完成第一章', reward: { coins: 50 }, condition: (stats) => stats.totalCorrect >= 50 },
+        ];
+
+        // 📚 Corrected Question Bank (Full Cangjie Codes)
+        // mainCode MUST match the first letter of 'code'.
+        const QUESTIONS = [
+            // A - 日
+            { mainCode: 'A', char: "晤", code: "AMMR", hint: "日一一口" }, { mainCode: 'A', char: "旦", code: "AM", hint: "日一" },
+            { mainCode: 'A', char: "暗", code: "AYTA", hint: "日卜廿日" }, { mainCode: 'A', char: "曙", code: "AWLA", hint: "日田中日" },
+            { mainCode: 'A', char: "晅", code: "AMGM", hint: "日一土一" }, { mainCode: 'A', char: "時", code: "AGDI", hint: "日土木戈" }, 
+            { mainCode: 'A', char: "景", code: "AYRF", hint: "日卜口火" }, { mainCode: 'A', char: "照", code: "ASRF", hint: "日尸口火" },
+            { mainCode: 'A', char: "題", code: "AMBC", hint: "日一月金" }, { mainCode: 'A', char: "暝", code: "ABAC", hint: "日月日金" },
+            { mainCode: 'A', char: "晚", code: "ANAU", hint: "日弓日山" }, { mainCode: 'A', char: "問", code: "ANR", hint: "日弓口" }, 
+            { mainCode: 'A', char: "門", code: "AN", hint: "日弓" }, { mainCode: 'A', char: "易", code: "APH", hint: "日心竹" }, 
+            { mainCode: 'A', char: "影", code: "AYHH", hint: "日卜竹竹" }, { mainCode: 'A', char: "即", code: "AIL", hint: "日戈中" },
+            // B - 月
+            { mainCode: 'B', char: "朋", code: "BB", hint: "月月" }, { mainCode: 'B', char: "賄", code: "BUKB", hint: "月山大月" }, 
+            { mainCode: 'B', char: "且", code: "BM", hint: "月一" }, { mainCode: 'B', char: "賠", code: "BUYR", hint: "月山卜口" }, 
+            { mainCode: 'B', char: "炙", code: "BKF", hint: "月大火" }, { mainCode: 'B', char: "骨", code: "BBB", hint: "月月月" },
+            { mainCode: 'B', char: "臉", code: "BOMM", hint: "月人人一" }, { mainCode: 'B', char: "貼", code: "BUYR", hint: "月山卜口" }, 
+            { mainCode: 'B', char: "賭", code: "BUJA", hint: "月山十日" }, { mainCode: 'B', char: "膽", code: "BNCR", hint: "月弓金口" }, 
+            { mainCode: 'B', char: "具", code: "BMC", hint: "月一金" }, { mainCode: 'B', char: "賺", code: "BUTXC", hint: "月山廿難金" }, 
+            { mainCode: 'B', char: "肚", code: "BG", hint: "月土" }, { mainCode: 'B', char: "睦", code: "BUG", hint: "月山土" },
+            { mainCode: 'B', char: "財", code: "BUD", hint: "月山木" }, { mainCode: 'B', char: "冠", code: "BMUI", hint: "月一山戈" },
+            { mainCode: 'B', char: "腳", code: "BGIL", hint: "月土戈中" }, { mainCode: 'B', char: "剛", code: "BKLN", hint: "月大中弓" },
+            // C - 金
+            { mainCode: 'C', char: "錯", code: "CTA", hint: "金廿日" }, { mainCode: 'C', char: "銷", code: "CFB", hint: "金火月" }, 
+            { mainCode: 'C', char: "鋪", code: "CIJB", hint: "金戈十月" }, { mainCode: 'C', char: "曾", code: "CWA", hint: "金田日" },
+            { mainCode: 'C', char: "鑽", code: "CHUC", hint: "金竹山金" }, { mainCode: 'C', char: "鎖", code: "CFBC", hint: "金火月金" }, 
+            { mainCode: 'C', char: "錢", code: "CII", hint: "金戈戈" }, { mainCode: 'C', char: "鍍", code: "CITOE", hint: "金戈廿人水" },
+            { mainCode: 'C', char: "鋰", code: "CWG", hint: "金田土" }, { mainCode: 'C', char: "鈕", code: "CNG", hint: "金弓土" }, 
+            { mainCode: 'C', char: "分", code: "CSH", hint: "金尸竹" }, { mainCode: 'C', char: "弟", code: "CNH", hint: "金弓竹" }, 
+            { mainCode: 'C', char: "父", code: "CK", hint: "金大" }, { mainCode: 'C', char: "卻", code: "CRIL", hint: "金口戈中" },
+            // D - 木
+            { mainCode: 'D', char: "柏", code: "DHA", hint: "木竹日" }, { mainCode: 'D', char: "橋", code: "DHKB", hint: "木竹大月" },
+            { mainCode: 'D', char: "賴", code: "DLBUC", hint: "木中月山金" }, { mainCode: 'D', char: "櫃", code: "DSLC", hint: "木尸中金" }, 
+            { mainCode: 'D', char: "橫", code: "DTLC", hint: "木廿中金" }, { mainCode: 'D', char: "棋", code: "DTMC", hint: "木廿一金" }, 
+            { mainCode: 'D', char: "杜", code: "DG", hint: "木土" }, { mainCode: 'D', char: "杯", code: "DMF", hint: "木一火" },
+            { mainCode: 'D', char: "禁", code: "DDMMF", hint: "木木一一火" }, { mainCode: 'D', char: "機", code: "DVII", hint: "木女戈戈" },
+            { mainCode: 'D', char: "想", code: "DBUP", hint: "木月山心" }, { mainCode: 'D', char: "整", code: "DLMK", hint: "木中一大" }, 
+            { mainCode: 'D', char: "鬱", code: "DDBUH", hint: "木木月山竹" }, 
+            // E - 水
+            { mainCode: 'E', char: "波", code: "EDHE", hint: "水木竹水" }, { mainCode: 'E', char: "湖", code: "EJRB", hint: "水十口月" },
+            { mainCode: 'E', char: "淇", code: "ETMC", hint: "水廿一金" }, { mainCode: 'E', char: "潛", code: "EQOA", hint: "水手人日" },
+            { mainCode: 'E', char: "泊", code: "EHA", hint: "水竹日" }, { mainCode: 'E', char: "澗", code: "EANA", hint: "水日弓日" },
+            { mainCode: 'E', char: "溝", code: "ETTB", hint: "水廿廿月" }, { mainCode: 'E', char: "滿", code: "ETMB", hint: "水廿一月" },
+            { mainCode: 'E', char: "消", code: "EFB", hint: "水火月" }, { mainCode: 'E', char: "潮", code: "EJJB", hint: "水十十月" },
+            { mainCode: 'E', char: "滑", code: "EBBB", hint: "水月月月" }, { mainCode: 'E', char: "淪", code: "EOMB", hint: "水人一月" },
+            { mainCode: 'E', char: "深", code: "EBCD", hint: "水月金木" }, { mainCode: 'E', char: "淨", code: "EBSD", hint: "水月尸木" },
+            { mainCode: 'E', char: "染", code: "END", hint: "水弓木" }, { mainCode: 'E', char: "游", code: "EYSD", hint: "水卜尸木" },
+            { mainCode: 'E', char: "梁", code: "EID", hint: "水戈木" }, { mainCode: 'E', char: "注", code: "EYG", hint: "水卜土" }, 
+            { mainCode: 'E', char: "灘", code: "ETOG", hint: "水廿人土" }, { mainCode: 'E', char: "湯", code: "EASH", hint: "水日尸竹" },
+            { mainCode: 'E', char: "沙", code: "EFH", hint: "水火竹" }, 
+            // F - 火
+            { mainCode: 'F', char: "精", code: "FDQMB", hint: "火木手一月" }, { mainCode: 'F', char: "嘗", code: "FBRPA", hint: "火月口心日" },
+            { mainCode: 'F', char: "常", code: "FBLB", hint: "火月中月" }, { mainCode: 'F', char: "幣", code: "FKLB", hint: "火大中月" },
+            { mainCode: 'F', char: "煩", code: "FMBC", hint: "火一月金" }, { mainCode: 'F', char: "賞", code: "FBRBC", hint: "火月口月金" },
+            { mainCode: 'F', char: "類", code: "FDMBC", hint: "火木一月金" }, { mainCode: 'F', char: "米", code: "FD", hint: "火木" },
+            { mainCode: 'F', char: "煤", code: "FDTM", hint: "火木廿一" }, { mainCode: 'F', char: "榮", code: "FFBD", hint: "火火月木" },
+            { mainCode: 'F', char: "燦", code: "FYED", hint: "火卜水木" }, { mainCode: 'F', char: "然", code: "BKF", hint: "月大火" }, 
+            { mainCode: 'F', char: "祭", code: "BOF", hint: "月人火" }, { mainCode: 'F', char: "杯", code: "DMF", hint: "木一火" }, 
+            { mainCode: 'F', char: "禁", code: "DDMMF", hint: "木木一一火" }, 
+            // G - 土
+            { mainCode: 'G', char: "增", code: "GCWA", hint: "土金田日" }, { mainCode: 'G', char: "幫", code: "GQBL", hint: "土手月中" },
+            { mainCode: 'G', char: "熱", code: "GCIF", hint: "土金戈火" }, { mainCode: 'G', char: "地", code: "GPD", hint: "土心木" },
+            { mainCode: 'G', char: "埔", code: "GIB", hint: "土戈月" }, { mainCode: 'G', char: "圾", code: "GNE", hint: "土弓水" }, 
+            { mainCode: 'G', char: "報", code: "GTLE", hint: "土廿中水" }, { mainCode: 'G', char: "堆", code: "GOG", hint: "土人土" },
+            { mainCode: 'G', char: "去", code: "GI", hint: "土戈" }, { mainCode: 'G', char: "再", code: "GB", hint: "土月" }, 
+            { mainCode: 'G', char: "整", code: "GK", hint: "土大" }, { mainCode: 'G', char: "均", code: "GG", hint: "土土" }, 
+            { mainCode: 'G', char: "型", code: "GCN", hint: "土金弓" }, { mainCode: 'G', char: "場", code: "GASH", hint: "土日尸竹" },
+            { mainCode: 'G', char: "彭", code: "GTHHH", hint: "土廿竹竹竹" }, 
+            { mainCode: 'G', char: "壽", code: "GNDI", hint: "土弓木戈" }, // Hard
+            // H - 竹
+            { mainCode: 'H', char: "白", code: "HA", hint: "竹日" }, { mainCode: 'H', char: "香", code: "HDA", hint: "竹木日" },
+            { mainCode: 'H', char: "禾", code: "HD", hint: "竹木" }, { mainCode: 'H', char: "與", code: "HXC", hint: "竹難金" },
+            { mainCode: 'H', char: "顧", code: "HMBC", hint: "竹一月金" }, { mainCode: 'H', char: "須", code: "HHMBC", hint: "竹竹一月金" },
+            { mainCode: 'H', char: "贊", code: "HUOC", hint: "竹山人金" }, { mainCode: 'H', char: "質", code: "HFBC", hint: "竹火月金" },
+            { mainCode: 'H', char: "興", code: "HXBC", hint: "竹難月金" }, { mainCode: 'H', char: "積", code: "HDQC", hint: "竹木手金" },
+            { mainCode: 'H', char: "重", code: "HGMG", hint: "竹土一土" }, { mainCode: 'H', char: "種", code: "HDHG", hint: "竹木竹土" },
+            { mainCode: 'H', char: "往", code: "HOYG", hint: "竹人卜土" }, { mainCode: 'H', char: "程", code: "HDRHG", hint: "竹木口竹土" },
+            { mainCode: 'H', char: "皇", code: "HAG", hint: "竹日土" }, { mainCode: 'H', char: "秋", code: "HDF", hint: "竹木火" },
+            { mainCode: 'H', char: "鳥", code: "HAF", hint: "竹日火" }, { mainCode: 'H', char: "所", code: "HML", hint: "竹一中" },
+            { mainCode: 'H', char: "第", code: "HCNH", hint: "竹金弓竹" }, { mainCode: 'H', char: "身", code: "HXH", hint: "竹難竹" }, 
+            { mainCode: 'H', char: "物", code: "HQPPH", hint: "竹手心心竹" }, { mainCode: 'H', char: "秒", code: "HDCH", hint: "竹木金竹" },
+            { mainCode: 'H', char: "我", code: "HQI", hint: "竹手戈" }, { mainCode: 'H', char: "得", code: "HOAMI", hint: "竹人日一戈" }, 
+            { mainCode: 'H', char: "等", code: "HGDI", hint: "竹土木戈" }, { mainCode: 'H', char: "私", code: "HDI", hint: "竹木戈" }, 
+            { mainCode: 'H', char: "冬", code: "HE", hint: "竹水" }, 
+            // I - 戈
+            { mainCode: 'I', char: "或", code: "IRM", hint: "戈口一" }, { mainCode: 'I', char: "式", code: "IPM", hint: "戈心一" },
+            { mainCode: 'I', char: "社", code: "IFG", hint: "戈火土" }, { mainCode: 'I', char: "參", code: "IIH", hint: "戈戈竹" }, 
+            { mainCode: 'I', char: "冷", code: "IMOII", hint: "戈一人戈戈" }, { mainCode: 'I', char: "為", code: "IKF", hint: "戈大火" }, 
+            { mainCode: 'I', char: "度", code: "ITE", hint: "戈廿水" }, { mainCode: 'I', char: "慶", code: "IXE", hint: "戈難水" },
+            { mainCode: 'I', char: "鹿", code: "IXP", hint: "戈難心" },
+            // J - 十
+            { mainCode: 'J', char: "者", code: "JKA", hint: "十大日" }, { mainCode: 'J', char: "車", code: "JJ", hint: "十十" },
+            { mainCode: 'J', char: "南", code: "JBJ", hint: "十月十" }, { mainCode: 'J', char: "真", code: "JBC", hint: "十月金" },
+            { mainCode: 'J', char: "實", code: "JBUC", hint: "十月山金" }, { mainCode: 'J', char: "寶", code: "JMBC", hint: "十一月金" },
+            { mainCode: 'J', char: "宇", code: "JMD", hint: "十一木" }, { mainCode: 'J', char: "字", code: "JND", hint: "十弓木" },
+            { mainCode: 'J', char: "案", code: "JVD", hint: "十女木" }, { mainCode: 'J', char: "寫", code: "JHKF", hint: "十竹大火" },
+            { mainCode: 'J', char: "察", code: "JBOF", hint: "十月人火" }, { mainCode: 'J', char: "室", code: "JMIG", hint: "十一戈土" },
+            { mainCode: 'J', char: "博", code: "JIBI", hint: "十戈月戈" }, { mainCode: 'J', char: "專", code: "JIDI", hint: "十戈木戈" },
+            { mainCode: 'J', char: "都", code: "JAL", hint: "十日中" }, { mainCode: 'J', char: "空", code: "JM", hint: "十一" },
+            { mainCode: 'J', char: "教", code: "JK", hint: "十大" }, { mainCode: 'J', char: "聽", code: "JSMIP", hint: "十尸一戈心" }, 
+            { mainCode: 'J', char: "考", code: "JKS", hint: "十大尸" }, { mainCode: 'J', char: "老", code: "JKP", hint: "十大心" },
+            { mainCode: 'J', char: "直", code: "JBM", hint: "十月一" },
+            // K - 大
+            { mainCode: 'K', char: "有", code: "KB", hint: "大月" }, { mainCode: 'K', char: "痛", code: "KNIB", hint: "大弓戈月" },
+            { mainCode: 'K', char: "帶", code: "KPNB", hint: "大心月月" }, { mainCode: 'K', char: "希", code: "KKB", hint: "大大月" },
+            { mainCode: 'K', char: "在", code: "KLG", hint: "大中土" }, { mainCode: 'K', char: "太", code: "KI", hint: "大戈" },
+            { mainCode: 'K', char: "左", code: "KM", hint: "大一" }, 
+            // L - 中
+            { mainCode: 'L', char: "書", code: "LGA", hint: "中土日" }, { mainCode: 'L', char: "貴", code: "LMBC", hint: "中一月金" }, 
+            { mainCode: 'L', char: "費", code: "LNBC", hint: "中弓月金" }, { mainCode: 'L', char: "被", code: "LDHE", hint: "中木竹水" }, 
+            { mainCode: 'L', char: "裡", code: "LWG", hint: "中田土" }, { mainCode: 'L', char: "初", code: "LCSH", hint: "中金尸竹" }, 
+            { mainCode: 'L', char: "數", code: "LVOK", hint: "中女人大" }, { mainCode: 'L', char: "史", code: "JL", hint: "中大" }, 
+            { mainCode: 'L', char: "央", code: "LBK", hint: "中月大" }, { mainCode: 'L', char: "忠", code: "LP", hint: "中心" },
+            { mainCode: 'L', char: "悲", code: "LMYP", hint: "中一卜心" }, { mainCode: 'L', char: "閉", code: "LS", hint: "中尸" }, 
+            { mainCode: 'L', char: "肅", code: "LX", hint: "中難" },
+            // M - 一
+            { mainCode: 'M', char: "百", code: "MA", hint: "一日" }, { mainCode: 'M', char: "天", code: "MK", hint: "一大" }, 
+            { mainCode: 'M', char: "至", code: "MIG", hint: "一戈土" }, { mainCode: 'M', char: "面", code: "MWYL", hint: "一田卜中" },
+            { mainCode: 'M', char: "恐", code: "MNIP", hint: "一弓戈心" }, 
+            // N - 弓
+            { mainCode: 'N', char: "鈕", code: "CNG", hint: "金弓土" }, { mainCode: 'N', char: "陌", code: "NLMA", hint: "弓中一日" }, 
+            { mainCode: 'N', char: "隨", code: "NLKB", hint: "弓中大月" }, { mainCode: 'N', char: "子", code: "ND", hint: "弓木" }, 
+            { mainCode: 'N', char: "除", code: "NLOD", hint: "弓中人木" }, { mainCode: 'N', char: "發", code: "NOHNE", hint: "弓人竹水" }, 
+            { mainCode: 'N', char: "孫", code: "NDNF", hint: "弓木弓火" }, { mainCode: 'N', char: "魚", code: "NWF", hint: "弓田火" }, 
+            { mainCode: 'N', char: "陣", code: "NLJJ", hint: "弓中十十" }, { mainCode: 'N', char: "陽", code: "NLAM", hint: "弓中日一" }, 
+            { mainCode: 'N', char: "尷", code: "NSLI", hint: "弓尸中戈" }, { mainCode: 'N', char: "尬", code: "NUJU", hint: "弓山十山" },
+            { mainCode: 'N', char: "龜", code: "NXU", hint: "弓難山" },
+            // O - 人
+            { mainCode: 'O', char: "你", code: "ONF", hint: "人弓火" }, { mainCode: 'O', char: "他", code: "OPD", hint: "人心木" },
+            { mainCode: 'O', char: "休", code: "OD", hint: "人木" }, { mainCode: 'O', char: "會", code: "OMA", hint: "人一日" },
+            { mainCode: 'O', char: "便", code: "OMK", hint: "人一大" }, { mainCode: 'O', char: "做", code: "OJRK", hint: "人十口大" },
+            { mainCode: 'O', char: "使", code: "OJLK", hint: "人十中大" }, { mainCode: 'O', char: "借", code: "OTA", hint: "人廿日" },
+            { mainCode: 'O', char: "來", code: "DOO", hint: "木人人" }, { mainCode: 'O', char: "住", code: "OYG", hint: "人卜土" },
+            { mainCode: 'O', char: "坐", code: "OOG", hint: "人人土" }, { mainCode: 'O', char: "係", code: "OHVF", hint: "人竹女火" },
+            // P - 心
+            { mainCode: 'P', char: "怕", code: "PHA", hint: "心竹日" }, { mainCode: 'P', char: "情", code: "PQMB", hint: "心手一月" },
+            { mainCode: 'P', char: "忙", code: "PYV", hint: "心卜女" }, { mainCode: 'P', char: "忍", code: "SIP", hint: "尸戈心" }, 
+            { mainCode: 'P', char: "快", code: "PDK", hint: "心木大" }, { mainCode: 'P', char: "忽", code: "PPHP", hint: "心心竹心" },
+            // Q - 手
+            { mainCode: 'Q', char: "指", code: "QPA", hint: "手心日" }, { mainCode: 'Q', char: "拍", code: "QHA", hint: "手竹日" },
+            { mainCode: 'Q', char: "掃", code: "QSMB", hint: "手尸一月" }, { mainCode: 'Q', char: "搞", code: "QYRB", hint: "手卜口月" },
+            { mainCode: 'Q', char: "捕", code: "QIJB", hint: "手戈十月" }, { mainCode: 'Q', char: "推", code: "QOG", hint: "手人土" },
+            { mainCode: 'Q', char: "揮", code: "QBJJ", hint: "手月十十" }, { mainCode: 'Q', char: "換", code: "QNBK", hint: "手弓月大" }, 
+            { mainCode: 'Q', char: "擇", code: "QWLJ", hint: "手田中十" }, { mainCode: 'Q', char: "插", code: "QHJX", hint: "手竹十難" },
+            // R - 口
+            { mainCode: 'R', char: "唱", code: "RAA", hint: "口日日" }, { mainCode: 'R', char: "嘴", code: "RYPB", hint: "口卜心月" },
+            { mainCode: 'R', char: "哭", code: "RRIK", hint: "口口戈大" }, { mainCode: 'R', char: "吃", code: "RON", hint: "口人弓" }, 
+            { mainCode: 'R', char: "哪", code: "RSQL", hint: "口尸手中" }, { mainCode: 'R', char: "呀", code: "RMVH", hint: "口一女竹" }, 
+            { mainCode: 'R', char: "哦", code: "RHQI", hint: "口竹手戈" }, { mainCode: 'R', char: "號", code: "RYPU", hint: "口卜心山" },
+            // S - 尸
+            { mainCode: 'S', char: "層", code: "SCWA", hint: "尸金田日" }, { mainCode: 'S', char: "屋", code: "SMIG", hint: "尸一戈土" },
+            { mainCode: 'S', char: "居", code: "SJR", hint: "尸十口" }, { mainCode: 'S', char: "局", code: "SSR", hint: "尸尸口" },
+            { mainCode: 'S', char: "屬", code: "SHYI", hint: "尸竹卜戈" }, { mainCode: 'S', char: "刀", code: "SH", hint: "尸竹" },
+            // T - 廿
+            { mainCode: 'T', char: "昔", code: "TA", hint: "廿日" }, { mainCode: 'T', char: "曹", code: "TWA", hint: "廿田日" },
+            { mainCode: 'T', char: "著", code: "TJKA", hint: "廿十大日" }, { mainCode: 'T', char: "開", code: "ANT", hint: "日弓廿" }, 
+            { mainCode: 'T', char: "期", code: "TCMC", hint: "廿金一金" }, { mainCode: 'T', char: "共", code: "TC", hint: "廿金" },
+            { mainCode: 'T', char: "黃", code: "TWC", hint: "廿田金" },
+            // U - 山
+            { mainCode: 'U', char: "凱", code: "UMTU", hint: "山一廿山" }, { mainCode: 'U', char: "逆", code: "YTU", hint: "卜廿山" }, 
+            { mainCode: 'U', char: "凶", code: "UK", hint: "山大" }, { mainCode: 'U', char: "峨", code: "UHQI", hint: "山竹手戈" },
+            { mainCode: 'U', char: "崩", code: "UBB", hint: "山月月" }, { mainCode: 'U', char: "凹", code: "SSU", hint: "尸尸山" }, 
+            // V - 女
+            { mainCode: 'V', char: "媚", code: "VAHU", hint: "女日竹山" }, { mainCode: 'V', char: "綿", code: "VHAB", hint: "女竹日月" },
+            { mainCode: 'V', char: "姍", code: "VBBT", hint: "女月月廿" }, { mainCode: 'V', char: "嫻", code: "VWD", hint: "女木" }, 
+            { mainCode: 'V', char: "絞", code: "VYCK", hint: "女卜金大" }, { mainCode: 'V', char: "姊", code: "VLXH", hint: "女中難竹" },
+            { mainCode: 'V', char: "維", code: "VMQG", hint: "女一手土" },
+            // W - 田
+            { mainCode: 'W', char: "疊", code: "WMBBM", hint: "田一月一" }, { mainCode: 'W', char: "圍", code: "WDMQ", hint: "田木一手" },
+            { mainCode: 'W', char: "果", code: "WD", hint: "田木" }, { mainCode: 'W', char: "默", code: "WFIK", hint: "田火戈大" },
+            { mainCode: 'W', char: "圈", code: "WFQU", hint: "田火手山" }, { mainCode: 'W', char: "國", code: "WIRM", hint: "田戈口一" },
+            // Y - 卜
+            { mainCode: 'Y', char: "退", code: "YAV", hint: "卜日女" }, { mainCode: 'Y', char: "迫", code: "YHA", hint: "卜竹日" },
+            { mainCode: 'Y', char: "桌", code: "YD", hint: "卜木" }, { mainCode: 'Y', char: "帝", code: "YBJB", hint: "卜月十月" },
+            { mainCode: 'Y', char: "望", code: "YBMG", hint: "卜月一土" }, { mainCode: 'Y', char: "邊", code: "YRS", hint: "卜口尸" },
+            { mainCode: 'Y', char: "處", code: "YHE", hint: "卜竹水" }, { mainCode: 'Y', char: "龍", code: "YBP", hint: "卜月心" },
+            // X - 難
+            { mainCode: 'X', char: "臼", code: "HX", hint: "竹難" }, { mainCode: 'X', char: "稻", code: "HDBX", hint: "竹木月難" }, 
+            { mainCode: 'X', char: "舂", code: "QKX", hint: "手大難" }, { mainCode: 'X', char: "插", code: "QHJX", hint: "手竹十難" },
+            { mainCode: 'X', char: "舊", code: "TOHX", hint: "廿人竹難" }, { mainCode: 'X', char: "齊", code: "YX", hint: "卜難" }, 
+        ];
+
+        // --- 🟢 MASTER SKILL POOL ---
+        const MASTER_SKILL_POOL = {
+            heal: { id: 'heal', name: '治癒術', cost: 0, icon: Heart, color: 'bg-green-500', effect: (p) => ({ ...p, hp: Math.min(p.maxHp, p.hp + Math.floor(p.maxHp * 0.3)), log: `施放治癒術！回復 ${Math.floor(p.maxHp * 0.3)} HP` }) },
+            burst: { id: 'burst', name: '爆裂魔法', cost: 0, icon: Flame, color: 'bg-red-500', effect: (p) => ({ ...p, bonusDmg: p.atk * 2, log: '爆裂魔法蓄力！下擊傷害 200%！' }) },
+            freeze: { id: 'freeze', name: '凝滯', cost: 800, icon: Snowflake, color: 'bg-cyan-500', effect: (p) => ({ ...p, log: '時間凍結！怪物停止行動 5 秒！' }) }, 
+            thunder: { id: 'thunder', name: '雷擊', cost: 1200, icon: Zap, color: 'bg-yellow-500', effect: (p, monster) => ({ ...p, damageDealt: 100, log: '雷擊！造成 100 真實傷害！' }) }, 
+            shuffle: { id: 'shuffle', name: '重置', cost: 500, icon: Shuffle, color: 'bg-purple-500', effect: (p) => ({ ...p, log: '幸運重置！更換題目！' }) }, 
+            execute: { id: 'execute', name: '斬殺', cost: 1500, icon: Gavel, color: 'bg-stone-600', effect: (p) => ({ ...p, log: '斬殺！' }) },
+            alchemy: { id: 'alchemy', name: '煉金', cost: 2000, icon: FlaskConical, color: 'bg-amber-400', effect: (p) => ({ ...p, log: '煉金術！' }) },
+            revelation: { id: 'revelation', name: '天啟', cost: 2500, icon: EyeIcon, color: 'bg-indigo-500', effect: (p) => ({ ...p, log: '天啟！' }) },
+        };
+
+        // --- 🎭 Player Avatar Component ---
+        const PlayerAvatar = ({ type, isHit, isAttacking }) => {
+            const avatar = AVATARS[type] || AVATARS.hero;
             
-                const goToMenu = () => {
-                    TypeEngine.stop();
-                    state.value = 'MENU';
-                    currentLevel.value = null;
-                    selectedMode.value = null;
-                };
-                
-                const retryLevel = () => {
-                    if (currentLevel.value && selectedMode.value) {
-                        startLevel(currentLevel.value, selectedMode.value);
-                    }
-                };
-                
-                const getGrade = (accuracy) => ScoreSystem.getGrade(accuracy);
-                const getGradeColor = (grade) => ScoreSystem.getGradeColor(grade);
-                
-                const selectMode = (modeId) => {
-                    selectedMode.value = modeId;
-                    state.value = 'MENU';
-                };
-                
-                return {
-                    state, currentLevel, currentQuestion, questionIndex, questionTotal,
-                    userInput, inputRef, sessionSummary, difficulty, showHint, showCode, feedback,
-                    combo, comboMilestone, timeRemaining, selectedMode, player, LEVELS,
-                    startLevel, submitAnswer, goToMenu, retryLevel, getGrade, getGradeColor,
-                    selectMode, GAME_MODES,
-                    // Boss 模式
-                    bossHP, bossMaxHP, bossPlayerHP, bossPlayerMaxHP, bossPhase, bossPhaseName,
-                    bossName, bossIcon, isBossMode, BossSystem, GameModeManager,
-                };
-            },
-            template: `
-                <div class="min-h-screen flex flex-col items-center justify-center p-4">
-                    
-                    <!-- HOME -->
-                    <div v-if="state === 'HOME'" class="text-center animate-slideIn">
-                        <div class="text-6xl mb-4 animate-float">⌨️</div>
-                        <h1 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                            速成打字王國
-                        </h1>
-                        <p class="text-xl text-purple-300 mb-8">TypeQuest Kingdom</p>
-                        <div class="flex flex-col gap-3">
-                            <button
-                                aria-label="開始遊戲"
-                                @click="state = 'MODE_SELECT'"
-                                class="px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-xl text-xl font-bold transition-all transform hover:scale-105 animate-glow border-2 border-purple-400"
-                            >
-                                🎮 開始遊戲
-                            </button>
-                            <button
-                                aria-label="設定"
-                                @click="state = 'SETTINGS'"
-                                class="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-lg transition-all"
-                            >
-                                ⚙️ 設定
-                            </button>
-                        </div>
+            return (
+                <div className={`relative flex flex-col items-center justify-center transition-all duration-300 ${isHit ? 'animate-shake filter brightness-150 saturate-150' : 'animate-float-slow'} ${isAttacking ? 'animate-lunge' : ''}`}>
+                    <div className={`w-28 h-28 rounded-full ${avatar.bg} bg-opacity-20 flex items-center justify-center border-4 border-white shadow-lg backdrop-blur-sm ${avatar.glow}`}>
+                         <LucideIcon icon={avatar.icon} size={64} className={`${avatar.color} filter drop-shadow-lg`} />
                     </div>
-                    
-                    <!-- MODE SELECT -->
-                    <div v-if="state === 'MODE_SELECT'" class="w-full max-w-4xl animate-slideIn">
-                        <div class="text-center mb-8">
-                            <h2 class="text-3xl font-bold mb-2">🎯 選擇模式</h2>
-                            <p class="text-purple-300">你想點樣玩？</p>
-                        </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <button
-                                v-for="mode in GAME_MODES"
-                                :key="mode.id"
-                                :aria-label="mode.name + ':' + mode.description"
-                                @click="selectMode(mode.id)"
-                                class="mode-card p-4 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 text-center"
-                            >
-                                <div class="text-4xl mb-2">{{ mode.icon }}</div>
-                                <h3 class="font-bold text-lg">{{ mode.name }}<span v-if="mode.comingSoon" class="ml-1 text-xs bg-yellow-500 text-black px-1 rounded">新</span></h3>
-                                <p class="text-purple-300 text-xs mt-1">{{ mode.description }}</p>
-                            </button>
-                        </div>
-                        <div class="mt-8 text-center">
-                            <button aria-label="返回主頁" @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                ← 返回
-                            </button>
-                        </div>
+                    {/* Character Name Tag */}
+                    <div className="absolute -bottom-3 bg-slate-900/80 px-3 py-1 rounded-full text-xs font-bold border border-white/20 text-white shadow-md backdrop-blur">
+                        {avatar.name}
                     </div>
-                    
-                    <!-- MENU -->
-                    <div v-if="state === 'MENU'" class="w-full max-w-4xl animate-slideIn">
-                        <div class="text-center mb-4">
-                            <h2 class="text-3xl font-bold mb-2">🎮 選擇關卡</h2>
-                            <p class="text-purple-300">
-                                模式：{{ GAME_MODES[selectedMode]?.name || '基礎' }} | 
-                                難度：{{ difficulty.name }}級
-                            </p>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button
-                                v-for="level in LEVELS"
-                                :key="level.id"
-                                :aria-label="'開始' + level.name"
-                                @click="startLevel(level, selectedMode || 'foundation')"
-                                class="p-6 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-102 text-left group"
-                            >
-                                <div class="flex items-center gap-4">
-                                    <span class="text-4xl">{{ level.icon }}</span>
-                                    <div>
-                                        <h3 class="text-xl font-bold">{{ level.name }}</h3>
-                                        <p class="text-purple-300 text-sm">{{ level.description }}</p>
-                                        <span class="text-xs px-2 py-1 bg-purple-600/50 rounded mt-2 inline-block">{{ level.category }}</span>
-                                    </div>
-                                </div>
-                            </button>
-                        </div>
-                        
-                        <div class="mt-8 flex justify-center gap-4">
-                            <button aria-label="返回模式選擇" @click="state = 'MODE_SELECT'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                ← 換模式
-                            </button>
-                            <button aria-label="返回主頁" @click="state = 'HOME'" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg">
-                                🏠 主頁
-                            </button>
-                        </div>
+                    {/* Simple "Stand" Effect */}
+                    <div className="absolute -bottom-6 w-20 h-4 bg-black/40 rounded-full blur-sm"></div>
+                </div>
+            );
+        };
+
+        // --- 📊 Dashboard Component ---
+        const Dashboard = ({ stats, onBack }) => {
+            const { totalCorrect, totalWrong, gamesPlayed, highestCombo } = stats;
+            const accuracy = totalCorrect + totalWrong > 0 
+                ? Math.round((totalCorrect / (totalCorrect + totalWrong)) * 100) 
+                : 0;
+
+            const StatCard = ({ title, value, icon, color }) => (
+                <div className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between`}>
+                    <div>
+                        <div className="text-sm text-slate-500 font-bold mb-1">{title}</div>
+                        <div className="text-3xl font-black text-slate-800">{value}</div>
                     </div>
-                    
-                    <!-- PLAYING -->
-                    <div v-if="state === 'PLAYING'" class="w-full max-w-2xl animate-slideIn">
-                        <!-- 頂部狀態列 -->
-                        <div class="flex justify-between items-center mb-4">
-                            <div class="text-purple-300">
-                                <span class="text-lg">{{ currentLevel?.name }}</span>
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <div v-if="timeRemaining > 0" class="text-xl font-bold" :class="timeRemaining <= 10 ? 'text-red-400' : 'text-yellow-400'">
-                                    ⏱️ {{ timeRemaining }}s
-                                </div>
-                                <div class="text-xl font-bold text-purple-300">
-                                    {{ questionIndex + 1 }} / {{ questionTotal }}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 進度條 -->
-                        <div class="h-2 bg-magic-800 rounded-full overflow-hidden mb-4" role="progressbar" :aria-valuenow="questionIndex" :aria-valuemin="0" :aria-valuemax="questionTotal" aria-label="答題進度">
-                            <div 
-                                class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                                :class="{ 'progress-pulse': combo >= 10 }"
-                                :style="{ width: ((questionIndex / questionTotal) * 100) + '%' }"
-                            ></div>
-                        </div>
-                        
-                        <!-- Combo & 能量條 -->
-                        <div v-if="selectedMode !== 'practice' && selectedMode !== 'vocabulary'" class="mb-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="font-bold" :class="combo >= 10 ? 'combo-milestone' : 'text-purple-300'">
-                                    {{ combo >= 5 ? '🔥' : '' }} Combo: {{ combo }}
-                                </span>
-                                <span class="text-purple-400">{{ ScoreSystem.getComboMultiplier().toFixed(1) }}x</span>
-                            </div>
-                            <div class="h-3 bg-magic-800 rounded-full overflow-hidden">
-                                <div 
-                                    class="h-full bg-gradient-to-r from-yellow-500 to-orange-500 energy-bar-fill"
-                                    :style="{ width: Math.min(100, (combo / 30) * 100) + '%' }"
-                                ></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Boss HP 血條 (Boss Mode) -->
-                        <div v-if="isBossMode" class="mb-4 bg-gradient-to-br from-red-900/50 to-magic-900 rounded-xl p-4 border-2 border-red-500/50">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-3xl">{{ bossIcon }}</span>
-                                    <div>
-                                        <div class="font-bold text-red-400">{{ bossName }}</div>
-                                        <div class="text-xs text-red-300">{{ bossPhaseName }} ({{ bossPhase + 1 }}/3)</div>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-sm text-red-300">HP</div>
-                                    <div class="font-bold text-red-400">{{ bossHP }} / {{ bossMaxHP }}</div>
-                                </div>
-                            </div>
-                            <div class="h-4 bg-red-950 rounded-full overflow-hidden">
-                                <div 
-                                    class="h-full transition-all duration-300"
-                                    :class="{
-                                        'bg-gradient-to-r from-red-600 to-red-400': bossPhase === 0,
-                                        'bg-gradient-to-r from-yellow-600 to-orange-400': bossPhase === 1,
-                                        'bg-gradient-to-r from-purple-600 to-pink-400': bossPhase === 2
-                                    }"
-                                    :style="{ width: (bossHP / bossMaxHP * 100) + '%' }"
-                                ></div>
-                            </div>
-                            
-                            <!-- 玩家 HP -->
-                            <div class="flex items-center justify-between mt-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-2xl">🧙</span>
-                                    <span class="text-sm text-purple-300">玩家</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="text-sm text-purple-300">{{ bossPlayerHP }} / {{ bossPlayerMaxHP }}</div>
-                                    <div class="w-24 h-2 bg-purple-950 rounded-full overflow-hidden">
-                                        <div 
-                                            class="h-full bg-gradient-to-r from-green-600 to-emerald-400 transition-all duration-300"
-                                            :style="{ width: (bossPlayerHP / bossPlayerMaxHP * 100) + '%' }"
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- 即時評級 -->
-                            <div class="mt-2 text-center">
-                                <span class="text-lg font-bold" :class="GameModeManager.getLiveGrade().color">
-                                    評級：{{ GameModeManager.getLiveGrade().grade }}
-                                </span>
-                                <span class="text-sm text-purple-300 ml-2">
-                                    ({{ Math.round(GameModeManager.getLiveGrade().accuracy * 100) }}%)
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <!-- Combo 里程碑訊息 -->
-                        <div v-if="comboMilestone" 
-                            class="text-center text-2xl font-bold mb-4 animate-slideIn"
-                            :class="comboMilestone.color"
-                        >
-                            {{ comboMilestone.message }}
-                        </div>
-                        
-                        <!-- 遊戲區域 -->
-                        <div class="game-container bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-8 border-2 border-purple-500/30">
-                            <!-- 題目顯示 -->
-                            <div class="text-center mb-6">
-                                <div class="text-6xl font-bold mb-2 text-purple-300">{{ currentQuestion?.text }}</div>
-                                <div v-if="showHint || selectedMode === 'practice'" class="text-lg text-purple-400 mt-2">
-                                    💡 提示：{{ currentQuestion?.hint || '無' }}<br v-if="selectedMode === 'vocabulary'"><span v-if="selectedMode === 'vocabulary' && showCode" class="text-green-400 mt-2 block">答案：{{ currentQuestion?.code }}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- 反饋 -->
-                            <div v-if="feedback" 
-                                class="text-center text-2xl font-bold mb-4 animate-slideIn"
-                                :class="feedback.type === 'correct' ? 'text-green-400' : 'text-red-400'"
-                            >
-                                {{ feedback.message }}
-                            </div>
-                            
-                            <!-- 輸入框 -->
-                            <div class="mb-4">
-                                <input
-                                    ref="inputRef"
-                                    v-model="userInput"
-                                    @keyup.enter="submitAnswer"
-                                    type="text"
-                                    aria-label="輸入倉頡碼"
-                                    class="w-full px-6 py-4 text-2xl text-center bg-magic-950 border-2 border-purple-500 rounded-xl focus:border-purple-400 focus:outline-none uppercase"
-                                    placeholder="輸入倉頡碼..."
-                                    autocomplete="off"
-                                    autofocus
-                                />
-                            </div>
-                            
-                            <!-- 按鈕 -->
-                            <div class="flex gap-4">
-                                <button v-if="selectedMode !== 'timeAttack' && selectedMode !== 'sprint'" 
-                                    @click="showHint = !showHint" 
-                                    class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg"
-                                >
-                                    {{ showHint ? '隱藏提示' : '💡提示' }}
-                                </button>
-                                <button v-if="selectedMode === 'vocabulary'" 
-                                    @click="showCode = !showCode" 
-                                    class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg touch-target"
-                                    aria-label="顯示或隱藏答案">
-                                    {{ showCode ? '隱藏答案' : '顯示答案' }}
-                                </button>
-                                <button aria-label="確認答案" @click="submitAnswer" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold text-lg touch-target">
-                                    確認 ✓
-                                </button>
-                                <button aria-label="離開遊戲" @click="goToMenu" class="py-3 px-4 bg-red-900/50 hover:bg-red-800/50 rounded-lg text-xl touch-target">
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div v-if="currentQuestion" class="text-center text-purple-400 text-sm mt-2">
-                            WPM: {{ Math.round((ProgressTracker.session.correctCount / Math.max(1, (Date.now() - ProgressTracker.session.startTime) / 60000)) || 0) }}
-                        </div>
-<!-- 難度提示 -->
-                        <div class="mt-4 text-center text-purple-400 text-sm">
-                            難度：{{ difficulty.name }}級 | 
-                            <span v-if="combo > 0" :class="combo >= 10 ? 'text-yellow-400 font-bold' : ''">
-                                連擊：{{ combo }}
-                            </span>
-                            <span v-else>連擊：0</span>
-                        </div>
-                    </div>
-                    
-                    <!-- LEVEL_COMPLETE -->
-                    <div v-if="state === 'LEVEL_COMPLETE'" class="w-full max-w-md text-center animate-slideIn">
-                        <div class="text-6xl mb-4">{{ sessionSummary?.defeated ? '💀' : '🎉' }}</div>
-                        <h2 class="text-3xl font-bold mb-2">
-                            {{ sessionSummary?.defeated ? '挑戰失敗...' : (sessionSummary?.bossMode ? 'Boss擊敗！' : '關卡完成！') }}
-                        </h2>
-                        
-                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30 mb-6">
-                            <div v-if="sessionSummary?.bossMode" class="text-center mb-4">
-                                <div class="text-5xl">{{ sessionSummary?.defeated ? '💀' : '👑' }}</div>
-                                <div class="text-xl font-bold mt-2" :class="sessionSummary?.defeated ? 'text-red-400' : 'text-yellow-400'">
-                                    {{ sessionSummary?.defeated ? '下次一定打敗它！' : '恭喜擊敗 Boss！' }}
-                                </div>
-                            </div>
-                            <div class="text-6xl font-bold mb-2" :class="getGradeColor(getGrade(sessionSummary?.accuracy || 0))">
-                                {{ getGrade(sessionSummary?.accuracy || 0) }}
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 text-left mt-4">
-                                <div class="text-purple-300">正確</div>
-                                <div class="font-bold text-green-400">{{ sessionSummary?.correct || 0 }} 題</div>
-                                <div class="text-purple-300">錯誤</div>
-                                <div class="font-bold text-red-400">{{ sessionSummary?.wrong || 0 }} 題</div>
-                                <div class="text-purple-300">準確率</div>
-                                <div class="font-bold">{{ Math.round((sessionSummary?.accuracy || 0) * 100) }}%</div>
-                                <div class="text-purple-300">最高連擊</div>
-                                <div class="font-bold text-yellow-400">{{ sessionSummary?.maxStreak || 0 }}</div>
-                                <div class="text-purple-300">WPM</div>
-                                <div class="font-bold text-blue-400">{{ sessionSummary?.wpm || 0 }}</div>
-                                <div class="text-purple-300">最佳WPM</div>
-                                <div class="font-bold text-yellow-400">{{ player?.stats?.bestWPM || 0 }}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-4">
-                            <button aria-label="再玩一次" @click="retryLevel" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold touch-target">
-                                再玩一次
-                            </button>
-                            <button aria-label="返回選單" @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                返回選單
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- GAME_OVER (Boss 模式玩家失敗) -->
-                    <div v-if="state === 'GAME_OVER'" class="w-full max-w-md text-center animate-slideIn">
-                        <div class="text-6xl mb-4">💀</div>
-                        <h2 class="text-3xl font-bold mb-2 text-red-400">挑戰失敗...</h2>
-                        <p class="text-purple-300 mb-6">勇敢的法师倒下了，Boss 還有一段時間可以休息...</p>
-                        
-                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-red-500/30 mb-6">
-                            <div class="text-lg text-purple-300 mb-2">擊敗敵人</div>
-                            <div class="text-4xl font-bold text-red-400">{{ BossSystem.enemiesDefeated }}</div>
-                            <div class="text-sm text-purple-400 mt-1">敵人</div>
-                        </div>
-                        
-                        <div class="flex gap-4">
-                            <button aria-label="再挑戰一次" @click="retryLevel" class="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold touch-target">
-                                再挑戰一次
-                            </button>
-                            <button aria-label="返回選單" @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                返回選單
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- SETTINGS -->
-                    <div v-if="state === 'SETTINGS'" class="w-full max-w-md animate-slideIn">
-                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30">
-                            <h2 class="text-2xl font-bold mb-6 text-center">⚙️ 設定</h2>
-                            
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <span>難度等級</span>
-                                    <select 
-                                        aria-label="選擇難度等級"
-                                        v-model="difficulty.level"
-                                        @change="AdaptiveEngine.setLevel(difficulty.level)"
-                                        class="px-4 py-2 bg-magic-950 rounded-lg border border-purple-500"
-                                    >
-                                        <option v-for="(d, idx) in [1,2,3,4,5]" :key="idx" :value="idx+1">
-                                            {{ ['輕鬆','簡單','普通','困難','專家'][idx] }}
-                                        </option>
-                                    </select>
-                                </div>
-                                
-                                <div class="flex justify-between items-center">
-                                    <span>音效</span>
-                                    <button 
-                                        @click="AudioSystem.enabled = !AudioSystem.enabled"
-                                        class="px-4 py-2 rounded-lg"
-                                        :class="AudioSystem.enabled ? 'bg-green-600' : 'bg-gray-600'"
-                                    >
-                                        {{ AudioSystem.enabled ? '開' : '關' }}
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-6 flex justify-center">
-                                <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                    ← 返回
-                                </button>
-                            </div>
-                        </div>
+                    <div className={`p-4 rounded-xl ${color}`}>
+                        <LucideIcon icon={icon} size={32} className="text-white" />
                     </div>
                 </div>
-            `,
-        }).mount('#app');
-        
-        // 暴露到全域
-        window.AdaptiveEngine = AdaptiveEngine;
-        window.AudioSystem = AudioSystem;
-        window.ScoreSystem = ScoreSystem;
-        window.BossSystem = BossSystem;
-        window.GameModeManager = GameModeManager;
+            );
+
+            return (
+                <div className="h-full bg-slate-50 p-6 overflow-y-auto">
+                    <div className="flex items-center gap-4 mb-8">
+                        <button onClick={onBack} className="bg-white p-3 rounded-full shadow hover:bg-slate-100"><LucideIcon icon={ArrowLeft} /></button>
+                        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><LucideIcon icon={BarChart3} /> 學習儀表版</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        <StatCard title="總遊玩次數" value={gamesPlayed} icon={Activity} color="bg-blue-500" />
+                        <StatCard title="準確率" value={`${accuracy}%`} icon={Target} color={accuracy >= 80 ? 'bg-green-500' : accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'} />
+                        <StatCard title="累積答對" value={totalCorrect} icon={CheckCircle} color="bg-indigo-500" />
+                        <StatCard title="最高連擊" value={highestCombo} icon={Zap} color="bg-orange-500" />
+                    </div>
+                    
+                    <div className="mt-8 text-center text-slate-400 text-sm">
+                        持續練習，突破自我！數據僅儲存於本機。
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 🏛️ Meta Shop Component ---
+        const MetaShop = ({ metaState, setMetaState, onBack }) => {
+            const buyUpgrade = (type) => {
+                const cfg = META_UPGRADES[type];
+                const currentLv = metaState.upgrades[type];
+                const cost = Math.floor(cfg.baseCost * Math.pow(cfg.costMult, currentLv));
+                if (metaState.coins >= cost) {
+                    AudioEngine.coin();
+                    setMetaState(prev => ({ ...prev, coins: prev.coins - cost, upgrades: { ...prev.upgrades, [type]: currentLv + 1 } }));
+                } else AudioEngine.wrong();
+            };
+
+            const unlockArtifact = (artId, cost) => {
+                if (metaState.coins >= cost) {
+                    AudioEngine.coin();
+                    setMetaState(prev => ({ ...prev, coins: prev.coins - cost, unlockedArtifacts: [...prev.unlockedArtifacts, artId] }));
+                } else AudioEngine.wrong();
+            };
+
+             const unlockSkill = (skillId, cost) => {
+                if (metaState.coins >= cost) {
+                    AudioEngine.coin();
+                    setMetaState(prev => ({ ...prev, coins: prev.coins - cost, unlockedSkills: [...(prev.unlockedSkills || []), skillId] }));
+                } else AudioEngine.wrong();
+            };
+
+            return (
+                <div className="h-full bg-slate-900 text-white p-6 overflow-y-auto">
+                    <div className="flex justify-between items-center mb-8 sticky top-0 bg-slate-900/95 p-4 z-10 border-b border-slate-700">
+                        <div className="flex items-center gap-4"><button onClick={onBack} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft} /></button><h2 className="text-2xl font-bold text-magic-300">知識聖殿</h2></div>
+                        <div className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full border border-gold-500/50"><LucideIcon icon={Coins} className="text-gold-400" /><span className="font-bold text-xl text-gold-400">{metaState.coins}</span></div>
+                    </div>
+                    <div className="max-w-5xl mx-auto space-y-12">
+                        <section><h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-magic-100"><LucideIcon icon={GraduationCap} /> 基礎能力強化</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6">{Object.entries(META_UPGRADES).map(([key, cfg]) => { const lv = metaState.upgrades[key]; const cost = Math.floor(cfg.baseCost * Math.pow(cfg.costMult, lv)); const canAfford = metaState.coins >= cost; return ( <div key={key} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 relative overflow-hidden"><div className="flex items-center gap-4 mb-4"><div className="p-3 bg-magic-900 rounded-lg"><LucideIcon icon={cfg.icon} size={28} className="text-magic-300" /></div><div><div className="font-bold text-lg">{cfg.name}</div><div className="text-xs text-slate-400">Lv.{lv}</div></div></div><p className="text-sm text-slate-300 mb-6">{cfg.desc} (當前: +{Math.round(cfg.effectVal * lv * 10)/10}{key === 'exp' ? '%' : ''})</p><button onClick={() => buyUpgrade(key)} disabled={!canAfford} className={`w-full py-2 rounded-xl font-bold flex items-center justify-center gap-2 ${canAfford ? 'bg-gold-600 hover:bg-gold-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}><span>升級</span><span className="text-xs bg-black/20 px-2 py-0.5 rounded flex items-center"><LucideIcon icon={Coins} size={12} className="mr-1"/>{cost}</span></button></div> ); })}</div></section>
+                        
+                        <section><h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-magic-100"><LucideIcon icon={Book} /> 技能學習</h3><div className="grid grid-cols-1 md:grid-cols-4 gap-4">{Object.values(MASTER_SKILL_POOL).filter(s => s.cost > 0).map(skill => { const isUnlocked = (metaState.unlockedSkills || []).includes(skill.id); const canAfford = metaState.coins >= skill.cost; return ( <div key={skill.id} className={`p-4 rounded-xl border-2 flex flex-col items-center text-center transition-all ${isUnlocked ? 'bg-magic-900/30 border-magic-500/50' : 'bg-slate-800 border-slate-700'}`}><div className={`p-3 rounded-full mb-2 ${skill.color} bg-opacity-20`}><LucideIcon icon={skill.icon} className={isUnlocked ? 'text-white' : 'text-slate-400'} /></div><h4 className={`font-bold ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>{skill.name}</h4><p className="text-xs text-slate-400 mb-4 h-8">{skill.id==='freeze'?'凍結怪物時間':skill.id==='thunder'?'造成真實傷害':skill.id==='shuffle'?'重置當前題目':skill.id==='execute'?'低血量斬殺':'煉金轉化'}</p>{isUnlocked ? ( <div className="text-green-400 text-xs font-bold flex items-center"><LucideIcon icon={CheckCircle} size={12} className="mr-1"/> 已學習</div> ) : ( <button onClick={() => unlockSkill(skill.id, skill.cost)} disabled={!canAfford} className={`px-4 py-1 rounded-lg text-xs font-bold flex items-center ${canAfford ? 'bg-gold-600 text-white hover:bg-gold-500' : 'bg-slate-700 text-slate-500'}`}><LucideIcon icon={Unlock} size={10} className="mr-1"/> {skill.cost}</button> )}</div> ); })}</div></section>
+
+                        <section><h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-magic-100"><LucideIcon icon={Lock} /> 遺物解鎖</h3><div className="grid grid-cols-1 md:grid-cols-4 gap-4">{RPG_ARTIFACTS.filter(a => a.unlockCost > 0).map(art => { const isUnlocked = metaState.unlockedArtifacts.includes(art.id); const canAfford = metaState.coins >= art.unlockCost; return ( <div key={art.id} className={`p-4 rounded-xl border-2 flex flex-col items-center text-center transition-all ${isUnlocked ? 'bg-magic-900/30 border-magic-500/50' : 'bg-slate-800 border-slate-700'}`}><div className={`p-3 rounded-full mb-2 ${isUnlocked ? 'bg-magic-500/20' : 'bg-slate-900'}`}><LucideIcon icon={art.icon} className={isUnlocked ? 'text-magic-300' : 'text-slate-600'} /></div><h4 className={`font-bold ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>{art.name}</h4><p className="text-xs text-slate-400 mb-4 h-8">{art.desc}</p>{isUnlocked ? ( <div className="text-green-400 text-xs font-bold flex items-center"><LucideIcon icon={CheckCircle} size={12} className="mr-1"/> 已解鎖</div> ) : ( <button onClick={() => unlockArtifact(art.id, art.unlockCost)} disabled={!canAfford} className={`px-4 py-1 rounded-lg text-xs font-bold flex items-center ${canAfford ? 'bg-gold-600 text-white hover:bg-gold-500' : 'bg-slate-700 text-slate-500'}`}><LucideIcon icon={Unlock} size={10} className="mr-1"/> {art.unlockCost}</button> )}</div> ); })}</div></section>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- ⚙️ Game Setup Component ---
+        const GameSetup = ({ onStart, onBack, mode }) => {
+            const [inputMode, setInputMode] = useState('quick'); 
+            const [difficulty, setDifficulty] = useState('normal'); 
+
+            const inputModes = [
+                { id: 'quick', name: '速成 (首尾)', desc: '輸入首尾碼，反應訓練', icon: Zap },
+                { id: 'cangjie', name: '倉頡 (全碼)', desc: '輸入完整碼，硬派挑戰', icon: Keyboard },
+            ];
+
+            const difficulties = [
+                { id: 'easy', name: '休閒', desc: '怪物速度慢，傷害低', icon: Coffee, color: 'text-green-400' },
+                { id: 'normal', name: '普通', desc: '標準挑戰', icon: Sword, color: 'text-yellow-400' },
+                { id: 'hard', name: '困難', desc: '極速反應，高傷害', icon: Skull, color: 'text-red-500' },
+            ];
+
+            return (
+                <div className="h-full bg-slate-950 p-6 flex flex-col items-center justify-center text-white">
+                    <div className="w-full max-w-2xl">
+                        <div className="flex items-center mb-8">
+                            <button onClick={onBack} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 mr-4"><LucideIcon icon={ArrowLeft} /></button>
+                            <h2 className="text-3xl font-bold flex items-center gap-2"><LucideIcon icon={Settings} /> 遊戲設定</h2>
+                        </div>
+                        
+                        <div className="mb-8">
+                            <h3 className="text-xl font-bold mb-4 text-magic-300">1. 選擇輸入模式</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {inputModes.map(m => (
+                                    <button key={m.id} onClick={() => setInputMode(m.id)} className={`p-4 rounded-xl border-2 text-left transition-all ${inputMode === m.id ? 'bg-magic-900 border-magic-500 ring-2 ring-magic-500/50' : 'bg-slate-800 border-slate-700 hover:bg-slate-700'}`}>
+                                        <div className={`mb-2 ${inputMode === m.id ? 'text-magic-300' : 'text-slate-400'}`}><LucideIcon icon={m.icon} size={32}/></div>
+                                        <div className="font-bold text-lg">{m.name}</div>
+                                        <div className="text-xs text-slate-400">{m.desc}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mb-10">
+                            <h3 className="text-xl font-bold mb-4 text-magic-300">2. 選擇難度</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {difficulties.map(d => (
+                                    <button key={d.id} onClick={() => setDifficulty(d.id)} className={`p-4 rounded-xl border-2 text-left transition-all ${difficulty === d.id ? 'bg-slate-800 border-white ring-2 ring-white/20' : 'bg-slate-900 border-slate-800 hover:bg-slate-800'}`}>
+                                        <div className={`mb-2 ${d.color}`}><LucideIcon icon={d.icon} size={32}/></div>
+                                        <div className="font-bold text-lg">{d.name}</div>
+                                        <div className="text-xs text-slate-400">{d.desc}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button onClick={() => onStart(inputMode, difficulty)} className="w-full py-4 bg-brand-600 hover:bg-brand-500 rounded-xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 animate-pulse">
+                            <span>下一步：選擇章節</span> <LucideIcon icon={ArrowLeft} className="rotate-180" />
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- ⚔️ RPG Game Component ---
+        const RPGGame = ({ inputMode, difficulty, chapter, onExit, onHome, initialData, metaState, onGameEnd }) => {
+            const baseStats = {
+                hp: 100 + (metaState.upgrades.hp * META_UPGRADES.hp.effectVal),
+                atk: 20 + (metaState.upgrades.atk * META_UPGRADES.atk.effectVal),
+                expMult: 1 + (metaState.upgrades.exp * META_UPGRADES.exp.effectVal)
+            };
+
+            const [player, setPlayer] = useState(initialData?.player || {
+                hp: baseStats.hp, maxHp: baseStats.hp, atk: baseStats.atk, level: 1, exp: 0, maxExp: 100,
+                critChance: 0.1, critMult: 1.5, lifesteal: 0, thorns: 0, dodge: 0, shield: 0, cdr: 0,
+                bonusDmg: 0, combo: 0, floor: 1, gold: 0, 
+                skills: (metaState.unlockedSkills || ['heal', 'burst']).slice(0, 4).map(sid => ({...MASTER_SKILL_POOL[sid], currentCd: 0})),
+                artifacts: [], coinsGained: 0, revive: false, extraReward: false,
+                avatar: metaState.avatar || 'hero'
+            });
+            
+            const [monster, setMonster] = useState({ hp: 100, maxHp: 100, name: '亂碼怪獸', type: MONSTER_TYPES[0], frozen: 0 });
+            const [attackGauge, setAttackGauge] = useState(0); 
+            const [qIndex, setQIndex] = useState(0);
+            const [turn, setTurn] = useState('player'); 
+            const [userInput, setUserInput] = useState([]);
+            const [combatLog, setCombatLog] = useState("戰鬥開始！");
+            const [animation, setAnimation] = useState(null); 
+            const [rewards, setRewards] = useState([]); 
+            const [shopItems, setShopItems] = useState([]);
+            const [showStats, setShowStats] = useState(false);
+            
+            // Session Stats Tracking
+            const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0, maxCombo: 0 });
+
+            const filteredQuestions = useMemo(() => chapter ? QUESTIONS.filter(q => q.mainCode === chapter) : QUESTIONS, [chapter]);
+            const activeQuestions = filteredQuestions.length > 0 ? filteredQuestions : QUESTIONS;
+            const currentQ = useMemo(() => activeQuestions[Math.floor(Math.random() * activeQuestions.length)], [qIndex, activeQuestions]);
+
+            const silencedSkillIdx = useMemo(() => {
+                if (monster.type.effect === 'silence') return Math.floor(Math.random() * player.skills.length);
+                return -1;
+            }, [monster]);
+
+            // Options for Radical Mode (Shuffled if confusion)
+            const currentOptions = useMemo(() => {
+                if (inputMode !== 'radical') return [];
+                const correctOption = { label: `${KEYBOARD_MAP[currentQ.code[0]]} (${currentQ.code[0]})`, val: currentQ.code[0], isCorrect: true };
+                const decoys = generateDecoys(currentQ).slice(0, 2).map(d => ({
+                    label: `${KEYBOARD_MAP[d.code[0]] || '?'} (${d.code[0]})`, 
+                    val: d.code[0], 
+                    isCorrect: false 
+                }));
+                // Confusion Effect: Hide the Helper Text if confused
+                const isConfused = monster.type.effect === 'confusion';
+                const options = [correctOption, ...decoys].sort(() => Math.random() - 0.5);
+                
+                if (isConfused) {
+                    return options.map(o => ({
+                        ...o,
+                        label: o.val // Show only 'A', 'B' etc. instead of '日 (A)'
+                    }));
+                }
+                return options;
+            }, [qIndex, inputMode, currentQ, monster]);
+
+            useEffect(() => { if (!initialData) spawnMonster(); }, []);
+
+            const spawnMonster = () => {
+                const isBoss = player.floor % 5 === 0;
+                const pool = MONSTER_TYPES.filter(m => isBoss ? m.isBoss : !m.isBoss);
+                const type = pool[Math.floor(Math.random() * pool.length)];
+                
+                let diffMod = 1.0;
+                if (difficulty === 'easy') diffMod = 0.8;
+                if (difficulty === 'hard') diffMod = 1.5;
+
+                const scale = 1 + (player.floor * 0.25 * diffMod); 
+                const hp = Math.floor(100 * type.hpMod * scale);
+                const name = `${isBoss ? '【BOSS】' : ''}${type.name} (F${player.floor})`;
+                setMonster({ hp, maxHp: hp, name, type, frozen: 0 });
+                setAttackGauge(0);
+                
+                let log = `F${player.floor}: 遭遇 ${name}！`;
+                if (type.effect) log += ` (特性: ${type.effectName})`;
+                setCombatLog(log);
+            };
+
+            const saveGame = () => {
+                const data = JSON.stringify({ player, inputMode, difficulty, date: new Date().toISOString() });
+                const blob = new Blob([data], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `word_battler_f${player.floor}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                setCombatLog("進度已儲存！");
+            };
+            
+            const handleGameOver = (isWin) => {
+                setTurn(isWin ? 'win' : 'lose');
+                if (!isWin) AudioEngine.lose(); else AudioEngine.win();
+            };
+
+            useEffect(() => {
+                let interval;
+                if (turn === 'player') {
+                    interval = setInterval(() => {
+                        // Freeze check
+                        if (monster.frozen > 0) {
+                             setMonster(m => ({...m, frozen: m.frozen - 0.2}));
+                             return; // Skip gauge update
+                        }
+
+                        setAttackGauge(prev => {
+                            if (prev >= 100) {
+                                let dmgMult = 1.0;
+                                if (difficulty === 'easy') dmgMult = 0.7;
+                                if (difficulty === 'hard') dmgMult = 1.5;
+                                
+                                const baseDmg = 10 + (player.floor * 2);
+                                const finalDmg = Math.floor(baseDmg * monster.type.atkMod * dmgMult);
+                                handlePlayerDamage(finalDmg, `${monster.type.name} 攻擊！`);
+                                return 0;
+                            }
+                            let speedMult = 1.0;
+                            if (difficulty === 'easy') speedMult = 0.6;
+                            if (difficulty === 'hard') speedMult = 1.4;
+
+                            let inc = 2.5 * monster.type.speedMod * speedMult;
+                            return prev + inc;
+                        });
+                    }, 200);
+                }
+                return () => clearInterval(interval);
+            }, [turn, difficulty, monster, player.floor]);
+
+            const handlePlayerDamage = (rawDmg, reason) => {
+                if (reason.includes("按錯")) {
+                    setSessionStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+                }
+
+                if (Math.random() < player.dodge) { setCombatLog(`${reason} MISS!`); return; }
+                AudioEngine.hit();
+                setAnimation('damage');
+                let damage = Math.max(0, rawDmg - player.shield);
+                const remainingShield = Math.max(0, player.shield - rawDmg);
+                if (player.thorns > 0) { const thornsDmg = Math.floor(rawDmg * player.thorns); setMonster(m => ({ ...m, hp: Math.max(0, m.hp - thornsDmg) })); }
+                setPlayer(p => ({ ...p, hp: Math.max(0, p.hp - damage), shield: remainingShield, combo: 0 }));
+                setCombatLog(`${reason} 受到 ${damage} 傷害！`);
+                setTimeout(() => { 
+                    setAnimation(null); 
+                    if (player.hp - damage <= 0) { 
+                        if (player.revive) { 
+                            setPlayer(p => ({ ...p, hp: p.maxHp, revive: false })); 
+                            setCombatLog("鳳凰灰燼觸發！"); 
+                            setAnimation('heal'); 
+                        } else {
+                            handleGameOver(false); 
+                        }
+                    } 
+                }, 300);
+            };
+
+            const resolvePlayerAttack = () => {
+                // Update Session Stats
+                setSessionStats(prev => {
+                    const newCombo = player.combo + 1;
+                    return {
+                        ...prev,
+                        correct: prev.correct + 1,
+                        maxCombo: Math.max(prev.maxCombo, newCombo)
+                    };
+                });
+
+                const comboMult = 1 + (player.combo * 0.1);
+                let atkVal = player.atk;
+                if (player.shieldToAtk && player.shield > 0) atkVal += Math.floor(player.shield * 0.5);
+                let damage = (atkVal + player.bonusDmg) * comboMult;
+                let isCrit = Math.random() < player.critChance;
+                if (isCrit) { damage *= player.critMult; AudioEngine.crit(); } else AudioEngine.attack();
+                damage = Math.floor(damage);
+                if (player.lifesteal > 0) setPlayer(p => ({ ...p, hp: Math.min(p.maxHp, p.hp + Math.floor(damage * player.lifesteal)) }));
+                
+                const newCombo = player.combo + 1;
+                let comboLog = `${isCrit ? '會心！' : '命中！'} -${damage}`;
+                
+                // Combo Bonus Check
+                let bonusHeal = 0;
+                let bonusShield = 0;
+                if (newCombo > 0 && newCombo % 10 === 0) {
+                    bonusHeal = Math.floor(player.maxHp * 0.05);
+                    bonusShield = 10;
+                    AudioEngine.powerUp(); 
+                    comboLog = `連擊獎勵！+${bonusHeal}HP +${bonusShield}盾`;
+                }
+
+                setPlayer(p => ({ 
+                    ...p, 
+                    bonusDmg: 0, 
+                    combo: newCombo, 
+                    hp: Math.min(p.maxHp, p.hp + bonusHeal),
+                    shield: p.shield + bonusShield,
+                    skills: p.skills.map(s => ({ ...s, currentCd: Math.max(0, s.currentCd - 1) })) 
+                })); 
+                setMonster(m => ({ ...m, hp: Math.max(0, m.hp - damage) }));
+                setCombatLog(comboLog);
+                setAttackGauge(prev => Math.max(0, prev - 10)); // Knockback gauge slightly on hit
+                if (monster.hp - damage <= 0) setTimeout(handleMonsterDefeat, 600); else setTimeout(() => setUserInput([]), 600);
+            };
+
+            const handleSkill = (skillId) => {
+                if (turn !== 'player') return;
+                const idx = player.skills.findIndex(s => s.id === skillId);
+                const skill = player.skills[idx];
+                if (skill.currentCd > 0) return;
+                AudioEngine.skill();
+                
+                // Skill Logic
+                let newP = { ...player };
+                let log = '';
+                
+                if (skill.id === 'heal') { 
+                    const v = Math.floor(newP.maxHp * 0.3); newP.hp = Math.min(newP.maxHp, newP.hp + v); log = `回復 ${v} HP`; 
+                    setAnimation('heal');
+                }
+                else if (skill.id === 'burst') { 
+                    newP.bonusDmg = newP.atk * 2; log = '下擊傷害 200%'; 
+                    setAnimation('heal');
+                }
+                else if (skill.id === 'freeze') { 
+                     setMonster(m => ({...m, frozen: 5})); // Freeze for 5s
+                     log = '怪物凍結 5 秒！';
+                     AudioEngine.freeze();
+                     setAnimation('heal');
+                }
+                else if (skill.id === 'thunder') {
+                    const dmg = 100 + (player.floor * 10);
+                    setMonster(m => ({...m, hp: Math.max(0, m.hp - dmg)}));
+                    log = `雷擊！造成 ${dmg} 真實傷害！`;
+                    setAnimation('damage');
+                     if (monster.hp - dmg <= 0) setTimeout(handleMonsterDefeat, 600);
+                }
+                else if (skill.id === 'shuffle') {
+                    setQIndex(q => q + 1); // Reroll
+                    log = '命運重置！';
+                }
+                else if (skill.id === 'execute') {
+                    const threshold = monster.maxHp * 0.3;
+                    if (monster.hp <= threshold) {
+                        setMonster(m => ({...m, hp: 0}));
+                        log = '斬殺成功！';
+                        setTimeout(handleMonsterDefeat, 600);
+                    } else {
+                         const dmg = Math.floor(monster.maxHp * 0.3);
+                         setMonster(m => ({...m, hp: Math.max(0, m.hp - dmg)}));
+                         log = `斬殺失敗！造成 ${dmg} 傷害`;
+                    }
+                    setAnimation('damage');
+                }
+                else if (skill.id === 'alchemy') {
+                    const dmg = Math.floor(player.atk * 0.5);
+                    setMonster(m => ({...m, hp: Math.max(0, m.hp - dmg)}));
+                    newP.gold += dmg;
+                    log = `煉金術！獲得 ${dmg} 金幣`;
+                    setAnimation('damage');
+                     if (monster.hp - dmg <= 0) setTimeout(handleMonsterDefeat, 600);
+                }
+                else if (skill.id === 'revelation') {
+                     resolvePlayerAttack(); // Auto win
+                     log = '天啟降臨！';
+                     setAnimation('heal');
+                }
+
+                // Update CD
+                const updatedSkills = [...player.skills];
+                const cooldown = Math.max(1, (skill.baseCd || 5) - player.cdr);
+                updatedSkills[idx] = { ...skill, currentCd: cooldown };
+                newP.skills = updatedSkills;
+                
+                setPlayer(newP); setCombatLog(log); setTimeout(() => setAnimation(null), 800);
+            };
+
+            const handleMonsterDefeat = () => {
+                AudioEngine.levelUp();
+                const expGain = Math.floor((50 + (player.floor * 10)) * baseStats.expMult);
+                const coinGain = 15 + Math.floor(player.floor * 3);
+                let newExp = player.exp + expGain;
+                let newLevel = player.level;
+                let newMaxExp = player.maxExp;
+                let leveledUp = false;
+                if (newExp >= player.maxExp) { newExp -= player.maxExp; newLevel++; newMaxExp = Math.floor(newMaxExp * 1.2); leveledUp = true; }
+                setPlayer(p => ({ ...p, exp: newExp, level: newLevel, maxExp: newMaxExp, maxHp: leveledUp ? p.maxHp + 10 : p.maxHp, atk: leveledUp ? p.atk + 2 : p.atk, hp: leveledUp ? p.maxHp : p.hp, floor: p.floor + 1, coinsGained: p.coinsGained + coinGain, gold: p.gold + coinGain }));
+                const numChoices = player.extraReward ? 6 : 5;
+                const availableArtifacts = RPG_ARTIFACTS.filter(a => a.unlockCost === 0 || metaState.unlockedArtifacts.includes(a.id));
+                const pool = availableArtifacts.sort(() => 0.5 - Math.random()).slice(0, numChoices);
+                setRewards(pool);
+                setTurn('reward');
+            };
+
+            const handleSelectReward = (reward) => {
+                AudioEngine.correct();
+                const newP = reward.effect(player);
+                const safeArtifact = { id: reward.id, name: reward.name, icon: reward.icon, desc: reward.desc };
+                setPlayer({ ...newP, artifacts: [...newP.artifacts, safeArtifact] });
+                determineNextEvent();
+            };
+
+            const determineNextEvent = () => {
+                const roll = Math.random();
+                if (player.floor % 5 === 0) { 
+                    const nextFloor = player.floor + 1;
+                    setPlayer(p => ({...p, floor: nextFloor}));
+                    if (nextFloor % 3 === 0) generateShop();
+                    else if (roll < 0.2) setTurn('camp');
+                    else nextBattle();
+                } else {
+                     const nextFloor = player.floor + 1;
+                     setPlayer(p => ({...p, floor: nextFloor}));
+                     if (roll < 0.1) generateShop();
+                     else if (roll < 0.25) setTurn('camp');
+                     else nextBattle();
+                }
+            };
+
+            const nextBattle = () => {
+                setQIndex(q => q + 1); spawnMonster(); setUserInput([]); setTurn('player');
+            };
+
+            const generateShop = () => {
+                const shopPool = RPG_ARTIFACTS.filter(a => a.unlockCost === 0 || metaState.unlockedArtifacts.includes(a.id)).sort(() => 0.5 - Math.random()).slice(0, 3);
+                setShopItems([
+                    ...shopPool.map(i => ({ ...i, price: Math.floor(i.cost * (0.8 + Math.random()*0.4)) })),
+                    { id: 'potion', name: '大紅藥水', type: 'consumable', val: 100, price: 30, icon: Coffee, desc: '回復 100 HP', effect: (p)=>({...p, hp: Math.min(p.maxHp, p.hp+100)}) }
+                ]);
+                setTurn('shop');
+            };
+
+            const handleShopBuy = (item) => {
+                if (player.gold >= item.price) {
+                    AudioEngine.coin();
+                    const newP = item.effect(player);
+                    if (item.type !== 'consumable') newP.artifacts = [...newP.artifacts, { id: item.id, name: item.name, icon: item.icon, desc: item.desc }];
+                    setPlayer({ ...newP, gold: newP.gold - item.price });
+                    setShopItems(prev => prev.filter(i => i !== item));
+                } else AudioEngine.wrong();
+            };
+
+            const handleCampAction = (action) => {
+                AudioEngine.heal();
+                if (action === 'rest') {
+                    setPlayer(p => ({ ...p, hp: Math.min(p.maxHp, p.hp + Math.floor(p.maxHp * 0.5)) }));
+                    setCombatLog("休息了一晚，精神百倍！");
+                } else {
+                    setPlayer(p => ({ ...p, maxHp: p.maxHp + 10, atk: p.atk + 2 }));
+                    setCombatLog("經過鍛鍊，變得更強了！");
+                }
+                setTimeout(nextBattle, 1000);
+            };
+
+            // Enhanced Key Handling Logic based on Input Mode
+            const handleKeyInput = (key) => {
+                if (turn !== 'player') return;
+
+                if (inputMode === 'radical') {
+                    if (key === currentQ.code[0]) {
+                        resolvePlayerAttack(); 
+                    } else {
+                        handlePlayerDamage(5, "按錯了！"); 
+                    }
+                } else if (inputMode === 'quick') {
+                    const targetCode = currentQ.code[0] + (currentQ.code.length > 1 ? currentQ.code[currentQ.code.length-1] : '');
+                    const nextInput = [...userInput, key];
+
+                    if (targetCode.startsWith(nextInput.join(''))) {
+                         if (nextInput.join('') === targetCode) {
+                             resolvePlayerAttack();
+                         } else {
+                             AudioEngine.click();
+                             setUserInput(nextInput);
+                         }
+                    } else {
+                        handlePlayerDamage(5, "按錯了！");
+                        setUserInput([]);
+                    }
+                }
+                else if (inputMode === 'cangjie') {
+                    const targetCode = currentQ.code;
+                    const nextInput = [...userInput, key];
+                    if (targetCode.startsWith(nextInput.join(''))) {
+                        if (nextInput.join('') === targetCode) {
+                            resolvePlayerAttack();
+                        } else {
+                            AudioEngine.click();
+                            setUserInput(nextInput);
+                        }
+                    } else {
+                        handlePlayerDamage(5, "按錯了！");
+                        setUserInput([]);
+                    }
+                }
+            };
+
+            useEffect(() => {
+                const handlePhysicalKey = (e) => {
+                    const key = e.key.toUpperCase();
+                    if (/^[A-Z]$/.test(key)) handleKeyInput(key);
+                };
+                window.addEventListener('keydown', handlePhysicalKey);
+                return () => window.removeEventListener('keydown', handlePhysicalKey);
+            }, [inputMode, turn, userInput, currentQ]);
+
+            const handleOptionClick = (val) => {
+                if (turn !== 'player') return;
+                let isCorrect = (val === currentQ.code[0]);
+                if (isCorrect) resolvePlayerAttack();
+                else handlePlayerDamage(5, "選錯了！");
+            };
+
+            const renderInput = () => {
+                const isConfused = monster.type.effect === 'confusion';
+                const isBlind = monster.type.effect === 'blind';
+
+                if (inputMode === 'radical') {
+                    return <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">{currentOptions.map((o,i) => <button key={i} onClick={() => handleOptionClick(o.val)} className={`bg-slate-800 border-2 border-magic-600 py-6 rounded-xl text-xl font-bold text-magic-100 active:scale-95 hover:bg-slate-700 transition-all ${isConfused ? 'animate-wiggle' : ''}`}>{o.label}</button>)}</div>;
+                }
+                
+                const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split('');
+                return (
+                    <div className="w-full max-w-3xl mx-auto p-2">
+                        <div className="flex justify-center mb-4 space-x-2 min-h-[50px]">{userInput.map((k, i) => <div key={i} className={`w-12 h-12 border-2 rounded flex items-center justify-center text-2xl font-bold bg-slate-800 border-magic-500 text-magic-300 animate-float-up`}>{KEYBOARD_MAP[k]}</div>)}</div>
+                        <div className="keyboard-grid">
+                            {keys.map(k => (
+                                <button key={k} onClick={() => handleKeyInput(k)} className={`aspect-square bg-slate-800 border border-slate-700 rounded flex flex-col items-center justify-center hover:bg-slate-700 active:bg-slate-600 transition-all ${isConfused ? 'animate-wiggle' : ''}`}>
+                                    <span className="text-xs text-slate-500">{k}</span>
+                                    {/* Confusion: Hide Key Map in Keyboard Mode. Blind: Also hide? User said "遮住題目的提示或字根". So hide map if blind or confused. */}
+                                    <span className={`text-magic-300 font-bold ${isBlind || isConfused ? 'opacity-0' : 'opacity-100'}`}>{KEYBOARD_MAP[k]}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            if (turn === 'lose') return <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-white p-8 z-50"><LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" /><h2 className="text-4xl font-bold mb-2 text-red-500">挑戰結束</h2><p className="text-xl mb-4">止步於第 {player.floor} 層</p><div className="bg-slate-800 p-6 rounded-2xl mb-8 flex flex-col items-center border border-gold-500/30"><p className="text-sm text-gold-400 mb-2">本次獲得</p><div className="flex items-center gap-2 text-3xl font-bold text-yellow-400"><LucideIcon icon={Coins} /> <span>{player.coinsGained + (player.floor * 5)}</span></div></div><button onClick={() => onGameEnd(player.coinsGained, sessionStats)} className="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-full font-bold">返回聖殿</button></div>;
+
+            if (turn === 'shop') return (
+                <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-white p-8 z-50">
+                    <h2 className="text-3xl font-bold text-gold-400 mb-4 flex items-center gap-2"><LucideIcon icon={ShoppingBag}/> 神秘商店</h2>
+                    <p className="mb-6 text-slate-400">持有金幣: <span className="text-yellow-400 font-bold">{player.gold}</span></p>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full max-w-5xl">
+                        {shopItems.map((item, i) => (
+                            <button key={i} onClick={() => handleShopBuy(item)} disabled={player.gold < item.price} className={`p-4 rounded-xl border-2 flex flex-col items-center transition-all ${player.gold >= item.price ? 'bg-slate-800 border-gold-600 hover:bg-slate-700' : 'bg-slate-900 border-slate-700 opacity-50'}`}>
+                                <LucideIcon icon={item.icon} size={32} className="text-gold-400 mb-2" />
+                                <h4 className="font-bold">{item.name}</h4>
+                                <p className="text-xs text-slate-400 mb-2">{item.desc}</p>
+                                <span className="text-yellow-400 font-bold flex items-center"><LucideIcon icon={Coins} size={12} className="mr-1"/> {item.price}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <button onClick={nextBattle} className="mt-8 bg-brand-600 hover:bg-brand-500 px-8 py-3 rounded-full font-bold">離開商店</button>
+                </div>
+            );
+
+            if (turn === 'camp') return (
+                <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-white p-8 z-50">
+                    <LucideIcon icon={Tent} size={80} className="text-green-500 mb-6" />
+                    <h2 className="text-3xl font-bold mb-8">休息營地</h2>
+                    <div className="flex gap-6">
+                        <button onClick={() => handleCampAction('rest')} className="bg-slate-800 border-2 border-green-600 p-8 rounded-2xl hover:bg-slate-700 transition-all flex flex-col items-center w-48">
+                            <LucideIcon icon={BedDouble} size={48} className="text-green-400 mb-4" />
+                            <h3 className="text-xl font-bold">休息</h3>
+                            <p className="text-sm text-slate-400 mt-2">回復 50% HP</p>
+                        </button>
+                        <button onClick={() => handleCampAction('train')} className="bg-slate-800 border-2 border-red-600 p-8 rounded-2xl hover:bg-slate-700 transition-all flex flex-col items-center w-48">
+                            <LucideIcon icon={Dumbbell} size={48} className="text-red-400 mb-4" />
+                            <h3 className="text-xl font-bold">鍛鍊</h3>
+                            <p className="text-sm text-slate-400 mt-2">HP+10, ATK+2</p>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            if (turn === 'reward') return ( 
+                <div className="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center text-white p-4 z-50">
+                    <h2 className="text-3xl font-bold text-yellow-400 mb-8 animate-bounce">戰利品選擇</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-6xl w-full">
+                        {rewards.map((r, i) => (
+                            <button key={i} onClick={() => handleSelectReward(r)} className="bg-slate-800 border-2 border-magic-600 hover:scale-105 transition-transform p-4 rounded-xl flex flex-col items-center shadow-xl group h-full">
+                                <LucideIcon icon={r.icon} size={36} className="text-yellow-400 mb-3 group-hover:scale-110 transition-transform" />
+                                <h3 className="text-lg font-bold mb-1 text-center leading-tight">{r.name}</h3>
+                                <p className="text-xs text-slate-300 text-center flex-1 flex items-center justify-center">{r.desc}</p>
+                            </button>
+                        ))}
+                    </div>
+                </div> 
+            );
+
+            return (
+                <div className={`h-full w-full flex flex-col bg-slate-950 text-white font-sans relative overflow-hidden ${animation === 'damage' ? 'animate-damage-flash' : ''}`}>
+                    {/* Header */}
+                    <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center z-10">
+                        <div className="flex items-center gap-4 cursor-pointer hover:bg-slate-800/50 rounded-lg p-1" onClick={() => setShowStats(!showStats)}>
+                            <div className="w-12 h-12 bg-magic-700 rounded-lg flex flex-col items-center justify-center border-2 border-magic-500 relative overflow-hidden">
+                                <span className="text-xs relative z-10">LV</span><span className="font-bold text-xl relative z-10">{player.level}</span>
+                                <div className="absolute bottom-0 w-full bg-yellow-500/30 transition-all duration-300" style={{height: `${(player.combo % 10) * 10}%`}}></div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-slate-400 flex justify-between w-32"><span>F{player.floor}</span><span className="text-yellow-400 font-bold">Combo {player.combo}</span></div>
+                                <div className="w-32 h-3 bg-slate-800 rounded-full overflow-hidden relative"><div className="h-full bg-red-500 transition-all duration-300" style={{width: `${(player.hp/player.maxHp)*100}%`}}></div>{player.shield>0 && <div className="absolute top-0 h-full bg-blue-400/50" style={{width: `${(player.shield/player.maxHp)*100}%`}}/>}</div>
+                                <div className="text-[10px] text-right">{player.hp}/{player.maxHp}</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1 text-gold-400 font-bold bg-slate-800 px-3 py-1 rounded-full text-sm border border-slate-700"><LucideIcon icon={Coins} size={14}/> {player.gold}</div>
+                            <button onClick={saveGame} className="p-2 bg-slate-800 rounded border border-slate-600"><LucideIcon icon={Save} size={18}/></button>
+                            <button onClick={() => onGameEnd(player.coinsGained, sessionStats)} className="p-2 bg-red-900/50 text-red-400 rounded hover:bg-red-900"><LucideIcon icon={X} size={18}/></button>
+                        </div>
+                    </div>
+                    {showStats && <div className="absolute top-20 left-4 bg-slate-900/95 border border-slate-700 p-4 rounded-xl z-40 text-sm shadow-xl min-w-[200px]" onClick={()=>setShowStats(false)}><h4 className="font-bold border-b border-slate-700 mb-2 pb-1 text-magic-300">屬性</h4><p>⚔️ {player.atk} | ⚡ {Math.round(player.critChance*100)}% | 🩸 {Math.round(player.lifesteal*100)}% | 💨 {Math.round(player.dodge*100)}%</p><h4 className="font-bold border-b border-slate-700 mb-2 pb-1 mt-2 text-magic-300">遺物</h4><div className="flex flex-wrap gap-1">{player.artifacts.map((a,i)=><div key={i} title={a.name} className="bg-slate-800 p-1.5 rounded border border-slate-600"><LucideIcon icon={a.icon} size={16} className="text-yellow-500"/></div>)}</div></div>}
+                    
+                    {/* RPG Character & Monster Scene */}
+                    <div className="flex-1 relative flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-magic-900/30 to-slate-950 -z-10"></div>
+                        
+                        {/* Skills Bar */}
+                        <div className="absolute top-4 flex gap-4 z-20">
+                            {player.skills.map((s, index) => {
+                                const isSilenced = monster.type.effect === 'silence' && index === silencedSkillIdx;
+                                return (
+                                    <button key={s.id} onClick={() => handleSkill(s.id)} disabled={s.currentCd > 0 || isSilenced} className={`w-14 h-14 rounded-full border-2 flex items-center justify-center relative transition-transform active:scale-95 ${s.currentCd > 0 || isSilenced ? 'bg-slate-800 border-slate-600 opacity-50 cursor-not-allowed' : `${s.color} border-white shadow-lg`}`}>
+                                        <LucideIcon icon={s.icon} size={24} className="text-white" />
+                                        {s.currentCd > 0 && <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center font-bold text-white">{s.currentCd}</div>}
+                                        {isSilenced && <div className="absolute inset-0 bg-black/80 rounded-full flex items-center justify-center text-red-500"><LucideIcon icon={MicOff} size={20} /></div>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Monster Area */}
+                        <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="relative z-10 mt-8 mb-4">
+                            <div className="w-40 h-40 bg-slate-800 rounded-full border-4 border-magic-500 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)] relative">
+                                <LucideIcon icon={monster.type.icon} size={80} className={monster.type.color} />
+                                {monster.type.effect === 'blind' ? (
+                                    <span className="absolute text-7xl font-serif font-black text-white/50 blur-[6px] select-none">???</span>
+                                ) : (
+                                    <span className="absolute text-7xl font-serif font-black text-white drop-shadow-md">{currentQ.char}</span>
+                                )}
+                                {monster.type.effect && <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-1 rounded-full font-bold shadow-sm z-20 flex items-center gap-1"><LucideIcon icon={monster.type.effect==='blind'?EyeOff : monster.type.effect==='silence'?MicOff : Shuffle} size={10}/> {monster.type.effectName}</div>}
+                                {monster.frozen > 0 && <div className="absolute inset-0 flex items-center justify-center bg-cyan-500/30 rounded-full"><LucideIcon icon={Snowflake} size={64} className="text-white animate-pulse" /></div>}
+                            </div>
+                            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-32 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-600"><motion.div className="h-full bg-red-500" style={{ width: `${attackGauge}%` }} transition={{ ease: 'linear', duration: 0.2 }} /></div>
+                            <div className="absolute -top-8 w-full text-center text-red-400 font-bold text-sm">{monster.name}</div>
+                        </motion.div>
+                        
+                        <div className="text-center h-8 font-bold text-lg text-magic-200 mb-8">{combatLog}</div>
+
+                        {/* Player Avatar Positioned Above Keyboard */}
+                        <div className="w-full max-w-4xl px-8 flex justify-start relative h-0">
+                            <div className="absolute -top-32 left-4 z-10 transform scale-75 md:scale-100 origin-bottom-left">
+                                <PlayerAvatar type={player.avatar} isHit={animation === 'damage'} isAttacking={false} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Keyboard / Input Area */}
+                    <div className="bg-slate-900 border-t border-slate-800 p-6 rounded-t-3xl shadow-2xl relative z-20">
+                         {/* Input Hints */}
+                        <div className="text-center mb-4 text-slate-400 text-sm h-6">
+                            {monster.type.effect === 'blind' ? <span className="text-red-400 flex items-center justify-center gap-1"><LucideIcon icon={EyeOff} size={14}/> 提示已被遮蔽</span> : (
+                                <>
+                                {inputMode === 'radical' && `選擇對應字首 [${currentQ.code[0]}]`}
+                                {inputMode === 'quick' && `輸入首尾碼 (2碼) [${currentQ.code[0]}${currentQ.code.length > 1 ? currentQ.code.slice(-1) : ''}] - 提示: ${currentQ.hint}`}
+                                {inputMode === 'cangjie' && `輸入全碼 (${currentQ.code.length}碼) [${currentQ.code}] - 提示: ${currentQ.hint}`}
+                                </>
+                            )}
+                        </div>
+                        <div className="max-w-4xl mx-auto text-center">{renderInput()}</div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 🏃 Runner Game ---
+        const RunnerGame = ({ inputMode, difficulty, chapter, onExit, onHome, currentTheme = THEMES.FOREST, user }) => {
+            const [score, setScore] = useState(0);
+            const [time, setTime] = useState(0);
+            const [qIndex, setQIndex] = useState(0);
+            const [gameState, setGameState] = useState('running');
+            const [userInput, setUserInput] = useState([]);
+            const [feedback, setFeedback] = useState(null);
+            const [message, setMessage] = useState(null);
+            const [qStartTime, setQStartTime] = useState(null);
+            
+            // Session Stats
+            const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0, maxCombo: 0 });
+            const [currentCombo, setCurrentCombo] = useState(0);
+            
+            const filteredQuestions = useMemo(() => chapter ? QUESTIONS.filter(q => q.mainCode === chapter) : QUESTIONS, [chapter]);
+            const activeQuestions = filteredQuestions.length > 0 ? filteredQuestions : QUESTIONS;
+            const currentQ = useMemo(() => activeQuestions[Math.floor(Math.random() * activeQuestions.length)], [qIndex, activeQuestions]);
+            
+            const charProgress = (qIndex / 10) * 80;
+            const charPosition = gameState === 'win' ? 90 : 10 + charProgress;
+
+            useEffect(() => {
+                let interval; if (gameState !== 'win') interval = setInterval(() => setTime(t => t + 1), 1000);
+                return () => clearInterval(interval);
+            }, [gameState]);
+
+            useEffect(() => {
+                let timer; if (gameState === 'running') timer = setTimeout(() => { setGameState('bullet_time'); setQStartTime(Date.now()); }, 2000);
+                return () => clearTimeout(timer);
+            }, [gameState, qIndex]);
+
+            // Options for Radical Mode
+            const currentOptions = useMemo(() => {
+                if (inputMode !== 'radical') return [];
+                const correct = { label: `${KEYBOARD_MAP[currentQ.code[0]]} (${currentQ.code[0]})`, val: currentQ.code[0], isCorrect: true };
+                const decoys = generateDecoys(currentQ).slice(0, 2).map(d => ({ label: `${KEYBOARD_MAP[d.code[0]]} (${d.code[0]})`, val: d.code[0], isCorrect: false }));
+                return [correct, ...decoys].sort(() => Math.random() - 0.5);
+            }, [qIndex, inputMode, currentQ]);
+
+            const handleWrong = () => {
+                AudioEngine.wrong();
+                setFeedback('wrong');
+                setMessage(`再試一次！`);
+                setSessionStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+                setCurrentCombo(0);
+                setTimeout(() => { setFeedback(null); setMessage(null); }, 1000);
+            };
+
+            const handleOptionClick = (val) => {
+                if (feedback === 'correct') return;
+                let isCorrect = (val === currentQ.code[0]);
+                if (isCorrect) processAnswer(true);
+                else handleWrong();
+            };
+            
+            const handleKeyInput = (key) => {
+                if (gameState !== 'bullet_time' || feedback === 'correct') return;
+
+                if (inputMode === 'radical') {
+                    if (key === currentQ.code[0]) processAnswer(true);
+                    else handleWrong();
+                }
+                else if (inputMode === 'quick') {
+                    const target = currentQ.code[0] + (currentQ.code.length > 1 ? currentQ.code[currentQ.code.length-1] : '');
+                    const nextInput = [...userInput, key];
+                    
+                    if (target.startsWith(nextInput.join(''))) {
+                         if (nextInput.join('') === target) {
+                             processAnswer(true);
+                             setUserInput([]);
+                         } else {
+                             AudioEngine.click();
+                             setUserInput(nextInput);
+                         }
+                    } else {
+                        AudioEngine.wrong(); setFeedback('wrong'); setMessage(`按錯了！`); 
+                        setUserInput([]);
+                        setSessionStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+                        setCurrentCombo(0);
+                        setTimeout(() => { setFeedback(null); setMessage(null); }, 1000);
+                    }
+                }
+                else if (inputMode === 'cangjie') {
+                     const target = currentQ.code;
+                     const nextInput = [...userInput, key];
+                     
+                     if (target.startsWith(nextInput.join(''))) {
+                         if (nextInput.join('') === target) {
+                             processAnswer(true);
+                             setUserInput([]);
+                         } else {
+                             AudioEngine.click();
+                             setUserInput(nextInput);
+                         }
+                     } else {
+                        AudioEngine.wrong(); setFeedback('wrong'); setMessage(`按錯了！`); 
+                        setUserInput([]);
+                        setSessionStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+                        setCurrentCombo(0);
+                        setTimeout(() => { setFeedback(null); setMessage(null); }, 1000);
+                     }
+                }
+            };
+
+            useEffect(() => {
+                const h = (e) => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKeyInput(k); };
+                window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+            }, [inputMode, gameState, userInput, feedback, currentQ]);
+
+            const processAnswer = () => {
+                AudioEngine.correct(); setFeedback('correct'); setMessage(null);
+                const speedBonus = Math.max(0, Math.floor(50 - ((Date.now() - qStartTime)/1000) * 5));
+                setScore(s => s + 100 + speedBonus);
+                
+                // Stats
+                setCurrentCombo(c => {
+                    const next = c + 1;
+                    setSessionStats(prev => ({ 
+                        ...prev, 
+                        correct: prev.correct + 1,
+                        maxCombo: Math.max(prev.maxCombo, next)
+                    }));
+                    return next;
+                });
+
+                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q => q + 1); setGameState('running'); }, 1000);
+            };
+
+            const renderInput = () => {
+                 if (inputMode === 'radical') {
+                     return <div className="grid grid-cols-3 gap-4 w-full max-w-2xl mx-auto">{currentOptions.map((opt, i) => (<button key={i} onClick={() => handleOptionClick(opt.val)} className={`relative py-6 rounded-2xl text-xl font-bold shadow-lg transform transition-all active:scale-95 flex items-center justify-center overflow-hidden ${feedback === 'correct' && opt.isCorrect ? 'bg-green-500 text-white' : 'bg-white text-slate-800 hover:bg-brand-50'} ${feedback === 'wrong' && !opt.isCorrect ? 'opacity-50 bg-red-50' : ''}`}><span className={`absolute left-3 top-2 text-2xl font-black opacity-20 ${feedback === 'correct' && opt.isCorrect ? 'text-white' : 'text-slate-900'}`}>{String.fromCharCode(65 + i)}</span><span>{opt.label}</span></button>))}</div>;
+                 }
+                 const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split('');
+                 return <div className="w-full max-w-3xl mx-auto p-2"><div className="flex justify-center mb-4 space-x-2 min-h-[50px]">{userInput.map((k,i) => <div key={i} className={`w-12 h-12 border-2 rounded flex items-center justify-center text-2xl font-bold transition-colors duration-300 bg-white border-brand-500 text-brand-600 animate-float-up`}>{KEYBOARD_MAP[k]}</div>)}</div><div className="keyboard-grid">{keys.map(k => (<button key={k} onClick={() => handleKeyInput(k)} className={`aspect-square rounded-md shadow-sm border flex flex-col items-center justify-center transition-colors ${userInput.length === 0 && userInput.includes(k) && feedback === 'wrong-first' ? 'bg-red-100 border-red-300' : 'bg-white border-slate-200 active:bg-brand-100'}`}><span className="text-xs font-bold text-slate-400">{k}</span><span className="text-lg font-bold font-serif text-slate-800">{KEYBOARD_MAP[k]}</span></button>))}</div></div>;
+            };
+
+            return (
+                <div className={`h-full w-full flex flex-col ${currentTheme.bg} overflow-hidden relative`}>
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-30 pointer-events-none"><div className="flex items-center space-x-2 pointer-events-auto"><button onClick={onExit} className="bg-white/80 p-2 rounded-full shadow-md mr-2"><LucideIcon icon={ArrowLeft} size={20} /></button><div className="flex items-center space-x-2 bg-white/80 backdrop-blur px-3 py-1 rounded-full shadow-sm min-w-[80px]"><LucideIcon icon={Timer} className="text-blue-500 fill-current" size={18} /><span className="font-bold text-slate-800 font-mono">{Math.floor(time / 60).toString().padStart(2, '0')}:{ (time % 60).toString().padStart(2, '0') }</span></div><div className="flex items-center space-x-2 bg-white/80 backdrop-blur px-3 py-1 rounded-full shadow-sm"><LucideIcon icon={Star} className="text-yellow-500 fill-current" size={18} /><span className="font-bold text-slate-800">{score}</span></div></div><button onClick={onHome} className="bg-brand-500 text-white p-2 rounded-full shadow-md pointer-events-auto hover:bg-brand-600 transition-colors"><LucideIcon icon={Home} size={20} /></button></div>
+                    <div className="relative h-[45%] flex flex-col justify-end overflow-hidden">
+                        <div className="absolute top-10 right-10 text-slate-400/50"><LucideIcon icon={currentTheme.decor} size={64} /></div><div className="absolute top-20 left-10 text-slate-400/30"><LucideIcon icon={Cloud} size={48} /></div><div className={`absolute bottom-0 w-full h-1/2 bg-gradient-to-b ${currentTheme.road} perspective-road flex justify-center`}><div className={`w-4 h-full bg-white/30 ${gameState === 'running' ? 'animate-pulse' : ''}`}></div></div><div className="absolute bottom-10 right-[5%] z-10 flex flex-col items-center"><div className="h-24 w-2 bg-slate-400"></div><LucideIcon icon={Flag} size={48} className="text-red-500 fill-current" /></div><div className={`absolute bottom-4 w-full flex justify-between px-10 ${gameState === 'running' ? 'animate-run' : ''} opacity-50`}><LucideIcon icon={Trees} size={32} className="text-green-800" /><LucideIcon icon={Trees} size={32} className="text-green-800" /></div>
+                        <div className="absolute bottom-8 z-20 transition-all duration-1000 ease-in-out" style={{ left: `${charPosition}%` }}><div className="relative transform -translate-x-1/2"><motion.div animate={gameState === 'running' ? { y: [0, -10, 0] } : { y: 0 }} transition={{ repeat: Infinity, duration: 0.5 }}><div style={{ transform: 'scaleX(-1)', display: 'inline-block' }} className={`text-6xl filter drop-shadow-2xl transition-all ${feedback === 'wrong' ? 'animate-shake grayscale' : ''}`}>{feedback === 'wrong' ? '😵' : '🏃'}</div></motion.div><div className="w-16 h-4 bg-black/20 rounded-full mx-auto blur-sm mt-[-5px]"></div><AnimatePresence><motion.div key={qIndex} initial={{ scale: 0, y: 50, opacity: 0 }} animate={{ scale: gameState === 'bullet_time' ? 1 : 0.2, y: gameState === 'bullet_time' ? -100 : 20, opacity: gameState === 'bullet_time' ? 1 : 0 }} transition={{ type: 'spring', damping: 20 }} className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-30 mb-12"><div className={`bg-white border-8 border-slate-800 rounded-2xl w-32 h-32 flex flex-col items-center justify-center shadow-2xl relative ${gameState === 'running' ? 'animate-bounce' : ''}`}><span className="text-6xl font-serif font-black text-slate-900">{currentQ ? currentQ.char : '?'}</span>{gameState === 'bullet_time' && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full flex flex-col items-center"><h3 className={`font-bold mb-6 text-sm tracking-wider uppercase transition-colors duration-300 ${feedback?.includes('wrong') ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>{message || `[${inputMode === 'quick' ? (currentQ.code[0] + (currentQ.code.length > 1 ? currentQ.code.slice(-1) : '')) : (inputMode === 'radical' ? currentQ.code[0] : currentQ.code)}] 提示：${currentQ.hint}`}</h3>{renderInput()}</motion.div>}</div></motion.div></AnimatePresence></div></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 🏠 App Component ---
+        const App = () => {
+            const [view, setView] = useState('home'); 
+            const [userName, setUserName] = useState('');
+            const [saveData, setSaveData] = useState(null);
+            const [config, setConfig] = useState({ 
+                mode: 'runner', // 'rpg' or 'runner'
+                inputMode: 'quick', // Default 'quick'
+                difficulty: 'normal', 
+                category: null, 
+                theme: THEMES.FOREST 
+            });
+            
+            const [metaState, setMetaState] = useState({
+                coins: 0,
+                upgrades: { hp: 0, atk: 0, exp: 0 },
+                unlockedArtifacts: ['wand_1', 'robe_1', 'ring_1', 'boots_1'],
+                unlockedSkills: ['heal', 'burst'],
+                stats: { totalCorrect: 0, totalWrong: 0, gamesPlayed: 0, highestCombo: 0 },
+                avatar: 'hero' // Default avatar
+            });
+
+            useEffect(() => {
+                const saved = localStorage.getItem('speedy_adventure_meta');
+                if (saved) { try { const parsed = JSON.parse(saved); setMetaState(prev => ({...prev, ...parsed.metaState, stats: {...prev.stats, ...(parsed.metaState?.stats || {})}, avatar: parsed.metaState.avatar || 'hero'})); setUserName(parsed.userName || ''); } catch(e) {} }
+            }, []);
+
+            useEffect(() => { localStorage.setItem('speedy_adventure_meta', JSON.stringify({ metaState, userName })); }, [metaState, userName]);
+
+            const goHome = () => setView('home');
+
+            const handleGameEnd = (coinsEarned, sessionStats) => { 
+                setMetaState(prev => ({ 
+                    ...prev, 
+                    coins: prev.coins + coinsEarned,
+                    stats: {
+                        totalCorrect: prev.stats.totalCorrect + (sessionStats?.correct || 0),
+                        totalWrong: prev.stats.totalWrong + (sessionStats?.wrong || 0),
+                        gamesPlayed: prev.stats.gamesPlayed + 1,
+                        highestCombo: Math.max(prev.stats.highestCombo, (sessionStats?.maxCombo || 0))
+                    }
+                })); 
+                setView('mode_select'); 
+            };
+
+            const handleExportSave = () => {
+                const data = JSON.stringify({ metaState, userName, date: new Date().toISOString() });
+                const blob = new Blob([data], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `word_battler_backup.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            };
+
+            const handleImportSave = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.metaState) setMetaState(data.metaState);
+                        if (data.userName) setUserName(data.userName);
+                        alert("存檔讀取成功！");
+                    } catch (err) { alert("無效的存檔！"); }
+                };
+                reader.readAsText(file);
+            };
+
+            const handleGameSetupStart = (inputMode, difficulty) => {
+                setConfig({ ...config, inputMode, difficulty });
+                setView('category_select');
+            };
+
+            if (view === 'home') return ( <div className="h-full flex flex-col items-center justify-center bg-slate-900 p-6 text-white"><div className="absolute top-4 left-4"><button onClick={()=>setView('dashboard')} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl transition-colors"><LucideIcon icon={BarChart3} className="text-blue-400"/><span className="font-bold">儀表版</span></button></div><div className="bg-slate-800 p-8 rounded-3xl shadow-2xl text-center w-full max-w-md border border-slate-700"><LucideIcon icon={Rocket} size={64} className="text-magic-500 mx-auto mb-6" /><h1 className="text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-magic-300 to-brand-300">速成大冒險 V30</h1><p className="text-slate-400 mb-8">Roguelite 知識深淵</p><input className="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl text-center text-lg mb-6 text-white focus:border-magic-500 outline-none" placeholder="召喚師之名" value={userName} onChange={e=>setUserName(e.target.value)} /><button disabled={!userName} onClick={()=>{AudioEngine.click(); setView('mode_select')}} className="w-full bg-magic-600 hover:bg-magic-500 text-white p-4 rounded-xl font-bold shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2 mb-4"><LucideIcon icon={Play} /> 進入深淵</button><div className="flex gap-4 justify-center text-sm text-slate-500"><label className="cursor-pointer hover:text-magic-300 flex items-center gap-1"><LucideIcon icon={Upload} size={14}/> 讀取 <input type="file" className="hidden" onChange={handleImportSave}/></label><button onClick={handleExportSave} className="hover:text-magic-300 flex items-center gap-1"><LucideIcon icon={Download} size={14}/> 備份</button></div></div></div> );
+
+            if (view === 'dashboard') return <Dashboard stats={metaState.stats} onBack={goHome} />;
+
+            if (view === 'mode_select') return ( <div className="h-full bg-slate-950 p-6 overflow-y-auto text-white"><div className="flex justify-between items-center mb-8 max-w-4xl mx-auto"><div className="flex items-center gap-4"><div className="w-12 h-12 bg-magic-900 rounded-full flex items-center justify-center border border-magic-600"><LucideIcon icon={User} className="text-magic-300"/></div><div><h2 className="text-xl font-bold">{userName}</h2><div className="flex items-center gap-1 text-gold-400 text-sm"><LucideIcon icon={Coins} size={14}/> {metaState.coins}</div></div></div><button onClick={()=>setView('home')} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700"><LucideIcon icon={Home} /></button></div><div className="grid gap-6 max-w-4xl mx-auto"><div onClick={()=>setView('meta_shop')} className="bg-gradient-to-r from-slate-900 to-magic-900 p-6 rounded-3xl border border-magic-500/30 cursor-pointer hover:scale-[1.02] transition-transform flex items-center justify-between"><div><h3 className="text-2xl font-bold text-gold-400 mb-1 flex items-center gap-2"><LucideIcon icon={ShoppingBag}/> 知識聖殿</h3><p className="text-slate-400 text-sm">消耗知識幣，強化自身與解鎖遺物</p></div><LucideIcon icon={ArrowLeft} className="rotate-180 text-slate-500" /></div><div className="grid md:grid-cols-2 gap-6">
+                <div onClick={()=>{setConfig({...config, mode: 'rpg'}); setView('game_setup')}} className="bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-magic-500 transition-colors cursor-pointer group"><LucideIcon icon={Sword} size={40} className="text-purple-400 mb-4" /><h3 className="text-2xl font-bold mb-2 group-hover:text-magic-300">深淵試煉 (RPG)</h3><p className="text-slate-400 text-sm mb-6">挑戰無限層數，Roguelite 成長體驗。</p><div className="flex justify-end"><LucideIcon icon={Play} size={24} className="text-magic-500 group-hover:scale-110 transition-transform"/></div></div>
+                <div onClick={()=>{setConfig({...config, mode: 'runner'}); setView('game_setup')}} className="bg-white p-6 rounded-3xl border border-slate-200 text-slate-800 cursor-pointer hover:border-brand-500 transition-colors group"><LucideIcon icon={Zap} size={40} className="text-yellow-500 mb-4" /><h3 className="text-2xl font-bold mb-2 group-hover:text-brand-600">速成跑酷</h3><p className="text-slate-500 text-sm mb-6">反應力訓練！</p><div className="flex justify-end"><LucideIcon icon={Play} size={24} className="text-brand-500 group-hover:scale-110 transition-transform"/></div></div>
+            </div></div></div> );
+
+            if (view === 'meta_shop') return <MetaShop metaState={metaState} setMetaState={setMetaState} onBack={()=>setView('mode_select')} />;
+            if (view === 'game_setup') return <GameSetup onStart={handleGameSetupStart} onBack={()=>setView('mode_select')} mode={config.mode} />;
+
+            if (view === 'category_select') return ( 
+                <div className="h-full bg-slate-950 p-6 text-white overflow-y-auto">
+                    <div className="flex justify-between items-center mb-8 max-w-4xl mx-auto"><h2 className="text-2xl font-bold">選擇章節 (首碼)</h2><button onClick={()=>setView('game_setup')} className="p-2 bg-slate-800 rounded-full"><LucideIcon icon={ArrowLeft} /></button></div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-4xl mx-auto">
+                        <button onClick={() => { setConfig({...config, category: null}); setView(config.mode==='rpg'?'game_rpg':'game_runner'); }} className="p-4 bg-magic-900 border-2 border-magic-500 rounded-xl hover:bg-magic-800 transition-all flex flex-col items-center gap-2 col-span-full mb-4">
+                            <span className="text-lg font-bold text-magic-300">隨機挑戰 (所有章節)</span>
+                        </button>
+                        {CHAPTERS.map(chap => (
+                            <button key={chap.id} onClick={()=>{setConfig({...config, category:chap.code}); setView(config.mode==='rpg'?'game_rpg':'game_runner')}} className="p-4 bg-slate-800 rounded-xl border border-slate-700 hover:border-brand-500 hover:bg-slate-700 transition-all flex flex-col items-center gap-1 group">
+                                <div className="text-2xl font-black text-slate-500 group-hover:text-white">{chap.code}</div>
+                                <div className="text-lg font-serif font-bold text-brand-400">{chap.name}</div>
+                                <div className="text-xs text-slate-500 mt-1">Chapter {chap.id}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div> 
+            );
+
+            if (view === 'game_rpg') return <RPGGame user={userName} difficulty={config.difficulty} inputMode={config.inputMode} chapter={config.category} metaState={metaState} onGameEnd={handleGameEnd} onExit={()=>setView('mode_select')} onHome={goHome} />;
+            if (view === 'game_rpg_load') return <RPGGame user={userName} difficulty={config.difficulty} inputMode={config.inputMode} chapter={config.category} metaState={metaState} onGameEnd={handleGameEnd} onExit={()=>setView('mode_select')} onHome={goHome} initialData={saveData} />;
+            if (view === 'game_runner') return <RunnerGame user={userName} difficulty={config.difficulty} inputMode={config.inputMode} chapter={config.category} currentTheme={config.theme} onExit={()=>setView('category_select')} onHome={goHome} />;
+
+            return null;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
