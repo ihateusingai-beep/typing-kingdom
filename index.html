@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>速成打字王國 | TypeQuest Kingdom</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'magic': { 950: '#1e1b4b', 900: '#2e1065', 800: '#4c1d95', 600: '#7c3aed', 500: '#8b5cf6', 300: '#c4b5fd', 100: '#ede9fe' },
+                        'gold': { 400: '#facc15', 500: '#eab308', 600: '#ca8a04' },
+                    },
+                    fontFamily: {
+                        'sans': ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        html, body { height: 100%; margin: 0; font-family: 'Noto Sans TC', sans-serif; }
+        .perspective-road { transform: perspective(500px) rotateX(40deg); transform-origin: 50% 100%; }
+        .typing-char { transition: all 0.2s ease; }
+        .typing-char.correct { @apply text-green-400; transform: scale(1.1); }
+        .typing-char.wrong { @apply text-red-400 animate-shake; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-float { animation: float 2s ease-in-out infinite; }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); } 50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.8); } }
+        .animate-glow { animation: glow 2s ease-in-out infinite; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slideIn { animation: slideIn 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-magic-950 to-magic-900 min-h-screen text-white overflow-hidden">
+    <div id="app"></div>
+
+    <script type="module">
+        // =============================================
+        // 核心系統 (Core Systems)
+        // =============================================
+        
+        // Event Bus
+        const EventBus = {
+            listeners: new Map(),
+            on(event, callback) {
+                if (!this.listeners.has(event)) this.listeners.set(event, new Set());
+                this.listeners.get(event).add(callback);
+                return () => this.off(event, callback);
+            },
+            once(event, callback) {
+                const wrapper = (data) => { this.off(event, wrapper); callback(data); };
+                this.on(event, wrapper);
+            },
+            emit(event, data) {
+                if (this.listeners.has(event)) {
+                    this.listeners.get(event).forEach(cb => { try { cb(data); } catch (e) { console.error(e); } });
+                }
+            },
+            off(event, callback) {
+                if (this.listeners.has(event)) this.listeners.get(event).delete(callback);
+            },
+        };
+        
+        const EVENTS = {
+            GAME_START: 'game:start', GAME_END: 'game:end',
+            QUESTION_SHOW: 'question:show', QUESTION_CORRECT: 'question:correct', QUESTION_WRONG: 'question:wrong',
+            LEVEL_COMPLETE: 'level:complete', LEVEL_FAILED: 'level:failed',
+            DIFFICULTY_CHANGE: 'difficulty:change', DIFFICULTY_ADJUST: 'difficulty:adjust',
+            STATE_CHANGE: 'state:change',
+        };
+        
+        // State Machine
+        const StateMachine = {
+            currentState: 'HOME',
+            states: {
+                HOME: {}, MENU: {}, PLAYING: {}, LEVEL_COMPLETE: {}, SETTINGS: {},
+            },
+            transition(to) {
+                this.currentState = to;
+                EventBus.emit(EVENTS.STATE_CHANGE, { from: this.currentState, to });
+            },
+            getState() { return this.currentState; },
+        };
+        
+        // Adaptive Difficulty Engine
+        const DIFFICULTY_LEVELS = {
+            1: { name: '輕鬆', timeLimit: null, hintLevel: 3 },
+            2: { name: '簡單', timeLimit: 20, hintLevel: 2 },
+            3: { name: '普通', timeLimit: 15, hintLevel: 1 },
+            4: { name: '困難', timeLimit: 10, hintLevel: 0 },
+            5: { name: '專家', timeLimit: 5, hintLevel: 0 },
+        };
+        
+        const AdaptiveEngine = {
+            currentLevel: 3,
+            metrics: { recentAccuracy: [], recentTimes: [], consecutiveErrors: 0, consecutiveSuccess: 0, frustrationLevel: 0 },
+            recordAnswer({ correct, time }) {
+                this.metrics.recentAccuracy.push(correct);
+                this.metrics.recentTimes.push(time);
+                if (this.metrics.recentAccuracy.length > 10) this.metrics.recentAccuracy.shift();
+                if (this.metrics.recentTimes.length > 10) this.metrics.recentTimes.shift();
+                if (correct) { this.metrics.consecutiveErrors = 0; this.metrics.consecutiveSuccess++; }
+                else { this.metrics.consecutiveErrors++; this.metrics.consecutiveSuccess = 0; }
+                this.metrics.frustrationLevel = Math.min(100, this.metrics.consecutiveErrors * 20);
+                this._checkAndAdapt();
+            },
+            _checkAndAdapt() {
+                const acc = this.metrics.recentAccuracy.filter(x => x).length / Math.max(1, this.metrics.recentAccuracy.length);
+                if (acc < 0.6 || this.metrics.consecutiveErrors >= 3) {
+                    this.currentLevel = Math.max(1, this.currentLevel - 1);
+                    EventBus.emit(EVENTS.DIFFICULTY_CHANGE, { from: this.currentLevel + 1, to: this.currentLevel });
+                } else if (acc > 0.95 && this.metrics.consecutiveSuccess >= 5) {
+                    this.currentLevel = Math.min(5, this.currentLevel + 1);
+                    EventBus.emit(EVENTS.DIFFICULTY_CHANGE, { from: this.currentLevel - 1, to: this.currentLevel });
+                }
+            },
+            getCurrentDifficulty() { return { level: this.currentLevel, ...DIFFICULTY_LEVELS[this.currentLevel] }; },
+            reset() { this.metrics = { recentAccuracy: [], recentTimes: [], consecutiveErrors: 0, consecutiveSuccess: 0, frustrationLevel: 0 }; },
+        };
+        
+        // Storage Manager
+        const StorageManager = {
+            PREFIX: 'tk_',
+            set(key, value) { try { localStorage.setItem(this.PREFIX + key, JSON.stringify(value)); return true; } catch (e) { return false; } },
+            get(key, defaultValue = null) { try { const d = localStorage.getItem(this.PREFIX + key); return d ? JSON.parse(d) : defaultValue; } catch (e) { return defaultValue; } },
+        };
+        
+        // Progress Tracker
+        const ProgressTracker = {
+            player: null,
+            session: { correctCount: 0, wrongCount: 0, startTime: 0, streak: 0, maxStreak: 0 },
+            init() { this.player = StorageManager.get('player', this._defaultPlayer()); return this.player; },
+            _defaultPlayer() {
+                return {
+                    id: 'p_' + Date.now(), name: '打字王', avatar: 'hero',
+                    progress: { totalStars: 0, completedLevels: [] },
+                    stats: { totalQuestions: 0, correctAnswers: 0, bestWPM: 0, longestStreak: 0 },
+                    badges: [], settings: { difficulty: 3, soundEnabled: true },
+                };
+            },
+            startSession() { this.session = { correctCount: 0, wrongCount: 0, startTime: Date.now(), streak: 0, maxStreak: 0 }; },
+            recordCorrect() {
+                this.session.correctCount++;
+                this.session.streak++;
+                if (this.session.streak > this.session.maxStreak) this.session.maxStreak = this.session.streak;
+                return { streak: this.session.streak };
+            },
+            recordWrong() { this.session.wrongCount++; this.session.streak = 0; return { streak: 0 }; },
+            getSessionSummary() {
+                const total = this.session.correctCount + this.session.wrongCount;
+                return { correct: this.session.correctCount, wrong: this.session.wrongCount, total, accuracy: total > 0 ? this.session.correctCount / total : 0, maxStreak: this.session.maxStreak };
+            },
+            savePlayer() { StorageManager.set('player', this.player); },
+        };
+        
+        // Audio System
+        const AudioSystem = {
+            ctx: null, enabled: true, volume: 0.1,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
+            playTone(freq, type = 'sine', duration = 0.2, vol = 0.1) {
+                if (!this.enabled) return;
+                this.init();
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, t);
+                gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(vol, t + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(t + duration);
+            },
+            correct() { this.playTone(880, 'sine', 0.15, this.volume); setTimeout(() => this.playTone(1108, 'sine', 0.2, this.volume), 50); },
+            wrong() { this.playTone(150, 'triangle', 0.3, this.volume * 1.5, 100); },
+            levelUp() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.25, this.volume), i * 80)); },
+            click() { this.playTone(1200, 'sine', 0.03, 0.02); },
+        };
+        
+        // Type Engine
+        const TypeEngine = {
+            questions: [], currentIndex: 0, currentQuestion: null,
+            isPlaying: false, questionStartTime: 0,
+            initLevel(questions) {
+                this.questions = [...questions];
+                this.currentIndex = 0;
+                this.isPlaying = true;
+                this._showNext();
+            },
+            _showNext() {
+                if (this.currentIndex >= this.questions.length) {
+                    this.isPlaying = false;
+                    EventBus.emit(EVENTS.LEVEL_COMPLETE, ProgressTracker.getSessionSummary());
+                    AudioSystem.levelUp();
+                    return;
+                }
+                this.currentQuestion = this.questions[this.currentIndex];
+                this.questionStartTime = Date.now();
+                EventBus.emit(EVENTS.QUESTION_SHOW, { question: this.currentQuestion, index: this.currentIndex, total: this.questions.length });
+            },
+            checkAnswer(input) {
+                if (!this.isPlaying) return null;
+                const time = Date.now() - this.questionStartTime;
+                const expected = this.currentQuestion?.code || '';
+                const correct = input.toUpperCase() === expected.toUpperCase();
+                if (correct) {
+                    AudioSystem.correct();
+                    ProgressTracker.recordCorrect();
+                    AdaptiveEngine.recordAnswer({ correct: true, time });
+                    this.currentIndex++;
+                    this._showNext();
+                } else {
+                    AudioSystem.wrong();
+                    ProgressTracker.recordWrong();
+                    AdaptiveEngine.recordAnswer({ correct: false, time });
+                    EventBus.emit(EVENTS.QUESTION_WRONG, { question: this.currentQuestion, attempts: 1 });
+                }
+                return { correct, expected, time };
+            },
+            stop() { this.isPlaying = false; this.questions = []; this.currentQuestion = null; },
+        };
+        
+        // =============================================
+        // 題庫數據
+        // =============================================
+        
+        const QUESTIONS = {
+            'cangjie-l1': [
+                { id: 'q1', text: '日', code: 'A', hint: '日字部首' },
+                { id: 'q2', text: '月', code: 'B', hint: '月字部首' },
+                { id: 'q3', text: '金', code: 'C', hint: '金字部首' },
+                { id: 'q4', text: '木', code: 'D', hint: '木字部首' },
+                { id: 'q5', text: '水', code: 'E', hint: '水字部首' },
+                { id: 'q6', text: '火', code: 'F', hint: '火字部首' },
+                { id: 'q7', text: '土', code: 'G', hint: '土字部首' },
+                { id: 'q8', text: '竹', code: 'H', hint: '竹字部首' },
+                { id: 'q9', text: '戈', code: 'I', hint: '戈字部首' },
+                { id: 'q10', text: '十', code: 'J', hint: '十字部首' },
+            ],
+            'cangjie-l2': [
+                { id: 'q1', text: '大', code: 'K', hint: '大字部首' },
+                { id: 'q2', text: '中', code: 'L', hint: '中字部首' },
+                { id: 'q3', text: '一', code: 'M', hint: '一字部首' },
+                { id: 'q4', text: '弓', code: 'N', hint: '弓字部首' },
+                { id: 'q5', text: '人', code: 'O', hint: '人字部首' },
+                { id: 'q6', text: '心', code: 'P', hint: '心字部首' },
+                { id: 'q7', text: '手', code: 'Q', hint: '手字部首' },
+                { id: 'q8', text: '口', code: 'R', hint: '口字部首' },
+                { id: 'q9', text: '尸', code: 'S', hint: '尸字部首' },
+                { id: 'q10', text: '廿', code: 'T', hint: '廿字部首' },
+            ],
+            'cangjie-l3': [
+                { id: 'q1', text: '山', code: 'U', hint: '山字部首' },
+                { id: 'q2', text: '女', code: 'V', hint: '女字部首' },
+                { id: 'q3', text: '田', code: 'W', hint: '田字部首' },
+                { id: 'q4', text: '卜', code: 'Y', hint: '卜字部首' },
+                { id: 'q5', text: '難', code: 'X', hint: '難字部首' },
+                { id: 'q6', text: '時', code: 'AGDI', hint: '日土木戈' },
+                { id: 'q7', text: '朋', code: 'BB', hint: '月月' },
+                { id: 'q8', text: '林', code: 'DD', hint: '木木' },
+                { id: 'q9', text: '字', code: 'JND', hint: '十弓木' },
+                { id: 'q10', text: '王', code: 'MG', hint: '一土' },
+            ],
+            'fruits-l1': [
+                { id: 'q1', text: '蘋果', code: 'BNLMMI' },
+                { id: 'q2', text: '香蕉', code: 'LKOW' },
+                { id: 'q3', text: '橙', code: 'MAJ' },
+                { id: 'q4', text: '西瓜', code: 'IHOJ' },
+                { id: 'q5', text: '葡萄', code: 'MWLMF' },
+                { id: 'q6', text: '柚子', code: 'PMBC' },
+                { id: 'q7', text: '荔枝', code: 'DWHQ' },
+                { id: 'q8', text: '檸檬', code: 'JTHQ' },
+                { id: 'q9', text: '菠蘿', code: 'ELMG' },
+                { id: 'q10', text: '草莓', code: 'ELHK' },
+            ],
+        };
+        
+        const LEVELS = [
+            { id: 'cangjie-l1', name: '倉頡基礎 L1', description: '學習日、月、金、木部首', icon: '🔤', category: '倉頡', color: 'purple', questions: 'cangjie-l1' },
+            { id: 'cangjie-l2', name: '倉頡基礎 L2', description: '學習大、中、一、弓部首', icon: '📚', category: '倉頡', color: 'indigo', questions: 'cangjie-l2' },
+            { id: 'cangjie-l3', name: '倉頡基礎 L3', description: '學習山、女、田、卜部首', icon: '🏔️', category: '倉頡', color: 'blue', questions: 'cangjie-l3' },
+            { id: 'fruits-l1', name: '水果王國', description: '打字水果名稱', icon: '🍎', category: '詞彙', color: 'red', questions: 'fruits-l1' },
+        ];
+        
+        // =============================================
+        // UI 組件
+        // =============================================
+        
+        const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
+        
+        createApp({
+            setup() {
+                const state = ref('HOME'); // HOME, MENU, PLAYING, LEVEL_COMPLETE
+                const currentLevel = ref(null);
+                const currentQuestion = ref(null);
+                const questionIndex = ref(0);
+                const questionTotal = ref(0);
+                const userInput = ref('');
+                const inputRef = ref(null);
+                const sessionSummary = ref(null);
+                const difficulty = ref(AdaptiveEngine.getCurrentDifficulty());
+                const showHint = ref(false);
+                const feedback = ref(null); // { type: 'correct'|'wrong', message: '' }
+                
+                const player = ref(ProgressTracker.init());
+                
+                // 監聽事件
+                onMounted(() => {
+                    EventBus.on(EVENTS.QUESTION_SHOW, (data) => {
+                        currentQuestion.value = data.question;
+                        questionIndex.value = data.index;
+                        questionTotal.value = data.total;
+                        userInput.value = '';
+                        feedback.value = null;
+                        showHint.value = false;
+                        setTimeout(() => inputRef.value?.focus(), 100);
+                    });
+                    
+                    EventBus.on(EVENTS.QUESTION_WRONG, () => {
+                        feedback.value = { type: 'wrong', message: '再試一次！' };
+                        setTimeout(() => { feedback.value = null; }, 1000);
+                    });
+                    
+                    EventBus.on(EVENTS.LEVEL_COMPLETE, (data) => {
+                        sessionSummary.value = data;
+                        state.value = 'LEVEL_COMPLETE';
+                    });
+                    
+                    EventBus.on(EVENTS.DIFFICULTY_CHANGE, (data) => {
+                        difficulty.value = AdaptiveEngine.getCurrentDifficulty();
+                    });
+                });
+                
+                // 開始關卡
+                const startLevel = (level) => {
+                    currentLevel.value = level;
+                    const questions = QUESTIONS[level.questions] || [];
+                    if (questions.length === 0) return;
+                    
+                    AdaptiveEngine.reset();
+                    ProgressTracker.startSession();
+                    TypeEngine.initLevel(questions);
+                    state.value = 'PLAYING';
+                };
+                
+                // 提交答案
+                const submitAnswer = () => {
+                    if (!userInput.value.trim()) return;
+                    const result = TypeEngine.checkAnswer(userInput.value);
+                    if (result?.correct) {
+                        feedback.value = { type: 'correct', message: '正確！' };
+                    }
+                };
+                
+                // 返回選單
+                const goToMenu = () => {
+                    TypeEngine.stop();
+                    state.value = 'MENU';
+                    currentLevel.value = null;
+                };
+                
+                // 重新開始
+                const retryLevel = () => {
+                    if (currentLevel.value) startLevel(currentLevel.value);
+                };
+                
+                // 獲取評級
+                const getGrade = (accuracy) => {
+                    if (accuracy >= 0.95) return 'S';
+                    if (accuracy >= 0.9) return 'A';
+                    if (accuracy >= 0.8) return 'B';
+                    if (accuracy >= 0.7) return 'C';
+                    return 'D';
+                };
+                
+                return {
+                    state, currentLevel, currentQuestion, questionIndex, questionTotal,
+                    userInput, inputRef, sessionSummary, difficulty, showHint, feedback,
+                    player, LEVELS,
+                    startLevel, submitAnswer, goToMenu, retryLevel, getGrade,
+                };
+            },
+            template: `
+                <div class="min-h-screen flex flex-col items-center justify-center p-4">
+                    
+                    <!-- HOME -->
+                    <div v-if="state === 'HOME'" class="text-center animate-slideIn">
+                        <div class="text-6xl mb-4 animate-float">⌨️</div>
+                        <h1 class="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            速成打字王國
+                        </h1>
+                        <p class="text-xl text-purple-300 mb-8">TypeQuest Kingdom</p>
+                        <button 
+                            @click="state = 'MENU'"
+                            class="px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-xl text-xl font-bold transition-all transform hover:scale-105 animate-glow border-2 border-purple-400"
+                        >
+                            開始遊戲
+                        </button>
+                    </div>
+                    
+                    <!-- MENU -->
+                    <div v-if="state === 'MENU'" class="w-full max-w-4xl animate-slideIn">
+                        <div class="text-center mb-8">
+                            <h2 class="text-3xl font-bold mb-2">🎮 選擇關卡</h2>
+                            <p class="text-purple-300">難度：{{ difficulty.name }}級</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button
+                                v-for="level in LEVELS"
+                                :key="level.id"
+                                @click="startLevel(level)"
+                                class="p-6 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-102 text-left group"
+                            >
+                                <div class="flex items-center gap-4">
+                                    <span class="text-4xl">{{ level.icon }}</span>
+                                    <div>
+                                        <h3 class="text-xl font-bold">{{ level.name }}</h3>
+                                        <p class="text-purple-300 text-sm">{{ level.description }}</p>
+                                        <span class="text-xs px-2 py-1 bg-purple-600/50 rounded mt-2 inline-block">{{ level.category }}</span>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="mt-8 text-center">
+                            <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                ← 返回
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- PLAYING -->
+                    <div v-if="state === 'PLAYING'" class="w-full max-w-2xl animate-slideIn">
+                        <!-- 進度條 -->
+                        <div class="mb-4">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>{{ currentLevel?.name }}</span>
+                                <span>{{ questionIndex + 1 }} / {{ questionTotal }}</span>
+                            </div>
+                            <div class="h-2 bg-magic-800 rounded-full overflow-hidden">
+                                <div 
+                                    class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                                    :style="{ width: ((questionIndex / questionTotal) * 100) + '%' }"
+                                ></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 題目卡片 -->
+                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-8 border-2 border-purple-500/30">
+                            <!-- 題目顯示 -->
+                            <div class="text-center mb-6">
+                                <div class="text-6xl font-bold mb-2 text-purple-300">{{ currentQuestion?.text }}</div>
+                                <div v-if="showHint" class="text-lg text-purple-400">提示：{{ currentQuestion?.hint }}</div>
+                            </div>
+                            
+                            <!-- 反饋 -->
+                            <div v-if="feedback" 
+                                class="text-center text-2xl font-bold mb-4 animate-slideIn"
+                                :class="feedback.type === 'correct' ? 'text-green-400' : 'text-red-400'"
+                            >
+                                {{ feedback.message }}
+                            </div>
+                            
+                            <!-- 輸入框 -->
+                            <div class="mb-4">
+                                <input
+                                    ref="inputRef"
+                                    v-model="userInput"
+                                    @keyup.enter="submitAnswer"
+                                    type="text"
+                                    class="w-full px-6 py-4 text-2xl text-center bg-magic-950 border-2 border-purple-500 rounded-xl focus:border-purple-400 focus:outline-none uppercase"
+                                    placeholder="輸入倉頡碼..."
+                                    autocomplete="off"
+                                    autofocus
+                                />
+                            </div>
+                            
+                            <!-- 按鈕 -->
+                            <div class="flex gap-4">
+                                <button @click="showHint = !showHint" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                    {{ showHint ? '隱藏提示' : '顯示提示' }}
+                                </button>
+                                <button @click="submitAnswer" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold">
+                                    確認
+                                </button>
+                                <button @click="goToMenu" class="py-3 px-4 bg-red-900/50 hover:bg-red-800/50 rounded-lg">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 難度提示 -->
+                        <div class="mt-4 text-center text-purple-400 text-sm">
+                            難度：{{ difficulty.name }}級 | 連擊：{{ sessionSummary?.maxStreak || 0 }}
+                        </div>
+                    </div>
+                    
+                    <!-- LEVEL_COMPLETE -->
+                    <div v-if="state === 'LEVEL_COMPLETE'" class="w-full max-w-md text-center animate-slideIn">
+                        <div class="text-6xl mb-4">🎉</div>
+                        <h2 class="text-3xl font-bold mb-4">關卡完成！</h2>
+                        
+                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30 mb-6">
+                            <div class="text-6xl font-bold text-yellow-400 mb-2">{{ getGrade(sessionSummary?.accuracy || 0) }}</div>
+                            <div class="grid grid-cols-2 gap-4 text-left mt-4">
+                                <div class="text-purple-300">正確</div>
+                                <div class="font-bold">{{ sessionSummary?.correct || 0 }} 題</div>
+                                <div class="text-purple-300">錯誤</div>
+                                <div class="font-bold">{{ sessionSummary?.wrong || 0 }} 題</div>
+                                <div class="text-purple-300">準確率</div>
+                                <div class="font-bold">{{ Math.round((sessionSummary?.accuracy || 0) * 100) }}%</div>
+                                <div class="text-purple-300">最高連擊</div>
+                                <div class="font-bold">{{ sessionSummary?.maxStreak || 0 }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <button @click="retryLevel" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold">
+                                再玩一次
+                            </button>
+                            <button @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                返回選單
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `,
+        }).mount('#app');
+    </script>
+</body>
+</html>

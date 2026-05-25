@@ -1,0 +1,112 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-05-25",
+  "categories": [
+    {
+      "id": "cangjie-basic",
+      "name": "倉頡基礎",
+      "icon": "🔤",
+      "description": "倉頡輸入法基礎字符",
+      "color": "#8b5cf6",
+      "levels": ["cangjie-l1", "cangjie-l2", "cangjie-l3"]
+    },
+    {
+      "id": "fruits",
+      "name": "水果",
+      "icon": "🍎",
+      "description": "常見水果名稱",
+      "color": "#ef4444",
+      "levels": ["fruits-l1"]
+    },
+    {
+      "id": "animals",
+      "name": "動物",
+      "icon": "🐕",
+      "description": "常見動物名稱",
+      "color": "#22c55e",
+      "levels": ["animals-l1"]
+    },
+    {
+      "id": "daily",
+      "name": "日常用字",
+      "icon": "🏠",
+      "description": "日常生活用字",
+      "color": "#3b82f6",
+      "levels": ["daily-l1"]
+    }
+  ],
+  "questions": {
+    "cangjie-l1": [
+      { "id": "cj-l1-q1", "text": "日", "code": "A", "type": "char", "difficulty": 1, "hint": "日字部首" },
+      { "id": "cj-l1-q2", "text": "月", "code": "B", "type": "char", "difficulty": 1, "hint": "月字部首" },
+      { "id": "cj-l1-q3", "text": "金", "code": "C", "type": "char", "difficulty": 1, "hint": "金字部首" },
+      { "id": "cj-l1-q4", "text": "木", "code": "D", "type": "char", "difficulty": 1, "hint": "木字部首" },
+      { "id": "cj-l1-q5", "text": "水", "code": "E", "type": "char", "difficulty": 1, "hint": "水字部首" },
+      { "id": "cj-l1-q6", "text": "火", "code": "F", "type": "char", "difficulty": 1, "hint": "火字部首" },
+      { "id": "cj-l1-q7", "text": "土", "code": "G", "type": "char", "difficulty": 1, "hint": "土字部首" },
+      { "id": "cj-l1-q8", "text": "竹", "code": "H", "type": "char", "difficulty": 1, "hint": "竹字部首" },
+      { "id": "cj-l1-q9", "text": "戈", "code": "I", "type": "char", "difficulty": 1, "hint": "戈字部首" },
+      { "id": "cj-l1-q10", "text": "十", "code": "J", "type": "char", "difficulty": 1, "hint": "十字部首" }
+    ],
+    "cangjie-l2": [
+      { "id": "cj-l2-q1", "text": "大", "code": "K", "type": "char", "difficulty": 2, "hint": "大字部首" },
+      { "id": "cj-l2-q2", "text": "中", "code": "L", "type": "char", "difficulty": 2, "hint": "中字部首" },
+      { "id": "cj-l2-q3", "text": "一", "code": "M", "type": "char", "difficulty": 2, "hint": "一字部首" },
+      { "id": "cj-l2-q4", "text": "弓", "code": "N", "type": "char", "difficulty": 2, "hint": "弓字部首" },
+      { "id": "cj-l2-q5", "text": "人", "code": "O", "type": "char", "difficulty": 2, "hint": "人字部首" },
+      { "id": "cj-l2-q6", "text": "心", "code": "P", "type": "char", "difficulty": 2, "hint": "心字部首" },
+      { "id": "cj-l2-q7", "text": "手", "code": "Q", "type": "char", "difficulty": 2, "hint": "手字部首" },
+      { "id": "cj-l2-q8", "text": "口", "code": "R", "type": "char", "difficulty": 2, "hint": "口字部首" },
+      { "id": "cj-l2-q9", "text": "尸", "code": "S", "type": "char", "difficulty": 2, "hint": "尸字部首" },
+      { "id": "cj-l2-q10", "text": "廿", "code": "T", "type": "char", "difficulty": 2, "hint": "廿字部首" }
+    ],
+    "cangjie-l3": [
+      { "id": "cj-l3-q1", "text": "山", "code": "U", "type": "char", "difficulty": 3, "hint": "山字部首" },
+      { "id": "cj-l3-q2", "text": "女", "code": "V", "type": "char", "difficulty": 3, "hint": "女字部首" },
+      { "id": "cj-l3-q3", "text": "田", "code": "W", "type": "char", "difficulty": 3, "hint": "田字部首" },
+      { "id": "cj-l3-q4", "text": "卜", "code": "Y", "type": "char", "difficulty": 3, "hint": "卜字部首" },
+      { "id": "cj-l3-q5", "text": "難", "code": "X", "type": "char", "difficulty": 3, "hint": "難字部首" },
+      { "id": "cj-l3-q6", "text": "時", "code": "AGDI", "type": "word", "difficulty": 3, "hint": "日土木戈" },
+      { "id": "cj-l3-q7", "text": "朋", "code": "BB", "type": "word", "difficulty": 3, "hint": "月月" },
+      { "id": "cj-l3-q8", "text": "林", "code": "DD", "type": "word", "difficulty": 3, "hint": "木木" },
+      { "id": "cj-l3-q9", "text": "字", "code": "JND", "type": "word", "difficulty": 3, "hint": "十弓木" },
+      { "id": "cj-l3-q10", "text": "王", "code": "MG", "type": "word", "difficulty": 3, "hint": "一土" }
+    ],
+    "fruits-l1": [
+      { "id": "fr-l1-q1", "text": "蘋果", "code": "BNLMMI", "type": "word", "difficulty": 2 },
+      { "id": "fr-l1-q2", "text": "香蕉", "code": "LKOW", "type": "word", "difficulty": 2 },
+      { "id": "fr-l1-q3", "text": "橙", "code": "MAJ", "type": "word", "difficulty": 2 },
+      { "id": "fr-l1-q4", "text": "西瓜", "code": "IHOJ", "type": "word", "difficulty": 2 },
+      { "id": "fr-l1-q5", "text": "葡萄", "code": "MWLMF", "type": "word", "difficulty": 3 },
+      { "id": "fr-l1-q6", "text": "柚子", "code": "PMBC", "type": "word", "difficulty": 3 },
+      { "id": "fr-l1-q7", "text": "荔枝", "code": "DWHQ", "type": "word", "difficulty": 3 },
+      { "id": "fr-l1-q8", "text": "檸檬", "code": "JTHQ", "type": "word", "difficulty": 3 },
+      { "id": "fr-l1-q9", "text": "菠蘿", "code": "ELMG", "type": "word", "difficulty": 2 },
+      { "id": "fr-l1-q10", "text": "草莓", "code": "ELHK", "type": "word", "difficulty": 2 }
+    ],
+    "animals-l1": [
+      { "id": "an-l1-q1", "text": "狗", "code": "HOK", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q2", "text": "貓", "code": "HNF", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q3", "text": "鳥", "code": "HAF", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q4", "text": "魚", "code": "NWF", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q5", "text": "馬", "code": "XHO", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q6", "text": "牛", "code": "QK", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q7", "text": "羊", "code": "UF", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q8", "text": "豬", "code": "QHG", "type": "word", "difficulty": 2 },
+      { "id": "an-l1-q9", "text": "蛇", "code": "NMI", "type": "word", "difficulty": 3 },
+      { "id": "an-l1-q10", "text": "龍", "code": "LPHF", "type": "word", "difficulty": 3 }
+    ],
+    "daily-l1": [
+      { "id": "dl-l1-q1", "text": "你好", "code": "ONFHVI", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q2", "text": "香港", "code": "ILKS", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q3", "text": "老師", "code": "JKSJ", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q4", "text": "學生", "code": "XND", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q5", "text": "學校", "code": "XOU", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q6", "text": "圖書館", "code": "BWKNR", "type": "word", "difficulty": 3 },
+      { "id": "dl-l1-q7", "text": "電腦", "code": "FKQU", "type": "word", "difficulty": 3 },
+      { "id": "dl-l1-q8", "text": "打字", "code": "DQLF", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q9", "text": "遊戲", "code": "KBUC", "type": "word", "difficulty": 2 },
+      { "id": "dl-l1-q10", "text": "學習", "code": "HNGNI", "type": "word", "difficulty": 3 }
+    ]
+  }
+}
