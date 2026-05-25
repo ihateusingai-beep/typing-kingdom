@@ -25,6 +25,28 @@
         }
     </script>
     <style>
+        /* CSS Variables - Theme */
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #4c1d95;
+            --primary-light: #c4b5fd;
+            --accent: #facc15;
+            --accent-dark: #eab308;
+            --success: #4ade80;
+            --danger: #f87171;
+            --purple-300: #c4b5fd;
+            --purple-400: #a78bfa;
+            --purple-500: #8b5cf6;
+            --purple-600: #7c3aed;
+            --purple-800: #4c1d95;
+            --purple-900: #2e1065;
+            --purple-950: #1e1b4b;
+            --orange-400: #fb923c;
+            --blue-400: #38bdf8;
+            --green-400: #4ade80;
+            --red-400: #f87171;
+        }
+        
         html, body { height: 100%; margin: 0; font-family: 'Noto Sans TC', sans-serif; }
         .perspective-road { transform: perspective(500px) rotateX(40deg); transform-origin: 50% 100%; }
         .typing-char { transition: all 0.2s ease; }
@@ -54,6 +76,18 @@
         .energy-bar-fill { transition: width 0.3s ease-out; }
         .mode-card:hover { transform: scale(1.02); }
         .mode-card { transition: transform 0.2s ease; }
+
+        /* Touch target for accessibility (44x44px min for special ed) */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+            padding: 10px 16px;
+        }
+        
+        /* Ensure input has proper touch target */
+        input[type="text"] {
+            min-height: 48px;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-b from-magic-950 to-magic-900 min-h-screen text-white overflow-hidden">
@@ -288,7 +322,7 @@
                 timed: false, infiniteHints: true, hasHints: true, comboEnabled: false, challenges: []
             },
             free: {
-                id: 'free', name: '自由練習', icon: '🎲', description: '自訂題目',
+                id: 'free', name: '自由練習', icon: '🎲', description: '自訂題目', comingSoon: true,
                 timed: false, customQuestions: true, hasHints: true, comboEnabled: false, challenges: []
             },
         };
@@ -485,6 +519,7 @@
                 const sessionSummary = ref(null);
                 const difficulty = ref(AdaptiveEngine.getCurrentDifficulty());
                 const showHint = ref(false);
+                const showCode = ref(true);
                 const feedback = ref(null);
                 const combo = ref(0);
                 const comboMilestone = ref(null);
@@ -493,10 +528,13 @@
                 const player = ref(ProgressTracker.init());
                 
                 // Vocab mode state
-                const vocabPhase = ref('input'); // 'memorize' | 'input'
+                const vocabPhase = ref('memorize'); // 'memorize' | 'input'
                 const vocabTimer = ref(0);
                 const vocabQuestion = ref(null);
-                const showCode = ref(true);
+                
+                let vocabTimerInterval = null;
+                
+                const showCode = ref(true); const vocabCountdown = ref(3); const vocabCountdown = ref(3);
                 
                 onMounted(() => {
                     EventBus.on(EVENTS.QUESTION_SHOW, (data) => {
@@ -518,6 +556,7 @@
                     
                     EventBus.on(EVENTS.LEVEL_COMPLETE, (data) => {
                         sessionSummary.value = data;
+                        updatePlayerStats();
                         state.value = 'LEVEL_COMPLETE';
                     });
                     
@@ -575,6 +614,21 @@
                     }
                 };
                 
+                
+            const updatePlayerStats = () => {
+                const summary = ProgressTracker.getSessionSummary();
+                player.value.stats.totalQuestions += summary.total;
+                player.value.stats.correctAnswers += summary.correct;
+                if (summary.maxStreak > player.value.stats.longestStreak) {
+                    player.value.stats.longestStreak = summary.maxStreak;
+                }
+                if (summary.wpm > player.value.stats.bestWPM) {
+                    player.value.stats.bestWPM = summary.wpm;
+                }
+                player.value.stats.gamesPlayed++;
+                ProgressTracker.savePlayer();
+            };
+            
                 const goToMenu = () => {
                     TypeEngine.stop();
                     state.value = 'MENU';
@@ -598,7 +652,7 @@
                 
                 return {
                     state, currentLevel, currentQuestion, questionIndex, questionTotal,
-                    userInput, inputRef, sessionSummary, difficulty, showHint, feedback,
+                    userInput, inputRef, sessionSummary, difficulty, showHint, showCode, feedback,
                     combo, comboMilestone, timeRemaining, selectedMode, player, LEVELS,
                     startLevel, submitAnswer, goToMenu, retryLevel, getGrade, getGradeColor,
                     selectMode, GAME_MODES,
@@ -615,13 +669,15 @@
                         </h1>
                         <p class="text-xl text-purple-300 mb-8">TypeQuest Kingdom</p>
                         <div class="flex flex-col gap-3">
-                            <button 
+                            <button
+                                aria-label="開始遊戲"
                                 @click="state = 'MODE_SELECT'"
                                 class="px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-xl text-xl font-bold transition-all transform hover:scale-105 animate-glow border-2 border-purple-400"
                             >
                                 🎮 開始遊戲
                             </button>
-                            <button 
+                            <button
+                                aria-label="設定"
                                 @click="state = 'SETTINGS'"
                                 class="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-lg transition-all"
                             >
@@ -640,16 +696,17 @@
                             <button
                                 v-for="mode in GAME_MODES"
                                 :key="mode.id"
+                                :aria-label="mode.name + ':' + mode.description"
                                 @click="selectMode(mode.id)"
                                 class="mode-card p-4 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 text-center"
                             >
                                 <div class="text-4xl mb-2">{{ mode.icon }}</div>
-                                <h3 class="font-bold text-lg">{{ mode.name }}</h3>
+                                <h3 class="font-bold text-lg">{{ mode.name }}<span v-if="mode.comingSoon" class="ml-1 text-xs bg-yellow-500 text-black px-1 rounded">新</span></h3>
                                 <p class="text-purple-300 text-xs mt-1">{{ mode.description }}</p>
                             </button>
                         </div>
                         <div class="mt-8 text-center">
-                            <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                            <button aria-label="返回主頁" @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
                                 ← 返回
                             </button>
                         </div>
@@ -669,6 +726,7 @@
                             <button
                                 v-for="level in LEVELS"
                                 :key="level.id"
+                                :aria-label="'開始' + level.name"
                                 @click="startLevel(level, selectedMode || 'foundation')"
                                 class="p-6 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-102 text-left group"
                             >
@@ -684,10 +742,10 @@
                         </div>
                         
                         <div class="mt-8 flex justify-center gap-4">
-                            <button @click="state = 'MODE_SELECT'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                            <button aria-label="返回模式選擇" @click="state = 'MODE_SELECT'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
                                 ← 換模式
                             </button>
-                            <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg">
+                            <button aria-label="返回主頁" @click="state = 'HOME'" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg">
                                 🏠 主頁
                             </button>
                         </div>
@@ -711,7 +769,7 @@
                         </div>
                         
                         <!-- 進度條 -->
-                        <div class="h-2 bg-magic-800 rounded-full overflow-hidden mb-4">
+                        <div class="h-2 bg-magic-800 rounded-full overflow-hidden mb-4" role="progressbar" :aria-valuenow="questionIndex" :aria-valuemin="0" :aria-valuemax="questionTotal" aria-label="答題進度">
                             <div 
                                 class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
                                 :class="{ 'progress-pulse': combo >= 10 }"
@@ -749,7 +807,7 @@
                             <div class="text-center mb-6">
                                 <div class="text-6xl font-bold mb-2 text-purple-300">{{ currentQuestion?.text }}</div>
                                 <div v-if="showHint || selectedMode === 'practice'" class="text-lg text-purple-400 mt-2">
-                                    💡 提示：{{ currentQuestion?.hint || currentQuestion?.code || '無' }}
+                                    💡 提示：{{ currentQuestion?.hint || '無' }}<br v-if="selectedMode === 'vocabulary'"><span v-if="selectedMode === 'vocabulary' && showCode" class="text-green-400 mt-2 block">答案：{{ currentQuestion?.code }}</span>
                                 </div>
                             </div>
                             
@@ -768,6 +826,7 @@
                                     v-model="userInput"
                                     @keyup.enter="submitAnswer"
                                     type="text"
+                                    aria-label="輸入倉頡碼"
                                     class="w-full px-6 py-4 text-2xl text-center bg-magic-950 border-2 border-purple-500 rounded-xl focus:border-purple-400 focus:outline-none uppercase"
                                     placeholder="輸入倉頡碼..."
                                     autocomplete="off"
@@ -783,16 +842,25 @@
                                 >
                                     {{ showHint ? '隱藏提示' : '💡提示' }}
                                 </button>
-                                <button @click="submitAnswer" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold text-lg">
+                                <button v-if="selectedMode === 'vocabulary'" 
+                                    @click="showCode = !showCode" 
+                                    class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg touch-target"
+                                    aria-label="顯示或隱藏答案">
+                                    {{ showCode ? '隱藏答案' : '顯示答案' }}
+                                </button>
+                                <button aria-label="確認答案" @click="submitAnswer" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold text-lg touch-target">
                                     確認 ✓
                                 </button>
-                                <button @click="goToMenu" class="py-3 px-4 bg-red-900/50 hover:bg-red-800/50 rounded-lg text-xl">
+                                <button aria-label="離開遊戲" @click="goToMenu" class="py-3 px-4 bg-red-900/50 hover:bg-red-800/50 rounded-lg text-xl touch-target">
                                     ✕
                                 </button>
                             </div>
                         </div>
                         
-                        <!-- 難度提示 -->
+                        <div v-if="currentQuestion" class="text-center text-purple-400 text-sm mt-2">
+                            WPM: {{ Math.round((ProgressTracker.session.correctCount / Math.max(1, (Date.now() - ProgressTracker.session.startTime) / 60000)) || 0) }}
+                        </div>
+<!-- 難度提示 -->
                         <div class="mt-4 text-center text-purple-400 text-sm">
                             難度：{{ difficulty.name }}級 | 
                             <span v-if="combo > 0" :class="combo >= 10 ? 'text-yellow-400 font-bold' : ''">
@@ -806,7 +874,7 @@
                     <div v-if="state === 'LEVEL_COMPLETE'" class="w-full max-w-md text-center animate-slideIn">
                         <div class="text-6xl mb-4">🎉</div>
                         <h2 class="text-3xl font-bold mb-2">
-                            {{ timeRemaining <= 0 && selectedMode === 'timeAttack' ? '時間到！' : '關卡完成！' }}
+                            {{ (timeRemaining <= 0 && selectedMode === 'timeAttack') || sessionSummary?.wpm ? '時間到！' : '關卡完成！' }}
                         </h2>
                         
                         <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30 mb-6">
@@ -822,16 +890,18 @@
                                 <div class="font-bold">{{ Math.round((sessionSummary?.accuracy || 0) * 100) }}%</div>
                                 <div class="text-purple-300">最高連擊</div>
                                 <div class="font-bold text-yellow-400">{{ sessionSummary?.maxStreak || 0 }}</div>
-                                <div v-if="sessionSummary?.wpm" class="text-purple-300">WPM</div>
-                                <div v-if="sessionSummary?.wpm" class="font-bold text-blue-400">{{ sessionSummary.wpm }}</div>
+                                <div class="text-purple-300">WPM</div>
+                                <div class="font-bold text-blue-400">{{ sessionSummary?.wpm || 0 }}</div>
+                                <div class="text-purple-300">最佳WPM</div>
+                                <div class="font-bold text-yellow-400">{{ player?.stats?.bestWPM || 0 }}</div>
                             </div>
                         </div>
                         
                         <div class="flex gap-4">
-                            <button @click="retryLevel" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold">
+                            <button aria-label="再玩一次" @click="retryLevel" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold touch-target">
                                 再玩一次
                             </button>
-                            <button @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                            <button aria-label="返回選單" @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
                                 返回選單
                             </button>
                         </div>
@@ -846,6 +916,7 @@
                                 <div class="flex justify-between items-center">
                                     <span>難度等級</span>
                                     <select 
+                                        aria-label="選擇難度等級"
                                         v-model="difficulty.level"
                                         @change="AdaptiveEngine.setLevel(difficulty.level)"
                                         class="px-4 py-2 bg-magic-950 rounded-lg border border-purple-500"
