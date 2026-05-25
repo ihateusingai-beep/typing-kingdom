@@ -363,7 +363,7 @@
                     </div>
                     <div className="keyboard-grid">
                         {keys.map(k => (
-                            <button key={k} onClick={() => onKey(k)} disabled={disabled}
+                            <button aria-label={"鍵 k"} onPointerDown={() => onKey("k")}  key={k}  disabled={disabled}
                                 className={`aspect-square rounded flex flex-col items-center justify-center text-xs transition-all active:scale-90
                                     ${disabled ? 'bg-zinc-900 border border-zinc-800 opacity-40 cursor-not-allowed' :
                                       'bg-zinc-900/80 border border-zinc-700/50 hover:bg-zinc-800 hover:border-zinc-600 active:bg-zinc-700'}`}>
@@ -387,7 +387,7 @@
             return (
                 <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto p-4">
                     {options.map((o, i) => (
-                        <button key={i} onClick={() => onSelect(o.val)} disabled={disabled}
+                        <button aria-label={`選項 ${o.val}`} onPointerDown={() => onSelect(o.val)} disabled={disabled}
                             className={`py-6 rounded-xl text-xl font-bold border-2 transition-all active:scale-95
                                 ${disabled ? 'bg-zinc-900 border-zinc-800 opacity-50 cursor-not-allowed' :
                                   `border-2 hover:scale-105`}`}
@@ -419,6 +419,7 @@
             const [userInput, setUserInput] = useState([]);
             const [combatLog, setCombatLog] = useState('戰鬥開始！');
             const [anim, setAnim] = useState(null);
+            const [levelUpFlash, setLevelUpFlash] = useState(false);
             const [rewards, setRewards] = useState([]);
             const [showStats, setShowStats] = useState(false);
             const [sessionStats, setSessionStats] = useState({ correct:0, wrong:0, maxCombo:0 });
@@ -504,6 +505,7 @@
                 let newMaxExp = player.maxExp;
                 let leveledUp = false;
                 if (newExp >= player.maxExp) { newExp -= player.maxExp; newLevel++; newMaxExp = Math.floor(newMaxExp*1.2); leveledUp = true; }
+                if (leveledUp) { AudioEngine.powerUp(); setLevelUpFlash(true); setTimeout(() => setLevelUpFlash(false), 1200); }
                 setPlayer(p => ({...p, exp:newExp, level:newLevel, maxExp:newMaxExp, maxHp:leveledUp?p.maxHp+10:p.maxHp, atk:leveledUp?p.atk+2:p.atk, hp:leveledUp?p.maxHp:p.hp, floor:p.floor+1, coinsGained:p.coinsGained+coinGain, gold:p.gold+coinGain }));
                 const pool = RPG_ARTIFACTS.filter(a => a.unlockCost===0 || metaState.unlockedArtifacts.includes(a.id)).sort(()=>0.5-Math.random()).slice(0,5);
                 setRewards(pool);
@@ -528,6 +530,7 @@
 
             if (turn === 'lose') return (
                 <div className="absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center text-white p-8 z-50">
+                    {levelUpFlash && <motion.div initial={{opacity:0}} animate={{opacity:[0,0.6,0]}} transition={{duration:1}} className="absolute inset-0 bg-yellow-500/10 pointer-events-none z-40"/>}
                     <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" />
                     <h2 className="text-4xl font-black mb-2 text-red-500 font-display">挑戰結束</h2>
                     <p className="text-xl mb-4 text-zinc-400">止步於第 {player.floor} 層</p>
@@ -536,12 +539,13 @@
                         <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800"><div className="text-2xl font-black text-green-400">{sessionStats.correct}</div><div className="text-xs text-zinc-500">答對</div></div>
                         <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800"><div className="text-2xl font-black text-purple-400">{sessionStats.maxCombo}</div><div className="text-xs text-zinc-500">最高連擊</div></div>
                     </div>
-                    <button onClick={()=>onGameEnd(player.coinsGained, sessionStats)} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold border border-zinc-700">返回聖殿</button>
+                    <button aria-label="返回聖殿" onPointerDown={()=>onGameEnd(player.coinsGained, sessionStats)} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold border border-zinc-700 min-h-[44px]">返回聖殿</button>
                 </div>
             );
 
             if (turn === 'reward') return (
                 <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-xl flex flex-col items-center justify-center text-white p-4 z-50">
+                    {levelUpFlash && <motion.div initial={{opacity:0}} animate={{opacity:[0,0.8,0]}} transition={{duration:1.2}} className="absolute inset-0 bg-yellow-500/20 pointer-events-none z-40"/>}
                     <motion.h2 initial={{y:-20, opacity:0}} animate={{y:0, opacity:1}} className="text-3xl font-black text-yellow-400 mb-8 font-display animate-pulse">戰利品選擇</motion.h2>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl w-full">
                         {rewards.map((r,i) => (
@@ -575,7 +579,7 @@
                             <div className="flex items-center gap-1 text-gold-400 font-bold bg-zinc-900/80 px-3 py-1.5 rounded-full text-sm border border-gold-500/20">
                                 <LucideIcon icon={Coins} size={14}/> <span>{player.gold}</span>
                             </div>
-                            <button onClick={goHome} className="p-2 bg-red-900/30 text-red-400/70 rounded-lg hover:bg-red-900/50 transition-colors border border-red-900/30"><LucideIcon icon={X} size={18}/></button>
+                            <button aria-label="關閉" onPointerDown={goHome} className="p-3 bg-red-900/30 text-red-400/70 rounded-lg hover:bg-red-900/50 transition-colors border border-red-900/30 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={X} size={18}/></button>
                         </div>
                     </div>
 
@@ -591,9 +595,7 @@
                         {/* Skills bar */}
                         <div className="absolute top-4 flex gap-3 z-20">
                             {player.skills.map((s,i) => (
-                                <button key={s.id} onClick={() => {
-                                    AudioEngine.skill();
-                                    if(s.id==='heal'){const v=Math.floor(player.maxHp*0.3); setPlayer(p=>({...p,hp:Math.min(p.maxHp,p.hp+v)})); setCombatLog(`回覆 ${v} HP`);}
+                                <button aria-label={`技能: ${s.id}`} onPointerDown={() => { AudioEngine.skill(); if(s.id==='heal'){const v=Math.floor(player.maxHp*0.3); setPlayer(p=>({...p,hp:Math.min(p.maxHp,p.hp+v)})); setCombatLog(`回覆 ${v} HP`);}
                                     else if(s.id==='burst'){setPlayer(p=>({...p,bonusDmg:p.atk*2})); setCombatLog('下次傷害 200%！');}
                                     setPlayer(p=>({...p,skills:p.skills.map((sk,j)=>j===i?{...sk,currentCd:5}:sk)}));
                                 }} disabled={s.currentCd>0}
@@ -606,7 +608,7 @@
                         </div>
 
                         {/* Monster */}
-                        <motion.div animate={{y:[0,-10,0]}} transition={{repeat:Infinity,duration:3}} className="relative z-10 mt-8 mb-4">
+                        <motion.div animate={{y:[0,-10,0]}} transition={{repeat:Infinity,duration:3}} className="relative z-10 mt-8 mb-4" style={{x: feedback === 'correct' ? [0, 8, -8, 4, 0] : 0}}>
                             <div className="w-40 h-40 rounded-full border-4 flex items-center justify-center shadow-2xl relative"
                                 style={{borderColor:'#8b5cf6', boxShadow:'0 0 40px rgba(139,92,246,0.3), inset 0 0 30px rgba(139,92,246,0.1)', background:'radial-gradient(circle, #1e1b4b 0%, #0f0f12 100%)'}}>
                                 <LucideIcon icon={monster.type.icon} size={72} className={monster.type.color}/>
@@ -623,10 +625,10 @@
                         {/* Combat log */}
                         <motion.div key={combatLog} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="text-center font-bold text-lg text-purple-200/80 mb-2 h-8">{combatLog}</motion.div>
 
-                        {/* Combo display */}
+                        {/* Combo display with milestone milestones */}
                         {player.combo >= 5 && (
-                            <motion.div initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} className="text-2xl font-black text-yellow-400 mb-2 font-display">
-                                {player.combo} COMBO
+                            <motion.div initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} className="text-2xl font-black mb-2 font-display" style={{color: player.combo >= 20 ? '#f43f5e' : player.combo >= 15 ? '#f97316' : player.combo >= 10 ? '#eab308' : '#facc15'}}>
+                                {player.combo >= 20 ? '💥 火力全開！' : player.combo >= 15 ? '🔥 熱辣辣！' : player.combo >= 10 ? '⚡ 強烈連擊！' : '⚡'} {player.combo} COMBO
                             </motion.div>
                         )}
                     </div>
@@ -689,7 +691,7 @@
                 <div className="h-full w-full flex flex-col bg-zinc-950 overflow-hidden relative">
                     <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-20 pointer-events-none">
                         <div className="flex items-center space-x-3 pointer-events-auto">
-                            <button onClick={goHome} className="bg-zinc-800/80 backdrop-blur p-2 rounded-xl border border-zinc-700/50 shadow-lg"><LucideIcon icon={ArrowLeft} size={20}/></button>
+                            <button aria-label="返回" onPointerDown={goHome} className="bg-zinc-800/80 backdrop-blur p-3 rounded-xl border border-zinc-700/50 shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft} size={20}/></button>
                             <div className="flex items-center space-x-2 bg-zinc-800/80 backdrop-blur px-3 py-1.5 rounded-xl border border-zinc-700/50 shadow-lg"><LucideIcon icon={Timer} className="text-blue-400" size={18}/><span className="font-black text-white font-mono">{Math.floor(time/60).toString().padStart(2,'0')}:{(time%60).toString().padStart(2,'0')}</span></div>
                             <div className="flex items-center space-x-2 bg-zinc-800/80 backdrop-blur px-3 py-1.5 rounded-xl border border-zinc-700/50 shadow-lg"><LucideIcon icon={Star} className="text-yellow-400" size={18}/><span className="font-black text-yellow-400">{score}</span></div>
                         </div>
@@ -768,7 +770,7 @@
                 <div className="h-full w-full flex flex-col bg-zinc-950 text-white relative">
                     <div className="p-4 bg-amber-950/30 border-b border-amber-800/30 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <button onClick={goHome} className="bg-amber-900/30 p-2 rounded-xl hover:bg-amber-900/50 transition-colors border border-amber-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                            <button aria-label="返回" onPointerDown={goHome} className="bg-amber-900/30 p-3 rounded-xl hover:bg-amber-900/50 transition-colors border border-amber-700/30 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                             <div>
                                 <h2 className="font-bold text-lg text-amber-200">自學練習</h2>
                                 <p className="text-xs text-amber-400/60">第 {qIndex+1} 題 | 準確率 {accuracy}%</p>
@@ -848,14 +850,14 @@
                             <div key={x.l} className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 text-center"><div className={`text-3xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500 mt-1">{x.l}</div></div>
                         )}
                     </div>
-                    <button onClick={goHome} className="bg-orange-600 hover:bg-orange-500 px-8 py-3 rounded-full font-bold border border-orange-500/50">返回</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-orange-600 hover:bg-orange-500 px-8 py-3 rounded-full font-bold border border-orange-500/50 min-h-[44px]">返回</button>
                 </div>
             );
 
             return (
                 <div className="h-full w-full flex flex-col bg-zinc-950 text-white relative">
                     <div className="flex justify-between items-center p-4 border-b border-zinc-800/50">
-                        <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 transition-colors border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                        <button aria-label="返回" onPointerDown={goHome} className="bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 transition-colors border border-zinc-700/50 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                         <div className="flex items-center gap-4">
                             <div className={`text-3xl font-black font-mono ${timeLeft<=10?'text-red-400 animate-pulse':'text-orange-400'}`}>{timeLeft}s</div>
                             <div className="text-xl font-bold text-yellow-400"><LucideIcon icon={Star}/> {score}</div>
@@ -866,7 +868,7 @@
                             <LucideIcon icon={Gauge} size={80} className="text-orange-400 mb-4" />
                             <h2 className="text-3xl font-black mb-2 font-display">速打模式</h2>
                             <p className="text-zinc-500 mb-6">60秒內挑戰最高分數！</p>
-                            <button onClick={() => setGameState('playing')} className="bg-orange-600 hover:bg-orange-500 px-10 py-4 rounded-2xl font-bold text-xl border border-orange-500/30 animate-pulse shadow-lg shadow-orange-900/30">開始挑戰</button>
+                            <button aria-label="開始遊戲" onPointerDown={() => setGameState('playing')} className="bg-orange-600 hover:bg-orange-500 px-10 py-4 rounded-2xl font-bold text-xl border border-orange-500/30 animate-pulse shadow-lg挑戰</button>
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-6">
@@ -931,7 +933,7 @@
                     <div className="grid grid-cols-3 gap-4 mb-8">
                         {[{v:score,l:'得分',c:'text-yellow-400'},{v:stats.correct,l:'答對',c:'text-green-400'},{v:stats.wrong,l:'答錯',c:'text-red-400'}].map(x => <div key={x.l} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500">{x.l}</div></div>)}
                     </div>
-                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold border border-emerald-600/50">返回</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold border border-emerald-600/50 min-h-[44px]">返回</button>
                 </div>
             );
 
@@ -939,8 +941,8 @@
                 <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
                     <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" />
                     <h2 className="text-4xl font-black mb-2 text-red-400 font-display">失敗</h2>
-                    <button onClick={() => { setQIndex(0); setLives(3); setScore(0); setStreak(0); setStats({correct:0,wrong:0}); setGameState('playing'); }} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold mr-4 border border-zinc-700">重試</button>
-                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold mt-2 border border-emerald-600/50">返回</button>
+                    <button aria-label="重試遊戲" onPointerDown={() => { setQIndex(0); setLives(3); setScore(0); setStreak(0); setStats({correct:0,wrong:0}); setGameState('playing'); }} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full min-h-[44px] font-bold mr-4 border border-zinc-700">重試</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold mt-2 border border-emerald-600/50 min-h-[44px]">返回</button>
                 </div>
             );
 
@@ -948,7 +950,7 @@
                 <div className="h-full w-full flex flex-col bg-zinc-950 text-white">
                     <div className="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-emerald-950/20">
                         <div className="flex items-center gap-3">
-                            <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                            <button aria-label="返回" onPointerDown={goHome} className="bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 border border-zinc-700/50 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                             <span className="font-bold text-emerald-200">單字闖關</span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -1010,7 +1012,7 @@
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                             {[{v:score,l:'總分',c:'text-yellow-400'},{v:stats.correct,l:'答對',c:'text-green-400'},{v:stats.wrong,l:'答錯',c:'text-red-400'},{v:accuracy,l:'準確率',c:'text-cyan-400'}].map(x => <div key={x.l} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500">{x.l}</div></div>)}
                         </div>
-                        <button onClick={goHome} className="bg-red-700 hover:bg-red-600 px-8 py-3 rounded-full font-bold border border-red-600/50">返回</button>
+                        <button aria-label="返回" onPointerDown={goHome} className="bg-red-700 hover:bg-red-600 px-8 py-3 rounded-full font-bold border border-red-600/50 min-h-[44px]">返回</button>
                     </div>
                 );
             }
@@ -1018,7 +1020,7 @@
             return (
                 <div className="h-full w-full flex flex-col bg-zinc-950 text-white">
                     <div className="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-red-950/20">
-                        <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                        <button aria-label="返回" onPointerDown={goHome} className="bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 border border-zinc-700/50 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                         <div className={`text-2xl font-black font-mono ${timeLeft<=30?'text-red-400 animate-pulse':'text-red-400/80'}`}>{Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}</div>
                         <div className="text-xl font-bold text-yellow-400"><LucideIcon icon={Star}/> {score}</div>
                     </div>
@@ -1027,7 +1029,7 @@
                             <LucideIcon icon={Timer} size={80} className="text-red-400 mb-4" />
                             <h2 className="text-3xl font-black mb-2 font-display">限時挑戰</h2>
                             <p className="text-zinc-500 mb-6">3分鐘內盡量答對更多題目</p>
-                            <button onClick={() => setGameState('playing')} className="bg-red-600 hover:bg-red-500 px-10 py-4 rounded-2xl font-bold text-xl border border-red-500/30 animate-pulse shadow-lg shadow-red-900/30">開始挑戰</button>
+                            <button aria-label="開始挑戰" onPointerDown={() => setGameState('playing')} className="bg-red-600 hover:bg-red-500 px-10 py-4 rounded-2xl font-bold text-xl border border-red-500/30 animate-pulse shadow-lg shadow-red-900/30 min-h-[44px]">開始挑戰</button>
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-6">
@@ -1072,7 +1074,7 @@
                 <div className="h-full w-full flex flex-col bg-indigo-950 text-white">
                     <div className="p-4 border-b border-indigo-800/30 flex justify-between items-center bg-indigo-900/20">
                         <div className="flex items-center gap-3">
-                            <button onClick={goHome} className="bg-indigo-900/30 p-2 rounded-xl hover:bg-indigo-900/50 border border-indigo-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                            <button aria-label="返回" onPointerDown={goHome} className="bg-indigo-900/30 p-3 rounded-xl hover:bg-indigo-900/50 border border-indigo-700/30 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                             <span className="font-bold text-indigo-200">聽打模式</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
@@ -1082,11 +1084,11 @@
                         </div>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center p-8">
-                        <button onClick={() => speak(currentQ?.char)} className="mb-8 bg-indigo-800/60 hover:bg-indigo-700/60 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 border border-indigo-600/40 transition-colors">
+                        <button aria-label="朗讀題目" onPointerDown={() => speak(currentQ?.char)} className="mb-8 bg-indigo-800/60 hover:bg-indigo-700/60 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 border border-indigo-600/40 min-h-[44px] transition-colors">
                             <LucideIcon icon={Headphones}/> 再聽一次
                         </button>
                         <div className="text-6xl font-serif font-black mb-6 text-indigo-200/30 blur-sm select-none">{currentQ?.char}</div>
-                        {!showHint && <button onClick={() => setShowHint(true)} className="mb-3 text-indigo-300/50 text-sm hover:text-indigo-200 transition-colors">顯示提示</button>}
+                        {!showHint && <button aria-label="顯示提示" onPointerDown={() => setShowHint(true)} className="mb-3 text-indigo-300/50 text-sm hover:text-indigo-200 transition-colors min-h-[44px]">顯示提示</button>}
                         {showHint && <div className="text-center text-indigo-200/50 mb-3 text-sm">提示：{currentQ?.hint}</div>}
                         <div className="text-center text-indigo-200/30 mb-4 text-xs">全碼長度：{currentQ?.code?.length} 碼</div>
                         <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-indigo-500/40 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-indigo-300">{KEYBOARD_MAP[k]}</div>)}</div>
@@ -1153,7 +1155,7 @@
                     <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6 animate-bounce" />
                     <h2 className="text-4xl font-black mb-2 text-green-400 font-display">勝利！</h2>
                     <div className="flex gap-4 mb-8">{[{v:sessionStats.correct,l:'答對',c:'text-green-400'},{v:sessionStats.wrong,l:'答錯',c:'text-red-400'}].map(x => <div key={x.l} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500">{x.l}</div></div>)}</div>
-                    <button onClick={goHome} className="bg-rose-700 hover:bg-rose-600 px-8 py-3 rounded-full font-bold border border-rose-600/50">返回</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-rose-700 hover:bg-rose-600 px-8 py-3 rounded-full font-bold border border-rose-600/50 min-h-[44px]">返回</button>
                 </div>
             );
 
@@ -1161,14 +1163,14 @@
                 <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
                     <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" />
                     <h2 className="text-4xl font-black mb-2 text-red-400 font-display">失敗</h2>
-                    <button onClick={goHome} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold border border-zinc-700">返回</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold border border-zinc-700 min-h-[44px]">返回</button>
                 </div>
             );
 
             return (
                 <div className="h-full w-full flex flex-col bg-zinc-950 text-white">
                     <div className="p-3 border-b border-zinc-800/50 flex justify-between items-center bg-rose-950/20">
-                        <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                        <button aria-label="返回" onPointerDown={goHome} className="bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 border border-zinc-700/50 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                         <div className="text-sm font-bold text-rose-300">對戰模式</div>
                         <div/>
                     </div>
@@ -1233,14 +1235,14 @@
                     <h2 className="text-3xl font-black mb-2 text-amber-200 font-display">故事完結</h2>
                     <p className="text-amber-200/50 mb-6 italic">"勇敢的心，永不退縮。"</p>
                     <div className="flex gap-4 mb-8">{[{v:stats.correct,l:'正確',c:'text-green-400'},{v:stats.wrong,l:'錯誤',c:'text-red-400'}].map(x => <div key={x.l} className="bg-amber-900/40 p-4 rounded-xl border border-amber-700/30 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-amber-200/50">{x.l}</div></div>)}</div>
-                    <button onClick={goHome} className="bg-amber-700 hover:bg-amber-600 px-8 py-3 rounded-full font-bold border border-amber-600/50">返回</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-amber-700 hover:bg-amber-600 px-8 py-3 rounded-full font-bold border border-amber-600/50 min-h-[44px]">返回</button>
                 </div>
             );
 
             return (
                 <div className="h-full w-full flex flex-col bg-gradient-to-b from-amber-900 to-amber-950 text-white">
                     <div className="p-4 border-b border-amber-800/30 flex justify-between items-center bg-amber-900/20">
-                        <button onClick={goHome} className="bg-amber-900/30 p-2 rounded-xl hover:bg-amber-900/50 border border-amber-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                        <button aria-label="返回" onPointerDown={goHome} className="bg-amber-900/30 p-3 rounded-xl hover:bg-amber-900/50 border border-amber-700/30 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                         <span className="font-bold text-amber-200">故事模式</span>
                         <span className="text-amber-400 text-sm">{idx+1}/{STORY.length}</span>
                     </div>
@@ -1292,14 +1294,14 @@
                     <LucideIcon icon={Book} size={80} className="text-emerald-400 mb-6 animate-bounce" />
                     <h2 className="text-3xl font-black mb-2 text-emerald-200 font-display">文章完成！</h2>
                     <div className="flex gap-4 mb-8">{[{v:stats.correct,l:'正確',c:'text-green-400'},{v:stats.wrong,l:'錯誤',c:'text-red-400'}].map(x => <div key={x.l} className="bg-emerald-900/40 p-4 rounded-xl border border-emerald-700/30 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-emerald-200/50">{x.l}</div></div>)}</div>
-                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold border border-emerald-600/50">返回</button>
+                    <button aria-label="返回" onPointerDown={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold border border-emerald-600/50 min-h-[44px]">返回</button>
                 </div>
             );
 
             return (
                 <div className="h-full w-full flex flex-col bg-gradient-to-b from-emerald-900 to-emerald-950 text-white">
                     <div className="p-4 border-b border-emerald-800/30 flex justify-between items-center bg-emerald-900/20">
-                        <button onClick={goHome} className="bg-emerald-900/30 p-2 rounded-xl hover:bg-emerald-900/50 border border-emerald-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                        <button aria-label="返回" onPointerDown={goHome} className="bg-emerald-900/30 p-3 rounded-xl hover:bg-emerald-900/50 border border-emerald-700/30 min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                         <span className="font-bold text-emerald-200">文章模式</span>
                         <span className="text-emerald-400 text-sm">{idx+1}/{TOTAL}</span>
                     </div>
@@ -1382,13 +1384,12 @@
                         <p className="text-zinc-500 mb-8 text-sm tracking-widest">TYPEQUEST KINGDOM V55</p>
                         <input className="w-full p-4 bg-zinc-800/80 border border-zinc-600/50 rounded-2xl text-center text-lg mb-6 text-white placeholder-zinc-600 focus:border-purple-500 outline-none transition-colors glass"
                             placeholder="召喚師之名" value={userName} onChange={e=>setUserName(e.target.value)}/>
-                        <button disabled={!userName} onClick={()=>{AudioEngine.click();setView('mode_select');}}
+                        <button aria-label="開始遊戲" disabled={!userName} onPointerDown={()=>{AudioEngine.click();setView(\'mode_select\');}}
                             className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg shadow-purple-900/30 flex items-center justify-center gap-3 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             style={{background:'linear-gradient(135deg, #7c3aed, #5b21b6)'}}>
                             <LucideIcon icon={Play}/> 進入王國
                         </button>
-                        <button onClick={handleExportSave} className="text-zinc-600 hover:text-zinc-400 text-xs flex items-center gap-1 mx-auto mt-4 transition-colors">
-                            <LucideIcon icon={Download} size={12}/> 備份存檔
+                        <button aria-label="匯出存檔" onPointerDown={handleExportSave} className="text-zinc-600 hover:text-zinc-400 text-xs flex items-center gap-1 mx-auto mt-4 transition-colors min-h-[44px]"><LucideIcon icon={Download} size={12}/> 備份存檔
                         </button>
                     </motion.div>
                 </div>
@@ -1401,7 +1402,7 @@
                 return (
                     <div className="h-full bg-zinc-950 p-6 overflow-y-auto">
                         <div className="flex items-center gap-4 mb-8 max-w-4xl mx-auto">
-                            <button onClick={()=>setView('home')} className="bg-zinc-900 p-3 rounded-2xl border border-zinc-800 hover:bg-zinc-800 transition-colors shadow-lg"><LucideIcon icon={ArrowLeft}/></button>
+                            <button aria-label="返回" onPointerDown={()=>setView('home')} className="bg-zinc-900 p-3 rounded-2xl border border-zinc-800 hover:bg-zinc-800 transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                             <h2 className="text-2xl font-black text-white font-display flex items-center gap-2"><LucideIcon icon={LayoutDashboard} className="text-blue-400"/> 學習儀表板</h2>
                         </div>
                         <div className="grid grid-cols-2 gap-5 max-w-4xl mx-auto">
@@ -1440,14 +1441,13 @@
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={()=>setView('dashboard')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-blue-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors">
+                                <button aria-label="數據面板" onPointerDown={()=>setView('dashboard')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-blue-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={BarChart3} size={16}/> 儀表板
                                 </button>
-                                <button onClick={()=>setView('meta_shop')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-gold-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors">
+                                <button aria-label="技能商店" onPointerDown={()=>setView('meta_shop')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-gold-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={ShoppingBag} size={16}/> 知識聖殿
                                 </button>
-                                <button onClick={()=>setView('home')} className="bg-zinc-800/80 hover:bg-zinc-700 p-2 rounded-xl border border-zinc-700/50 transition-colors">
-                                    <LucideIcon icon={Home} size={18}/>
+                                <button aria-label="首頁" onPointerDown={()=>setView('home')} className="bg-zinc-800/80 hover:bg-zinc-700 p-3 rounded-xl border border-zinc-700/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={Home} size={18}/>
                                 </button>
                             </div>
                         </div>
@@ -1503,20 +1503,20 @@
                                     <p className="text-zinc-400 text-sm mt-1">{currentMode.tagline}</p>
                                 </div>
                             </div>
-                            <button onClick={goBack} className="absolute top-4 left-4 bg-zinc-900/80 backdrop-blur p-2 rounded-xl border border-zinc-700/50 hover:bg-zinc-800 transition-colors z-20">
+                            <button aria-label="返回" onPointerDown={goBack} className="absolute top-4 left-4 bg-zinc-900/80 backdrop-blur p-3 rounded-xl border border-zinc-700/50 hover:bg-zinc-800 transition-colors z-20 min-w-[44px] min-h-[44px] flex items-center justify-center">
                                 <LucideIcon icon={ArrowLeft}/>
                             </button>
                         </div>
 
                         <div className="p-6 max-w-4xl mx-auto">
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                <button onClick={()=>{setConfig({...config,chapter:null});setView('game');}}
+                                <button aria-label="取消選擇" onPointerDown={()=>{setConfig({...config,chapter:null});setView(\'game\');}}
                                     className="col-span-full mb-2 p-4 bg-gradient-to-r from-purple-900/40 to-purple-800/20 border-2 border-purple-500/40 rounded-2xl hover:border-purple-400 transition-all flex flex-col items-center gap-1">
                                     <span className="text-lg font-black text-purple-300">🌐 隨機挑戰</span>
                                     <span className="text-xs text-zinc-500">所有題目隨機</span>
                                 </button>
                                 {CHAPTERS.map(ch => (
-                                    <button key={ch.code} onClick={()=>{setConfig({...config,chapter:ch.code});setView('game');}}
+                                    <button aria-label={`選擇章節 ${ch.code}`} onPointerDown={()=>{setConfig({...config,chapter:ch.code});setView(\'game\');}}
                                         className="p-3 bg-zinc-900/80 rounded-2xl border border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-800/80 transition-all flex flex-col items-center gap-1 glass">
                                         <div className="text-2xl font-black text-zinc-600">{ch.code}</div>
                                         <div className="text-sm font-serif font-bold" style={{color:currentMode.accentColor}}>{ch.name}</div>
@@ -1567,7 +1567,7 @@
                     <div className="h-full bg-zinc-950 text-white overflow-y-auto">
                         <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-800/50 px-6 py-4 flex justify-between items-center">
                             <div className="flex items-center gap-4">
-                                <button onClick={()=>setView('mode_select')} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50 transition-colors"><LucideIcon icon={ArrowLeft}/></button>
+                                <button aria-label="返回" onPointerDown={()=>setView('mode_select')} className="bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 border border-zinc-700/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                                 <h2 className="text-2xl font-black text-purple-300 font-display flex items-center gap-2"><LucideIcon icon={GraduationCap}/> 知識聖殿</h2>
                             </div>
                             <div className="flex items-center gap-2 bg-zinc-900 px-4 py-2 rounded-full border border-gold-500/30">
@@ -1589,7 +1589,7 @@
                                             <div><div className="font-bold">{cfg.name}</div><div className="text-xs text-zinc-500">Lv.{lv} → Lv.{lv+1}</div></div>
                                         </div>
                                         <p className="text-sm text-zinc-400 mb-3">{cfg.desc}</p>
-                                        <button onClick={()=>buyUpgrade(key)} disabled={!can}
+                                        <button aria-label="購買升級" onPointerDown={()=>buyUpgrade(key)} disabled={!can}
                                             className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${can?'bg-gradient-to-r from-yellow-600 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-400':'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
                                             <LucideIcon icon={Coins} size={14}/> {cost}
                                         </button>
@@ -1607,7 +1607,7 @@
                                         <div className={`p-3 rounded-full mb-2 ${skill.color}`} style={{opacity:isUn?1:0.5}}><LucideIcon icon={skill.icon} size={24} className={isUn?'text-white':'text-zinc-600'}/></div>
                                         <h4 className={`font-bold text-sm ${isUn?'text-white':'text-zinc-600'}`}>{skill.name}</h4>
                                         {isUn?<div className="text-green-400 text-xs font-bold flex items-center mt-2"><LucideIcon icon={CheckCircle} size={12}/> 已學習</div>:
-                                            <button onClick={()=>unlockSkill(skill.id,skill.cost)} disabled={!can}
+                                            <button aria-label="解鎖技能" onPointerDown={()=>unlockSkill(skill.id,skill.cost)} disabled={!can}
                                                 className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center ${can?'bg-gradient-to-r from-yellow-600 to-yellow-500 text-black':'bg-zinc-800 text-zinc-600'}`}>
                                                 <LucideIcon icon={Unlock} size={10}/> {skill.cost}
                                             </button>}
@@ -1626,7 +1626,7 @@
                                         <h4 className={`font-bold text-sm ${isUn?'text-white':'text-zinc-600'}`}>{art.name}</h4>
                                         <p className="text-xs text-zinc-500 mb-2">{art.desc}</p>
                                         {isUn?<div className="text-green-400 text-xs font-bold flex items-center"><LucideIcon icon={CheckCircle} size={12}/> 已解鎖</div>:
-                                            <button onClick={()=>unlockArtifact(art.id,art.unlockCost)} disabled={!can}
+                                            <button aria-label="解鎖神器" onPointerDown={()=>unlockArtifact(art.id,art.unlockCost)} disabled={!can}
                                                 className={`mt-1 px-3 py-1.5 rounded-lg text-xs font-bold flex items ${can?'bg-gradient-to-r from-yellow-600 to-yellow-500 text-black':'bg-zinc-800 text-zinc-600'}`}>
                                                 <LucideIcon icon={Unlock} size={10}/> {art.unlockCost}
                                             </button>}
