@@ -294,7 +294,7 @@
         };
         
         // =============================================
-        // 10種遊戲模式
+        // 10種遊戲模式定義
         // =============================================
         const GAME_MODES = {
             foundation: {
@@ -321,11 +321,316 @@
                 id: 'practice', name: '練習模式', icon: '📝', description: '無壓力學習',
                 timed: false, infiniteHints: true, hasHints: true, comboEnabled: false, challenges: []
             },
+            boss: {
+                id: 'boss', name: 'BOSS 戰', icon: '👹', description: '多階段史詩戰鬥',
+                timed: false, hasHints: false, comboEnabled: true, isBossMode: true, challenges: []
+            },
             free: {
                 id: 'free', name: '自由練習', icon: '🎲', description: '自訂題目', comingSoon: true,
                 timed: false, customQuestions: true, hasHints: true, comboEnabled: false, challenges: []
             },
         };
+
+        // =============================================
+        // GameModeManager - 統一管理 10 種遊戲模式切換
+        // =============================================
+        const GameModeManager = {
+            currentMode: null,
+            modeState: {},
+            
+            // 初始化指定模式
+            initMode(modeId, level, config = {}) {
+                const modeDef = GAME_MODES[modeId];
+                if (!modeDef) {
+                    console.error(`[GameModeManager] 未知模式: ${modeId}`);
+                    return false;
+                }
+                
+                this.currentMode = modeId;
+                this.modeState = {
+                    phase: 'playing',
+                    correctCount: 0,
+                    wrongCount: 0,
+                    startTime: Date.now(),
+                    streak: 0,
+                    maxStreak: 0,
+                };
+                
+                // 觸發模式切換事件
+                EventBus.emit(EVENTS.MODE_CHANGE, { 
+                    mode: modeId, 
+                    modeName: modeDef.name,
+                    config: modeDef 
+                });
+                
+                return true;
+            },
+            
+            // 獲取當前模式定義
+            getCurrentModeDef() {
+                return this.currentMode ? GAME_MODES[this.currentMode] : null;
+            },
+            
+            // 獲取當前即時評級（答題過程中）
+            getLiveGrade() {
+                const total = this.modeState.correctCount + this.modeState.wrongCount;
+                if (total === 0) return { grade: '-', accuracy: 0, color: 'text-gray-400' };
+                
+                const accuracy = this.modeState.correctCount / total;
+                const grade = ScoreSystem.getGrade(accuracy);
+                const color = ScoreSystem.getGradeColor(grade);
+                
+                return { grade, accuracy, color };
+            },
+            
+            // 記錄答題結果
+            recordAnswer(correct) {
+                if (correct) {
+                    this.modeState.correctCount++;
+                    this.modeState.streak++;
+                    if (this.modeState.streak > this.modeState.maxStreak) {
+                        this.modeState.maxStreak = this.modeState.streak;
+                    }
+                } else {
+                    this.modeState.wrongCount++;
+                    this.modeState.streak = 0;
+                }
+                return this.getLiveGrade();
+            },
+            
+            // 獲取模式統計
+            getStats() {
+                const elapsed = (Date.now() - this.modeState.startTime) / 1000;
+                const total = this.modeState.correctCount + this.modeState.wrongCount;
+                return {
+                    correct: this.modeState.correctCount,
+                    wrong: this.modeState.wrongCount,
+                    total,
+                    accuracy: total > 0 ? this.modeState.correctCount / total : 0,
+                    maxStreak: this.modeState.maxStreak,
+                    elapsed,
+                    wpm: elapsed > 0 ? Math.round((this.modeState.correctCount / elapsed) * 60) : 0,
+                };
+            },
+            
+            // 結束當前模式
+            endMode() {
+                const summary = this.getStats();
+                this.currentMode = null;
+                this.modeState = {};
+                return summary;
+            },
+            
+            // 檢查是否為特殊模式
+            isSpecialMode(modeId) {
+                const specialModes = ['timeAttack', 'sprint', 'vocabulary', 'boss'];
+                return specialModes.includes(modeId);
+            },
+            
+            // 獲取模式列表（用於 UI 渲染）
+            getModeList() {
+                return Object.values(GAME_MODES);
+            },
+        };
+
+        // =============================================
+        // Boss Mode 系統 - 多階段 HP 血條戰鬥
+        // =============================================
+        const BossSystem = {
+            bossData: null,
+            currentPhase: 0,
+            maxPhases: 3,
+            bossHP: 100,
+            bossMaxHP: 100,
+            playerHP: 100,
+            playerMaxHP: 100,
+            enemiesDefeated: 0,
+            phaseThreshold: 10, // 每階段需要擊敗多少敵人
+            
+            // Boss 定義
+            BOSS_TEMPLATES: {
+                goblin: {
+                    name: '哥布林之王',
+                    icon: '👹',
+                    phases: [
+                        { name: '第一形態', hp: 100, difficulty: 1, color: 'green' },
+                        { name: '第二形態', hp: 150, difficulty: 2, color: 'yellow' },
+                        { name: '最終形態', hp: 200, difficulty: 3, color: 'red' },
+                    ],
+                    damagePerWrong: 10,
+                    damagePerCorrect: 20,
+                },
+                dragon: {
+                    name: '打字龍',
+                    icon: '🐉',
+                    phases: [
+                        { name: '噴火階段', hp: 120, difficulty: 2, color: 'orange' },
+                        { name: '旋風階段', hp: 180, difficulty: 3, color: 'purple' },
+                        { name: '毀滅階段', hp: 250, difficulty: 4, color: 'red' },
+                    ],
+                    damagePerWrong: 15,
+                    damagePerCorrect: 25,
+                },
+            },
+            
+            // 初始化 Boss 戰
+            initBoss(bossType = 'goblin') {
+                const template = this.BOSS_TEMPLATES[bossType] || this.BOSS_TEMPLATES.goblin;
+                this.bossData = { ...template };
+                this.currentPhase = 0;
+                this.bossMaxHP = template.phases[0].hp;
+                this.bossHP = this.bossMaxHP;
+                this.playerHP = 100;
+                this.playerMaxHP = 100;
+                this.enemiesDefeated = 0;
+                this.phaseThreshold = 10;
+                
+                EventBus.emit('boss:init', {
+                    boss: this.bossData,
+                    phase: this.currentPhase,
+                    bossHP: this.bossHP,
+                    bossMaxHP: this.bossMaxHP,
+                    playerHP: this.playerHP,
+                    playerMaxHP: this.playerMaxHP,
+                });
+                
+                return this.bossData;
+            },
+            
+            // 答題正確時對 Boss 造成傷害
+            damageBoss() {
+                const phase = this.bossData?.phases[this.currentPhase];
+                const damage = phase ? 20 + (this.currentPhase * 5) : 20;
+                this.bossHP = Math.max(0, this.bossHP - damage);
+                this.enemiesDefeated++;
+                
+                EventBus.emit('boss:damage', { 
+                    damage, 
+                    bossHP: this.bossHP, 
+                    bossMaxHP: this.bossMaxHP,
+                    enemiesDefeated: this.enemiesDefeated 
+                });
+                
+                // 檢查是否需要進入下一階段
+                this._checkPhaseTransition();
+                
+                return { bossHP: this.bossHP, damage };
+            },
+            
+            // 答題錯誤時玩家受傷
+            playerTakeDamage(wrongCount = 1) {
+                const damage = (this.bossData?.damagePerWrong || 10) * wrongCount;
+                this.playerHP = Math.max(0, this.playerHP - damage);
+                
+                EventBus.emit('boss:playerDamage', { 
+                    damage, 
+                    playerHP: this.playerHP, 
+                    playerMaxHP: this.playerMaxHP 
+                });
+                
+                if (this.playerHP <= 0) {
+                    this._handleDefeat();
+                }
+                
+                return { playerHP: this.playerHP, damage };
+            },
+            
+            // 檢查階段轉換
+            _checkPhaseTransition() {
+                const phase = this.bossData?.phases[this.currentPhase];
+                if (!phase) return;
+                
+                // 每擊敗 phaseThreshold 個敵人進入下一階段
+                if (this.enemiesDefeated >= (this.currentPhase + 1) * this.phaseThreshold) {
+                    this._advancePhase();
+                }
+                
+                // Boss HP 歸零也進入下一階段
+                if (this.bossHP <= 0 && this.currentPhase < this.maxPhases - 1) {
+                    this._advancePhase();
+                }
+            },
+            
+            // 進入下一階段
+            _advancePhase() {
+                this.currentPhase++;
+                
+                if (this.currentPhase >= this.maxPhases) {
+                    this._handleVictory();
+                    return;
+                }
+                
+                const nextPhase = this.bossData.phases[this.currentPhase];
+                this.bossMaxHP = nextPhase.hp;
+                this.bossHP = this.bossMaxHP;
+                
+                EventBus.emit('boss:phaseChange', {
+                    phase: this.currentPhase,
+                    phaseName: nextPhase.name,
+                    bossHP: this.bossHP,
+                    bossMaxHP: this.bossMaxHP,
+                    color: nextPhase.color,
+                });
+                
+                AudioSystem.levelUp();
+            },
+            
+            // 勝利處理
+            _handleVictory() {
+                EventBus.emit('boss:victory', {
+                    totalEnemies: this.enemiesDefeated,
+                    playerHP: this.playerHP,
+                    playerMaxHP: this.playerMaxHP,
+                });
+            },
+            
+            // 失敗處理
+            _handleDefeat() {
+                EventBus.emit('boss:defeat', {
+                    phase: this.currentPhase,
+                    enemiesDefeated: this.enemiesDefeated,
+                });
+            },
+            
+            // 獲取當前階段資訊
+            getPhaseInfo() {
+                if (!this.bossData) return null;
+                return {
+                    current: this.currentPhase,
+                    total: this.maxPhases,
+                    name: this.bossData.phases[this.currentPhase]?.name || '未知',
+                    color: this.bossData.phases[this.currentPhase]?.color || 'gray',
+                    progress: this.enemiesDefeated,
+                    threshold: (this.currentPhase + 1) * this.phaseThreshold,
+                };
+            },
+            
+            // 獲取 Boss HP 百分比
+            getBossHPPercent() {
+                return this.bossMaxHP > 0 ? (this.bossHP / this.bossMaxHP) * 100 : 0;
+            },
+            
+            // 獲取玩家 HP 百分比
+            getPlayerHPPercent() {
+                return this.playerMaxHP > 0 ? (this.playerHP / this.playerMaxHP) * 100 : 0;
+            },
+            
+            // 重置 Boss 系統
+            reset() {
+                this.bossData = null;
+                this.currentPhase = 0;
+                this.bossHP = 100;
+                this.playerHP = 100;
+                this.enemiesDefeated = 0;
+            },
+        };
+
+        // 為 EventBus 添加 Boss 相關事件
+        EVENTS.BOSS_PHASE_CHANGE = 'boss:phaseChange';
+        EVENTS.BOSS_DAMAGE = 'boss:damage';
+        EVENTS.BOSS_VICTORY = 'boss:victory';
+        EVENTS.BOSS_DEFEAT = 'boss:defeat';
+        EVENTS.BOSS_INIT = 'boss:init';
         
         // =============================================
         // 題庫數據
@@ -483,6 +788,7 @@
                     const streakData = ProgressTracker.recordCorrect();
                     if (this.modeConfig.comboEnabled !== false) ComboSystem.add();
                     AdaptiveEngine.recordAnswer({ correct: true, time });
+                    EventBus.emit(EVENTS.QUESTION_CORRECT, { question: this.currentQuestion, time });
                     this.currentIndex++;
                     this._showNext();
                 } else {
@@ -519,7 +825,6 @@
                 const sessionSummary = ref(null);
                 const difficulty = ref(AdaptiveEngine.getCurrentDifficulty());
                 const showHint = ref(false);
-                const showCode = ref(true);
                 const feedback = ref(null);
                 const combo = ref(0);
                 const comboMilestone = ref(null);
@@ -534,7 +839,20 @@
                 
                 let vocabTimerInterval = null;
                 
-                const showCode = ref(true); const vocabCountdown = ref(3); const vocabCountdown = ref(3);
+                // Boss 模式狀態
+                const bossHP = ref(100);
+                const bossMaxHP = ref(100);
+                const bossPlayerHP = ref(100);
+                const bossPlayerMaxHP = ref(100);
+                const bossPhase = ref(0);
+                const bossPhaseName = ref('');
+                const bossName = ref('');
+                const bossIcon = ref('');
+                const isBossMode = ref(false);
+                
+                // Vocab mode 專用
+                const showCode = ref(true);
+                const vocabCountdown = ref(3);
                 
                 onMounted(() => {
                     EventBus.on(EVENTS.QUESTION_SHOW, (data) => {
@@ -547,17 +865,43 @@
                         setTimeout(() => inputRef.value?.focus(), 100);
                     });
                     
+                    // 答對事件 - Boss 模式時對 Boss 造成傷害
+                    EventBus.on(EVENTS.QUESTION_CORRECT, () => {
+                        if (isBossMode.value) {
+                            const result = BossSystem.damageBoss();
+                            bossHP.value = result.bossHP;
+                            bossMaxHP.value = BossSystem.bossMaxHP;
+                            bossPlayerHP.value = BossSystem.playerHP;
+                            bossPlayerMaxHP.value = BossSystem.playerMaxHP;
+                            bossPhase.value = BossSystem.currentPhase;
+                            bossPhaseName.value = BossSystem.bossData?.phases[BossSystem.currentPhase]?.name || '';
+                        }
+                    });
+                    
                     EventBus.on(EVENTS.QUESTION_WRONG, () => {
                         feedback.value = { type: 'wrong', message: '再試一次！' };
                         document.querySelector('.game-container')?.classList.add('screen-shake');
                         setTimeout(() => document.querySelector('.game-container')?.classList.remove('screen-shake'), 300);
                         setTimeout(() => { feedback.value = null; }, 1000);
+                        
+                        // 答錯時如果是 Boss 模式，玩家受傷
+                        if (isBossMode.value) {
+                            const result = BossSystem.playerTakeDamage();
+                            bossPlayerHP.value = result.playerHP;
+                            if (bossPlayerHP.value <= 0) {
+                                state.value = 'GAME_OVER';
+                            }
+                        }
                     });
                     
                     EventBus.on(EVENTS.LEVEL_COMPLETE, (data) => {
                         sessionSummary.value = data;
                         updatePlayerStats();
                         state.value = 'LEVEL_COMPLETE';
+                        if (isBossMode.value) {
+                            BossSystem.reset();
+                            isBossMode.value = false;
+                        }
                     });
                     
                     EventBus.on(EVENTS.GAME_END, (data) => {
@@ -583,6 +927,53 @@
                     EventBus.on(EVENTS.TIME_TICK, (data) => {
                         timeRemaining.value = data.remaining;
                     });
+                    
+                    // Boss 模式事件
+                    EventBus.on('boss:init', (data) => {
+                        bossName.value = data.boss.name;
+                        bossIcon.value = data.boss.icon;
+                        bossHP.value = data.bossHP;
+                        bossMaxHP.value = data.bossMaxHP;
+                        bossPlayerHP.value = data.playerHP;
+                        bossPlayerMaxHP.value = data.playerMaxHP;
+                        bossPhase.value = data.phase;
+                    });
+                    
+                    EventBus.on('boss:phaseChange', (data) => {
+                        bossPhase.value = data.phase;
+                        bossPhaseName.value = data.phaseName;
+                        bossHP.value = data.bossHP;
+                        bossMaxHP.value = data.bossMaxHP;
+                    });
+                    
+                    EventBus.on('boss:victory', (data) => {
+                        sessionSummary.value = {
+                            correct: BossSystem.enemiesDefeated,
+                            wrong: 0,
+                            total: BossSystem.enemiesDefeated,
+                            accuracy: 1,
+                            maxStreak: combo.value,
+                            wpm: 0,
+                            elapsed: 0,
+                            bossMode: true,
+                        };
+                        state.value = 'LEVEL_COMPLETE';
+                    });
+                    
+                    EventBus.on('boss:defeat', (data) => {
+                        sessionSummary.value = {
+                            correct: data.enemiesDefeated,
+                            wrong: 0,
+                            total: data.enemiesDefeated,
+                            accuracy: 0.5,
+                            maxStreak: 0,
+                            wpm: 0,
+                            elapsed: 0,
+                            bossMode: true,
+                            defeated: true,
+                        };
+                        state.value = 'LEVEL_COMPLETE';
+                    });
                 });
                 
                 const startLevel = (level, mode = 'foundation') => {
@@ -599,6 +990,20 @@
                     };
                     
                     if (mode === 'timeAttack') config.timeLimit = 60;
+                    
+                    // 如果是 Boss 模式，初始化 Boss 系統
+                    if (mode === 'boss') {
+                        isBossMode.value = true;
+                        BossSystem.initBoss('goblin');
+                        bossName.value = BossSystem.bossData.name;
+                        bossIcon.value = BossSystem.bossData.icon;
+                        bossHP.value = BossSystem.bossHP;
+                        bossMaxHP.value = BossSystem.bossMaxHP;
+                        bossPlayerHP.value = BossSystem.playerHP;
+                        bossPlayerMaxHP.value = BossSystem.playerMaxHP;
+                        bossPhase.value = BossSystem.currentPhase;
+                        bossPhaseName.value = BossSystem.bossData.phases[0].name;
+                    }
                     
                     TypeEngine.initLevel(questions, mode, config);
                     state.value = 'PLAYING';
@@ -656,6 +1061,9 @@
                     combo, comboMilestone, timeRemaining, selectedMode, player, LEVELS,
                     startLevel, submitAnswer, goToMenu, retryLevel, getGrade, getGradeColor,
                     selectMode, GAME_MODES,
+                    // Boss 模式
+                    bossHP, bossMaxHP, bossPlayerHP, bossPlayerMaxHP, bossPhase, bossPhaseName,
+                    bossName, bossIcon, isBossMode, BossSystem, GameModeManager,
                 };
             },
             template: `
@@ -793,6 +1201,61 @@
                             </div>
                         </div>
                         
+                        <!-- Boss HP 血條 (Boss Mode) -->
+                        <div v-if="isBossMode" class="mb-4 bg-gradient-to-br from-red-900/50 to-magic-900 rounded-xl p-4 border-2 border-red-500/50">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-3xl">{{ bossIcon }}</span>
+                                    <div>
+                                        <div class="font-bold text-red-400">{{ bossName }}</div>
+                                        <div class="text-xs text-red-300">{{ bossPhaseName }} ({{ bossPhase + 1 }}/3)</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-red-300">HP</div>
+                                    <div class="font-bold text-red-400">{{ bossHP }} / {{ bossMaxHP }}</div>
+                                </div>
+                            </div>
+                            <div class="h-4 bg-red-950 rounded-full overflow-hidden">
+                                <div 
+                                    class="h-full transition-all duration-300"
+                                    :class="{
+                                        'bg-gradient-to-r from-red-600 to-red-400': bossPhase === 0,
+                                        'bg-gradient-to-r from-yellow-600 to-orange-400': bossPhase === 1,
+                                        'bg-gradient-to-r from-purple-600 to-pink-400': bossPhase === 2
+                                    }"
+                                    :style="{ width: (bossHP / bossMaxHP * 100) + '%' }"
+                                ></div>
+                            </div>
+                            
+                            <!-- 玩家 HP -->
+                            <div class="flex items-center justify-between mt-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl">🧙</span>
+                                    <span class="text-sm text-purple-300">玩家</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-sm text-purple-300">{{ bossPlayerHP }} / {{ bossPlayerMaxHP }}</div>
+                                    <div class="w-24 h-2 bg-purple-950 rounded-full overflow-hidden">
+                                        <div 
+                                            class="h-full bg-gradient-to-r from-green-600 to-emerald-400 transition-all duration-300"
+                                            :style="{ width: (bossPlayerHP / bossPlayerMaxHP * 100) + '%' }"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 即時評級 -->
+                            <div class="mt-2 text-center">
+                                <span class="text-lg font-bold" :class="GameModeManager.getLiveGrade().color">
+                                    評級：{{ GameModeManager.getLiveGrade().grade }}
+                                </span>
+                                <span class="text-sm text-purple-300 ml-2">
+                                    ({{ Math.round(GameModeManager.getLiveGrade().accuracy * 100) }}%)
+                                </span>
+                            </div>
+                        </div>
+                        
                         <!-- Combo 里程碑訊息 -->
                         <div v-if="comboMilestone" 
                             class="text-center text-2xl font-bold mb-4 animate-slideIn"
@@ -872,12 +1335,18 @@
                     
                     <!-- LEVEL_COMPLETE -->
                     <div v-if="state === 'LEVEL_COMPLETE'" class="w-full max-w-md text-center animate-slideIn">
-                        <div class="text-6xl mb-4">🎉</div>
+                        <div class="text-6xl mb-4">{{ sessionSummary?.defeated ? '💀' : '🎉' }}</div>
                         <h2 class="text-3xl font-bold mb-2">
-                            {{ (timeRemaining <= 0 && selectedMode === 'timeAttack') || sessionSummary?.wpm ? '時間到！' : '關卡完成！' }}
+                            {{ sessionSummary?.defeated ? '挑戰失敗...' : (sessionSummary?.bossMode ? 'Boss擊敗！' : '關卡完成！') }}
                         </h2>
                         
                         <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30 mb-6">
+                            <div v-if="sessionSummary?.bossMode" class="text-center mb-4">
+                                <div class="text-5xl">{{ sessionSummary?.defeated ? '💀' : '👑' }}</div>
+                                <div class="text-xl font-bold mt-2" :class="sessionSummary?.defeated ? 'text-red-400' : 'text-yellow-400'">
+                                    {{ sessionSummary?.defeated ? '下次一定打敗它！' : '恭喜擊敗 Boss！' }}
+                                </div>
+                            </div>
                             <div class="text-6xl font-bold mb-2" :class="getGradeColor(getGrade(sessionSummary?.accuracy || 0))">
                                 {{ getGrade(sessionSummary?.accuracy || 0) }}
                             </div>
@@ -900,6 +1369,28 @@
                         <div class="flex gap-4">
                             <button aria-label="再玩一次" @click="retryLevel" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold touch-target">
                                 再玩一次
+                            </button>
+                            <button aria-label="返回選單" @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                返回選單
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- GAME_OVER (Boss 模式玩家失敗) -->
+                    <div v-if="state === 'GAME_OVER'" class="w-full max-w-md text-center animate-slideIn">
+                        <div class="text-6xl mb-4">💀</div>
+                        <h2 class="text-3xl font-bold mb-2 text-red-400">挑戰失敗...</h2>
+                        <p class="text-purple-300 mb-6">勇敢的法师倒下了，Boss 還有一段時間可以休息...</p>
+                        
+                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-red-500/30 mb-6">
+                            <div class="text-lg text-purple-300 mb-2">擊敗敵人</div>
+                            <div class="text-4xl font-bold text-red-400">{{ BossSystem.enemiesDefeated }}</div>
+                            <div class="text-sm text-purple-400 mt-1">敵人</div>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <button aria-label="再挑戰一次" @click="retryLevel" class="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-lg font-bold touch-target">
+                                再挑戰一次
                             </button>
                             <button aria-label="返回選單" @click="goToMenu" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
                                 返回選單
@@ -954,6 +1445,8 @@
         window.AdaptiveEngine = AdaptiveEngine;
         window.AudioSystem = AudioSystem;
         window.ScoreSystem = ScoreSystem;
+        window.BossSystem = BossSystem;
+        window.GameModeManager = GameModeManager;
     </script>
 </body>
 </html>
