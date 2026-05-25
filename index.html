@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>速成王國 | TypeQuest Kingdom V50</title>
+    <title>速成王國 | TypeQuest Kingdom V55</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,10 +16,12 @@
                 extend: {
                     colors: {
                         brand: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7' },
-                        magic: { 950: '#1e1b4b', 900: '#2e1065', 800: '#4c1d95', 600: '#7c3aed', 500: '#8b5cf6', 300: '#c4b5fd', 100: '#ede9fe' },
-                        gold: { 400: '#facc15', 500: '#eab308', 600: '#ca8a04' },
+                        magic: { 950: '#1e1b4b', 900: '#2e1065', 800: '#4c1d95', 700: '#5b21b6', 600: '#7c3aed', 500: '#8b5cf6', 400: '#a78bfa', 300: '#c4b5fd', 200: '#ddd6fe', 100: '#ede9fe' },
+                        gold: { 600: '#ca8a04', 500: '#eab308', 400: '#facc15' },
+                        void: { 950: '#09090b', 900: '#0f0f12', 800: '#18181b', 700: '#27272a' },
                     },
                     fontFamily: {
+                        display: ['"Orbitron"', '"Noto Sans TC"', 'sans-serif'],
                         serif: ['"Noto Serif TC"', 'serif'],
                         sans: ['"Noto Sans TC"', 'sans-serif'],
                         mono: ['"Noto Sans Mono"', 'monospace'],
@@ -29,32 +31,78 @@
                         'pulse-glow': 'pulseGlow 2s infinite',
                         'damage-flash': 'damageFlash 0.3s ease-in-out',
                         'float-up': 'floatUp 1s ease-out forwards',
-                        'coin-spin': 'coinSpin 1s linear infinite',
-                        'wiggle': 'wiggle 1s ease-in-out infinite',
                         'float-slow': 'floatUp 3s ease-in-out infinite',
-                        'lunge': 'lunge 0.2s ease-out',
+                        'spin-slow': 'spin 8s linear infinite',
+                        'gradient-shift': 'gradientShift 8s ease infinite',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                        'fade-in': 'fadeIn 0.4s ease-out forwards',
                     },
                     keyframes: {
                         shake: { '10%, 90%': { transform: 'translate3d(-2px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(4px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-6px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(6px, 0, 0)' } },
                         pulseGlow: { '0%, 100%': { opacity: 1, filter: 'brightness(1)' }, '50%': { opacity: 0.8, filter: 'brightness(1.3)' } },
                         damageFlash: { '0%, 100%': { backgroundColor: 'transparent' }, '50%': { backgroundColor: 'rgba(239, 68, 68, 0.3)' } },
                         floatUp: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
-                        coinSpin: { '0%': { transform: 'rotateY(0deg)' }, '100%': { transform: 'rotateY(360deg)' } },
-                        wiggle: { '0%, 100%': { transform: 'rotate(-3deg)' }, '50%': { transform: 'rotate(3deg)' } },
-                        lunge: { '0%': { transform: 'translateX(0)' }, '50%': { transform: 'translateX(20px)' }, '100%': { transform: 'translateX(0)' } }
+                        gradientShift: { '0%, 100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
+                        slideUp: { '0%': { opacity: 0, transform: 'translateY(30px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
                     }
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700&display=swap');
-        html, body, #root { height: 100%; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; touch-action: manipulation; background: #0f172a; }
-        .keyboard-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-        .perspective-road { transform: perspective(500px) rotateX(40deg); transform-origin: 50% 100%; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@400;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body, #root { height: 100%; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; touch-action: manipulation; }
+        body { background: #09090b; color: white; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
+
+        /* Glassmorphism */
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-strong { background: rgba(15,15,18,0.85); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Mode gradient backgrounds */
+        .bg-rpg     { background: linear-gradient(135deg, #1e1b4b 0%, #3d1a78 50%, #1e1b4b 100%); }
+        .bg-runner  { background: linear-gradient(135deg, #0c1a2e 0%, #1a4a6b 50%, #0c1a2e 100%); }
+        .bg-self     { background: linear-gradient(135deg, #1a1510 0%, #3d2e1a 50%, #1a1510 100%); }
+        .bg-speed    { background: linear-gradient(135deg, #2a0a00 0%, #8b2500 50%, #2a0a00 100%); }
+        .bg-vocab    { background: linear-gradient(135deg, #0a1a14 0%, #1a4a2e 50%, #0a1a14 100%); }
+        .bg-challenge{ background: linear-gradient(135deg, #2a0000 0%, #7a1010 50%, #2a0000 100%); }
+        .bg-dictation{ background: linear-gradient(135deg, #12082a 0%, #3d1a78 50%, #12082a 100%); }
+        .bg-battle   { background: linear-gradient(135deg, #1a0808 0%, #6b1a1a 50%, #1a0808 100%); }
+        .bg-story    { background: linear-gradient(135deg, #1a1208 0%, #6b4a1a 50%, #1a1208 100%); }
+        .bg-article   { background: linear-gradient(135deg, #081a12 0%, #1a6b3d 50%, #081a12 100%); }
+
+        /* Animated gradient background */
+        .anim-gradient {
+            background: linear-gradient(-45deg, #0f0f12, #1e1b4b, #0f0f12, #2e1065, #0f0f12);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+        }
+
+        /* Key glow */
+        .key-glow { box-shadow: 0 0 12px rgba(139,92,246,0.4), inset 0 0 8px rgba(139,92,246,0.1); }
+
+        /* Mode card hover effect */
+        .mode-card { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .mode-card:hover { transform: translateY(-8px) scale(1.02); }
+
+        /* Noise texture overlay */
+        .noise::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none; border-radius: inherit;
+        }
+
+        /* Confetti burst */
+        @keyframes confettiBurst {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(180deg); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -66,7 +114,7 @@
         const { icons } = lucide;
 
         // ───────────────────────────────────────────────────────────────
-        // 圖標別名（從 lucide 一次性解構，避免重複調用）
+        // Lucide Icon Helper
         // ───────────────────────────────────────────────────────────────
         const {
             Settings, Volume2, ArrowLeft, Play, User, Trophy, Star, Zap, LayoutGrid, Rocket,
@@ -77,7 +125,9 @@
             ShoppingBag, Tent, BedDouble, Dumbbell, Gem, Gauge, EyeOff, MicOff, Shuffle,
             Snowflake, BarChart3, Activity, Target, Dices, Book, Gavel, FlaskConical,
             UserCircle2, Wand2, Clock, Brain, Crosshair, Swords, Scroll, Map, List,
-            Headphones, GaugeCircle, Trophy2, FlameKindling, TrendingUp, Eye
+            Headphones, GaugeCircle, Trophy2, FlameKindling, TrendingUp, Eye, Sparkle,
+            Castle, Compass, Swords as SwordsIcon, Footprints, Mic, FileText, PenTool,
+            VolumeX, Wifi, WifiOff, PlayCircle, LayoutDashboard
         } = icons;
 
         const LucideIcon = ({ icon, size = 24, className = "" }) => {
@@ -88,7 +138,7 @@
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 🎵 Audio Engine
+        // Audio Engine
         // ───────────────────────────────────────────────────────────────
         const AudioEngine = {
             ctx: null,
@@ -120,10 +170,9 @@
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 📚 題庫
+        // 題庫
         // ───────────────────────────────────────────────────────────────
         const KEYBOARD_MAP = { 'A':'日','B':'月','C':'金','D':'木','E':'水','F':'火','G':'土','H':'竹','I':'戈','J':'十','K':'大','L':'中','M':'一','N':'弓','O':'人','P':'心','Q':'手','R':'口','S':'尸','T':'廿','U':'山','V':'女','W':'田','X':'難','Y':'卜','Z':'重' };
-
         const CHAPTERS = [
             { code:'A',name:'日' },{ code:'B',name:'月' },{ code:'C',name:'金' },{ code:'D',name:'木' },
             { code:'E',name:'水' },{ code:'F',name:'火' },{ code:'G',name:'土' },{ code:'H',name:'竹' },
@@ -133,67 +182,39 @@
             { code:'U',name:'山' },{ code:'V',name:'女' },{ code:'W',name:'田' },{ code:'Y',name:'卜' },
             { code:'X',name:'難' }
         ];
-
         const QUESTIONS = [
             { mainCode:'A',char:'晤',code:'AMMR',hint:'日一一口' },{ mainCode:'A',char:'旦',code:'AM',hint:'日一' },
             { mainCode:'A',char:'暗',code:'AYTA',hint:'日卜廿日' },{ mainCode:'A',char:'時',code:'AGDI',hint:'日土木戈' },
             { mainCode:'A',char:'景',code:'AYRF',hint:'日卜口火' },{ mainCode:'A',char:'照',code:'ASRF',hint:'日尸口火' },
             { mainCode:'A',char:'題',code:'AMBC',hint:'日一月金' },{ mainCode:'A',char:'晚',code:'ANAU',hint:'日弓日山' },
             { mainCode:'A',char:'問',code:'ANR',hint:'日弓口' },{ mainCode:'A',char:'易',code:'APH',hint:'日心竹' },
-            { mainCode:'A',char:'影',code:'AYHH',hint:'日卜竹竹' },{ mainCode:'B',char:'朋',code:'BB',hint:'月月' },
-            { mainCode:'B',char:'且',code:'BM',hint:'月一' },{ mainCode:'B',char:'具',code:'BMC',hint:'月一金' },
-            { mainCode:'B',char:'財',code:'BUD',hint:'月山木' },{ mainCode:'B',char:'骨',code:'BBB',hint:'月月月' },
+            { mainCode:'B',char:'朋',code:'BB',hint:'月月' },{ mainCode:'B',char:'且',code:'BM',hint:'月一' },
+            { mainCode:'B',char:'具',code:'BMC',hint:'月一金' },{ mainCode:'B',char:'財',code:'BUD',hint:'月山木' },
             { mainCode:'C',char:'錯',code:'CTA',hint:'金廿日' },{ mainCode:'C',char:'銷',code:'CFB',hint:'金火月' },
-            { mainCode:'C',char:'錢',code:'CII',hint:'金戈戈' },{ mainCode:'C',char:'鎖',code:'CFBC',hint:'金火月金' },
-            { mainCode:'D',char:'機',code:'DVII',hint:'木女戈戈' },{ mainCode:'D',char:'杜',code:'DG',hint:'木土' },
-            { mainCode:'D',char:'想',code:'DBUP',hint:'木月山心' },{ mainCode:'D',char:'柏',code:'DHA',hint:'木竹日' },
+            { mainCode:'C',char:'錢',code:'CII',hint:'金戈戈' },{ mainCode:'D',char:'機',code:'DVII',hint:'木女戈戈' },
+            { mainCode:'D',char:'杜',code:'DG',hint:'木土' },{ mainCode:'D',char:'想',code:'DBUP',hint:'木月山心' },
             { mainCode:'E',char:'波',code:'EDHE',hint:'水木竹水' },{ mainCode:'E',char:'注',code:'EYG',hint:'水卜土' },
-            { mainCode:'E',char:'染',code:'END',hint:'水弓木' },{ mainCode:'E',char:'游',code:'EYSD',hint:'水卜尸木' },
-            { mainCode:'F',char:'米',code:'FD',hint:'火木' },{ mainCode:'F',char:'然',code:'BKF',hint:'月大火' },
-            { mainCode:'F',char:'祭',code:'BOF',hint:'月人火' },{ mainCode:'F',char:'賞',code:'FBRBC',hint:'火月口月金' },
-            { mainCode:'G',char:'地',code:'GPD',hint:'土心木' },{ mainCode:'G',char:'均',code:'GG',hint:'土土' },
-            { mainCode:'G',char:'去',code:'GI',hint:'土戈' },{ mainCode:'G',char:'場',code:'GASH',hint:'土日尸竹' },
-            { mainCode:'H',char:'白',code:'HA',hint:'竹日' },{ mainCode:'H',char:'香',code:'HDA',hint:'竹木日' },
-            { mainCode:'H',char:'禾',code:'HD',hint:'竹木' },{ mainCode:'H',char:'秋',code:'HDF',hint:'竹木火' },
-            { mainCode:'H',char:'種',code:'HDHG',hint:'竹木竹土' },{ mainCode:'H',char:'程',code:'HDRHG',hint:'竹木口竹土' },
-            { mainCode:'H',char:'與',code:'HXC',hint:'竹難金' },{ mainCode:'H',char:'重',code:'HGMG',hint:'竹土一土' },
-            { mainCode:'I',char:'式',code:'IPM',hint:'戈心一' },{ mainCode:'I',char:'為',code:'IKF',hint:'戈大火' },
-            { mainCode:'I',char:'參',code:'IIH',hint:'戈戈竹' },{ mainCode:'J',char:'車',code:'JJ',hint:'十十' },
-            { mainCode:'J',char:'者',code:'JKA',hint:'十大日' },{ mainCode:'J',char:'南',code:'JBJ',hint:'十月十' },
-            { mainCode:'J',char:'真',code:'JBC',hint:'十月金' },{ mainCode:'J',char:'博',code:'JIBI',hint:'十戈月戈' },
-            { mainCode:'J',char:'教',code:'JK',hint:'十大' },{ mainCode:'J',char:'字',code:'JND',hint:'十弓木' },
-            { mainCode:'J',char:'空',code:'JM',hint:'十一' },{ mainCode:'J',char:'室',code:'JMIG',hint:'十一戈土' },
+            { mainCode:'E',char:'染',code:'END',hint:'水弓木' },{ mainCode:'F',char:'米',code:'FD',hint:'火木' },
+            { mainCode:'F',char:'然',code:'BKF',hint:'月大火' },{ mainCode:'G',char:'地',code:'GPD',hint:'土心木' },
+            { mainCode:'G',char:'均',code:'GG',hint:'土土' },{ mainCode:'H',char:'白',code:'HA',hint:'竹日' },
+            { mainCode:'H',char:'香',code:'HDA',hint:'竹木日' },{ mainCode:'H',char:'秋',code:'HDF',hint:'竹木火' },
+            { mainCode:'I',char:'式',code:'IPM',hint:'戈心一' },{ mainCode:'J',char:'車',code:'JJ',hint:'十十' },
+            { mainCode:'J',char:'者',code:'JKA',hint:'十大日' },{ mainCode:'J',char:'真',code:'JBC',hint:'十月金' },
             { mainCode:'K',char:'有',code:'KB',hint:'大月' },{ mainCode:'K',char:'在',code:'KLG',hint:'大中土' },
-            { mainCode:'K',char:'太',code:'KI',hint:'大戈' },{ mainCode:'K',char:'左',code:'KM',hint:'大一' },
-            { mainCode:'K',char:'帶',code:'KPNB',hint:'大心月月' },{ mainCode:'L',char:'書',code:'LGA',hint:'中土日' },
-            { mainCode:'L',char:'史',code:'JL',hint:'中大' },{ mainCode:'L',char:'央',code:'LBK',hint:'中月大' },
-            { mainCode:'L',char:'悲',code:'LMYP',hint:'中一卜心' },{ mainCode:'M',char:'天',code:'MK',hint:'一大' },
-            { mainCode:'M',char:'至',code:'MIG',hint:'一戈土' },{ mainCode:'M',char:'面',code:'MWYL',hint:'一田卜中' },
-            { mainCode:'M',char:'百',code:'MA',hint:'一日' },{ mainCode:'N',char:'子',code:'ND',hint:'弓木' },
-            { mainCode:'N',char:'孫',code:'NDNF',hint:'弓木弓火' },{ mainCode:'N',char:'陽',code:'NLAM',hint:'弓中日一' },
+            { mainCode:'L',char:'書',code:'LGA',hint:'中土日' },{ mainCode:'M',char:'天',code:'MK',hint:'一大' },
+            { mainCode:'M',char:'至',code:'MIG',hint:'一戈土' },{ mainCode:'N',char:'子',code:'ND',hint:'弓木' },
             { mainCode:'O',char:'休',code:'OD',hint:'人木' },{ mainCode:'O',char:'你',code:'ONF',hint:'人弓火' },
-            { mainCode:'O',char:'住',code:'OYG',hint:'人卜土' },{ mainCode:'O',char:'會',code:'OMA',hint:'人一日' },
-            { mainCode:'O',char:'便',code:'OMK',hint:'人一大' },{ mainCode:'O',char:'借',code:'OTA',hint:'人廿日' },
-            { mainCode:'P',char:'怕',code:'PHA',hint:'心竹日' },{ mainCode:'P',char:'情',code:'PQMB',hint:'心手一月' },
-            { mainCode:'P',char:'忍',code:'SIP',hint:'尸戈心' },{ mainCode:'P',char:'快',code:'PDK',hint:'心木大' },
-            { mainCode:'Q',char:'指',code:'QPA',hint:'手心日' },{ mainCode:'Q',char:'掃',code:'QSMB',hint:'手尸一月' },
-            { mainCode:'Q',char:'推',code:'QOG',hint:'手人土' },{ mainCode:'Q',char:'換',code:'QNBK',hint:'手弓月大' },
-            { mainCode:'R',char:'唱',code:'RAA',hint:'口日日' },{ mainCode:'R',char:'哭',code:'RRIK',hint:'口口戈大' },
-            { mainCode:'R',char:'吃',code:'RON',hint:'口人弓' },{ mainCode:'R',char:'號',code:'RYPU',hint:'口卜心山' },
-            { mainCode:'S',char:'局',code:'SSR',hint:'尸尸口' },{ mainCode:'S',char:'居',code:'SJR',hint:'尸十口' },
-            { mainCode:'S',char:'刀',code:'SH',hint:'尸竹' },{ mainCode:'T',char:'曹',code:'TWA',hint:'廿田日' },
-            { mainCode:'T',char:'著',code:'TJKA',hint:'廿十大日' },{ mainCode:'T',char:'期',code:'TCMC',hint:'廿金一金' },
-            { mainCode:'U',char:'凶',code:'UK',hint:'山大' },{ mainCode:'U',char:'凱',code:'UMTU',hint:'山一廿山' },
-            { mainCode:'U',char:'崩',code:'UBB',hint:'山月月' },{ mainCode:'V',char:'姊',code:'VLXH',hint:'女中難竹' },
-            { mainCode:'V',char:'維',code:'VMQG',hint:'女一手土' },{ mainCode:'V',char:'姍',code:'VBBT',hint:'女月月廿' },
+            { mainCode:'P',char:'怕',code:'PHA',hint:'心竹日' },{ mainCode:'P',char:'快',code:'PDK',hint:'心木大' },
+            { mainCode:'Q',char:'指',code:'QPA',hint:'手心日' },{ mainCode:'Q',char:'換',code:'QNBK',hint:'手弓月大' },
+            { mainCode:'R',char:'唱',code:'RAA',hint:'口日日' },{ mainCode:'R',char:'吃',code:'RON',hint:'口人弓' },
+            { mainCode:'S',char:'局',code:'SSR',hint:'尸尸口' },{ mainCode:'T',char:'曹',code:'TWA',hint:'廿田日' },
+            { mainCode:'U',char:'凶',code:'UK',hint:'山大' },{ mainCode:'V',char:'維',code:'VMQG',hint:'女一手土' },
             { mainCode:'W',char:'國',code:'WIRM',hint:'田戈口一' },{ mainCode:'W',char:'果',code:'WD',hint:'田木' },
-            { mainCode:'W',char:'圍',code:'WDMQ',hint:'田木一手' },{ mainCode:'Y',char:'桌',code:'YD',hint:'卜木' },
-            { mainCode:'Y',char:'帝',code:'YBJB',hint:'卜月十月' },{ mainCode:'Y',char:'望',code:'YBMG',hint:'卜月一土' },
-            { mainCode:'Y',char:'邊',code:'YRS',hint:'卜口尸' },{ mainCode:'X',char:'舊',code:'TOHX',hint:'廿人竹難' },
+            { mainCode:'Y',char:'桌',code:'YD',hint:'卜木' },{ mainCode:'X',char:'舊',code:'TOHX',hint:'廿人竹難' },
         ];
 
         // ───────────────────────────────────────────────────────────────
-        // 🎲 Decoy / 工具函數
+        // 工具函數
         // ───────────────────────────────────────────────────────────────
         const generateDecoys = (q, count = 2) => {
             const same = QUESTIONS.filter(x => x.mainCode === q.mainCode && x.code !== q.code);
@@ -201,81 +222,89 @@
             const pool = same.length >= count ? same : [...same, ...others];
             return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
         };
-
         const getTargetCode = (q, inputMode) => {
-            if (inputMode === 'quick') return q.code[0] + (q.code.length > 1 ? q.code[q.code.length - 1] : '');
             if (inputMode === 'cangjie') return q.code;
-            return q.code[0]; // radical = first letter
+            return q.code[0];
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 🏆 遊戲模式配置 (GameModeRegistry)
+        // 🎮 遊戲模式配置 (GameModeRegistry) + 視覺化元數據
         // ───────────────────────────────────────────────────────────────
         const GAME_MODES = {
             rpg: {
-                id: 'rpg', name: '深淵試煉', icon: Sword, color: 'text-purple-400',
+                id: 'rpg', name: '深淵試煉', nameEn: 'RPG Dungeon', icon: Sword, color: 'text-purple-300',
+                accentColor: '#a78bfa', bg: 'bg-rpg', accentBg: 'bg-purple-900/50', accentBorder: 'border-purple-500/40',
                 desc: 'Roguelite 角色扮演，無限層數挑戰',
-                bg: 'from-slate-900 to-purple-950', accent: 'purple',
-                component: 'RPGGame', required: true
+                tagline: '踏入深淵，永不回頭',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3CradialGradient id='a' cx='50%25' cy='80%25'%3E%3Cstop offset='0%25' stop-color='%234c1d95'/%3E%3Cstop offset='100%25' stop-color='%23090b15'/%3E%3C/radialGradient%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='4'/%3E%3C/filter%3E%3C/defs%3E%3Crect fill='url(%23a)' width='800' height='400'/%3E%3Cg opacity='0.4'%3E%3Cpath d='M400 200 L350 320 M400 200 L450 320 M400 200 L300 280 M400 200 L500 280' stroke='%238b5cf6' stroke-width='2' filter='url(%23glow)'/%3E%3C/g%3E%3Ctext x='400' y='180' text-anchor='middle' font-size='120' fill='%238b5cf6' opacity='0.15' font-family='serif'%3E⚔%3C/text%3E%3C/svg%3E")`,
             },
             runner: {
-                id: 'runner', name: '速成跑酷', icon: Zap, color: 'text-yellow-400',
+                id: 'runner', name: '速成跑酷', nameEn: 'Speed Runner', icon: Zap, color: 'text-yellow-300',
+                accentColor: '#facc15', bg: 'bg-runner', accentBg: 'bg-yellow-900/50', accentBorder: 'border-yellow-500/40',
                 desc: '子彈時間反應力訓練',
-                bg: 'from-sky-900 to-green-950', accent: 'yellow',
-                component: 'RunnerGame'
+                tagline: '速度即是一切',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%230c1a2e'/%3E%3Cstop offset='50%25' stop-color='%231a4a6b'/%3E%3Cstop offset='100%25' stop-color='%230c1a2e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Cg opacity='0.5'%3E%3Cpath d='M0 200 L800 200' stroke='%23facc15' stroke-width='1'/%3E%3Cpath d='M0 220 L800 220' stroke='%23facc15' stroke-width='0.5' opacity='0.4'/%3E%3Cpath d='M0 240 L800 240' stroke='%23facc15' stroke-width='0.3' opacity='0.2'/%3E%3C/g%3E%3Ctext x='650' y='200' font-size='80' fill='%23facc15' opacity='0.2'%3E⚡%3C/text%3E%3C/svg%3E")`,
             },
             selfLearn: {
-                id: 'selfLearn', name: '自學練習', icon: BookOpen, color: 'text-blue-400',
+                id: 'selfLearn', name: '自學練習', nameEn: 'Free Practice', icon: BookOpen, color: 'text-amber-300',
+                accentColor: '#facc15', bg: 'bg-self', accentBg: 'bg-amber-900/50', accentBorder: 'border-amber-500/40',
                 desc: '無壓力自由練習，任意輸入',
-                bg: 'from-blue-900 to-cyan-950', accent: 'blue',
-                component: 'SelfLearnGame'
+                tagline: '按自己的節奏學習',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233d2e1a'/%3E%3Cstop offset='100%25' stop-color='%231a1510'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Cg opacity='0.3'%3E%3Crect x='100' y='100' width='80' height='120' rx='4' fill='%23d97706' opacity='0.5'/%3E%3Crect x='200' y='80' width='70' height='140' rx='4' fill='%23d97706' opacity='0.3'/%3E%3Crect x='280' y='120' width='60' height='100' rx='4' fill='%23d97706' opacity='0.4'/%3E%3C/g%3E%3Ctext x='600' y='220' font-size='80' fill='%23facc15' opacity='0.2'%3E📖%3C/text%3E%3C/svg%3E")`,
             },
             speed: {
-                id: 'speed', name: '速打模式', icon: Gauge, color: 'text-orange-400',
+                id: 'speed', name: '速打模式', nameEn: 'Speed Typing', icon: Gauge, color: 'text-orange-300',
+                accentColor: '#f97316', bg: 'bg-speed', accentBg: 'bg-orange-900/50', accentBorder: 'border-orange-500/40',
                 desc: '限時60秒，挑戰最高 WPM',
-                bg: 'from-orange-900 to-red-950', accent: 'orange',
-                component: 'SpeedGame'
+                tagline: '60秒燃燒你的極限',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3CradialGradient id='a' cx='50%25' cy='50%25'%3E%3Cstop offset='0%25' stop-color='%23c2410c'/%3E%3Cstop offset='100%25' stop-color='%232a0a00'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect fill='url(%23a)' width='800' height='400'/%3E%3Ccircle cx='400' cy='200' r='120' fill='none' stroke='%23f97316' stroke-width='3' opacity='0.2'/%3E%3Ccircle cx='400' cy='200' r='90' fill='none' stroke='%23fb923c' stroke-width='2' opacity='0.3'/%3E%3Ctext x='400' y='230' text-anchor='middle' font-size='60' fill='%23f97316' opacity='0.3' font-family='monospace'%3E60%3C/text%3E%3C/svg%3E")`,
             },
             vocabulary: {
-                id: 'vocabulary', name: '單字闖關', icon: List, color: 'text-teal-400',
+                id: 'vocabulary', name: '單字闖關', nameEn: 'Word Quest', icon: Castle, color: 'text-emerald-300',
+                accentColor: '#34d399', bg: 'bg-vocab', accentBg: 'bg-emerald-900/50', accentBorder: 'border-emerald-500/40',
                 desc: '章節關卡挑戰，解鎖新區域',
-                bg: 'from-teal-900 to-emerald-950', accent: 'teal',
-                component: 'VocabularyGame'
+                tagline: '征服每一個關卡',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230a1a14'/%3E%3Cstop offset='100%25' stop-color='%231a4a2e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Cpath d='M300 300 L350 200 L400 300 L450 200 L500 300' fill='none' stroke='%2334d399' stroke-width='3' opacity='0.3'/%3E%3Ctext x='400' y='200' text-anchor='middle' font-size='80' fill='%2334d399' opacity='0.2'%3E🏰%3C/text%3E%3C/svg%3E")`,
             },
             challenge: {
-                id: 'challenge', name: '限時挑戰', icon: Timer, color: 'text-red-400',
+                id: 'challenge', name: '限時挑戰', nameEn: 'Time Attack', icon: Timer, color: 'text-red-300',
+                accentColor: '#f87171', bg: 'bg-challenge', accentBg: 'bg-red-900/50', accentBorder: 'border-red-500/40',
                 desc: '3分鐘限時，盡量答對更多題目',
-                bg: 'from-red-900 to-rose-950', accent: 'red',
-                component: 'ChallengeGame'
+                tagline: '與時間賽跑',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3CradialGradient id='a' cx='50%25' cy='50%25'%3E%3Cstop offset='0%25' stop-color='%23dc2626'/%3E%3Cstop offset='100%25' stop-color='%232a0000'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect fill='url(%23a)' width='800' height='400'/%3E%3Cg opacity='0.4'%3E%3Cpath d='M400 100 L420 150 L400 200 L380 150 Z' fill='%23f87171' opacity='0.3'/%3E%3Cpath d='M360 150 L380 200 L360 250 L340 200 Z' fill='%23f87171' opacity='0.2'/%3E%3Cpath d='M440 150 L460 200 L440 250 L420 200 Z' fill='%23f87171' opacity='0.2'/%3E%3C/g%3E%3Ctext x='400' y='220' text-anchor='middle' font-size='60' fill='%23f87171' opacity='0.25' font-family='monospace'%3E3:00%3C/text%3E%3C/svg%3E")`,
             },
             dictation: {
-                id: 'dictation', name: '聽打模式', icon: Headphones, color: 'text-indigo-400',
+                id: 'dictation', name: '聽打模式', nameEn: 'Dictation', icon: Headphones, color: 'text-indigo-300',
+                accentColor: '#a5b4fc', bg: 'bg-dictation', accentBg: 'bg-indigo-900/50', accentBorder: 'border-indigo-500/40',
                 desc: '語音朗讀，練習聽打能力',
-                bg: 'from-indigo-900 to-violet-950', accent: 'indigo',
-                component: 'DictationGame'
+                tagline: '用耳朵打字',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233d1a78'/%3E%3Cstop offset='100%25' stop-color='%2312082a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Cg opacity='0.4'%3E%3Cpath d='M350 220 Q400 160 450 220' fill='none' stroke='%23a5b4fc' stroke-width='3'/%3E%3Cpath d='M340 230 Q400 150 460 230' fill='none' stroke='%23a5b4fc' stroke-width='2' opacity='0.6'/%3E%3Cpath d='M330 240 Q400 140 470 240' fill='none' stroke='%23a5b4fc' stroke-width='1.5' opacity='0.3'/%3E%3C/g%3E%3Ctext x='400' y='200' text-anchor='middle' font-size='80' fill='%23a5b4fc' opacity='0.2'%3E🎧%3C/text%3E%3C/svg%3E")`,
             },
             battle: {
-                id: 'battle', name: '對戰模式', icon: Swords, color: 'text-rose-400',
+                id: 'battle', name: '對戰模式', nameEn: 'VS Battle', icon: SwordsIcon, color: 'text-rose-300',
+                accentColor: '#fb7185', bg: 'bg-battle', accentBg: 'bg-rose-900/50', accentBorder: 'border-rose-500/40',
                 desc: '雙人對戰，比賽打字速度',
-                bg: 'from-rose-900 to-pink-950', accent: 'rose',
-                component: 'BattleGame'
+                tagline: '勝者為王',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%236b1a1a'/%3E%3Cstop offset='50%25' stop-color='%233d0a0a'/%3E%3Cstop offset='100%25' stop-color='%236b1a1a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Cg opacity='0.4'%3E%3Cpath d='M250 200 L350 150' stroke='%23fb7185' stroke-width='4'/%3E%3Cpath d='M550 200 L450 150' stroke='%23fb7185' stroke-width='4'/%3E%3Cpath d='M250 200 L350 250' stroke='%23fb7185' stroke-width='4'/%3E%3Cpath d='M550 200 L450 250' stroke='%23fb7185' stroke-width='4'/%3E%3Ccircle cx='400' cy='200' r='20' fill='%23fb7185' opacity='0.5'/%3E%3C/g%3E%3Ctext x='400' y='220' text-anchor='middle' font-size='80' fill='%23fb7185' opacity='0.2'%3EVS%3C/text%3E%3C/svg%3E")`,
             },
             story: {
-                id: 'story', name: '故事模式', icon: Scroll, color: 'text-amber-400',
+                id: 'story', name: '故事模式', nameEn: 'Story Mode', icon: Scroll, color: 'text-amber-300',
+                accentColor: '#fbbf24', bg: 'bg-story', accentBg: 'bg-amber-900/50', accentBorder: 'border-amber-500/40',
                 desc: '在故事中完成打字任務',
-                bg: 'from-amber-900 to-yellow-950', accent: 'amber',
-                component: 'StoryGame'
+                tagline: '文字構築世界',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236b4a1a'/%3E%3Cstop offset='100%25' stop-color='%231a1208'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Crect x='280' y='100' width='240' height='200' rx='8' fill='%23d97706' opacity='0.15' stroke='%23fbbf24' stroke-width='1' opacity='0.3'/%3E%3Cline x1='320' y1='150' x2='480' y2='150' stroke='%23fbbf24' stroke-width='1' opacity='0.3'/%3E%3Cline x1='320' y1='180' x2='450' y2='180' stroke='%23fbbf24' stroke-width='1' opacity='0.2'/%3E%3Cline x1='320' y1='210' x2='470' y2='210' stroke='%23fbbf24' stroke-width='1' opacity='0.2'/%3E%3Ctext x='400' y='220' text-anchor='middle' font-size='80' fill='%23fbbf24' opacity='0.2'%3E📜%3C/text%3E%3C/svg%3E")`,
             },
             article: {
-                id: 'article', name: '文章模式', icon: Book, color: 'text-green-400',
+                id: 'article', name: '文章模式', nameEn: 'Article', icon: FileText, color: 'text-green-300',
+                accentColor: '#4ade80', bg: 'bg-article', accentBg: 'bg-green-900/50', accentBorder: 'border-green-500/40',
                 desc: '完整段落打字訓練',
-                bg: 'from-green-900 to-emerald-950', accent: 'green',
-                component: 'ArticleGame'
-            }
+                tagline: '寫完一篇文章',
+                hero: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a6b3d'/%3E%3Cstop offset='100%25' stop-color='%23081a12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='800' height='400'/%3E%3Crect x='250' y='120' width='300' height='180' rx='6' fill='%2322c55e' opacity='0.1' stroke='%234ade80' stroke-width='1' opacity='0.3'/%3E%3Cline x1='280' y1='160' x2='520' y2='160' stroke='%234ade80' stroke-width='2' opacity='0.3'/%3E%3Cline x1='280' y1='190' x2='480' y2='190' stroke='%234ade80' stroke-width='1.5' opacity='0.2'/%3E%3Cline x1='280' y1='215' x2='500' y2='215' stroke='%234ade80' stroke-width='1.5' opacity='0.2'/%3E%3Cline x1='280' y1='240' x2='450' y2='240' stroke='%234ade80' stroke-width='1.5' opacity='0.2'/%3E%3Ctext x='400' y='220' text-anchor='middle' font-size='80' fill='%234ade80' opacity='0.2'%3E📄%3C/text%3E%3C/svg%3E")`,
+            },
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 📦 RPG / Meta 系統
+        // RPG / Meta 系統
         // ───────────────────────────────────────────────────────────────
         const MONSTER_TYPES = [
             { name:'史萊姆', hpMod:0.8, atkMod:0.8, speedMod:0.8, color:'text-green-400', icon:Ghost, effect:'confusion', effectName:'混亂' },
@@ -285,70 +314,61 @@
             { name:'字靈龍', hpMod:2.5, atkMod:1.5, speedMod:1.0, color:'text-yellow-400', icon:Crown, isBoss:true, effect:'silence', effectName:'龍威' },
             { name:'深淵領主', hpMod:3.0, atkMod:1.8, speedMod:0.8, color:'text-rose-500', icon:Skull, isBoss:true, effect:'confusion', effectName:'恐懼' },
         ];
-
         const MASTER_SKILL_POOL = {
-            heal:     { id:'heal',    name:'治癒術',   cost:0,    icon:Heart,    color:'bg-green-500',  effect: p => ({ ...p, hp: Math.min(p.maxHp, p.hp + Math.floor(p.maxHp*0.3)), log:'回復 HP' }) },
-            burst:    { id:'burst',   name:'爆裂魔法', cost:0,    icon:Flame,    color:'bg-red-500',    effect: p => ({ ...p, bonusDmg: p.atk*2, log:'下次傷害 200%' }) },
-            freeze:   { id:'freeze',  name:'凝滯',     cost:800,  icon:Snowflake, color:'bg-cyan-500',  effect: p => ({ ...p, log:'凍結 5 秒！' }) },
-            thunder:  { id:'thunder', name:'雷擊',     cost:1200, icon:Zap,      color:'bg-yellow-500', effect: p => ({ ...p, damageDealt:100, log:'100 真實傷害' }) },
-            shuffle:  { id:'shuffle', name:'重置',     cost:500,  icon:Shuffle,  color:'bg-purple-500', effect: p => ({ ...p, log:'更換題目！' }) },
+            heal:    { id:'heal',    name:'治癒術',   cost:0,    icon:Heart,    color:'bg-green-500',  effect: p => ({ ...p, hp: Math.min(p.maxHp, p.hp + Math.floor(p.maxHp*0.3)), log:'回覆 HP' }) },
+            burst:   { id:'burst',   name:'爆裂魔法', cost:0,    icon:Flame,    color:'bg-red-500',    effect: p => ({ ...p, bonusDmg: p.atk*2, log:'下次傷害 200%' }) },
+            freeze:  { id:'freeze',  name:'凝滯',     cost:800,  icon:Snowflake, color:'bg-cyan-500',  effect: p => ({ ...p, log:'凍結 5 秒！' }) },
+            thunder: { id:'thunder', name:'雷擊',     cost:1200, icon:Zap,      color:'bg-yellow-500', effect: p => ({ ...p, damageDealt:100, log:'100 真實傷害' }) },
+            shuffle: { id:'shuffle', name:'重置',     cost:500,  icon:Shuffle,  color:'bg-purple-500', effect: p => ({ ...p, log:'更換題目！' }) },
         };
-
         const META_UPGRADES = {
             hp:  { name:'生命',  baseCost:200, costMult:1.8, effectVal:10,  icon:Heart,  desc:'+10 HP' },
             atk: { name:'攻擊',  baseCost:300, costMult:2.0, effectVal:5,   icon:Sword,  desc:'+5 ATK' },
             exp: { name:'經驗',  baseCost:500, costMult:2.2, effectVal:0.05, icon:Star,   desc:'+5% EXP' },
         };
-
         const RPG_ARTIFACTS = [
-            { id:'wand_1',  name:'新手法杖',   icon:Wand2,     cost:0,   unlockCost:0,    desc:'ATK+5',       effect:p => ({...p, atk:p.atk+5}) },
-            { id:'robe_1',  name:'布衣',       icon:Sparkles,  cost:0,   unlockCost:0,    desc:'HP+20',       effect:p => ({...p, maxHp:p.maxHp+20, hp:p.hp+20}) },
-            { id:'ring_1',  name:'幸運戒指',   icon:Gem,       cost:0,   unlockCost:0,    desc:'EXP+10%',     effect:p => ({...p, expMult:(p.expMult||1)+0.1}) },
-            { id:'boots_1', name:'輕便鞋',     icon:Gem,       cost:0,   unlockCost:0,    desc:'Dodge+5%',    effect:p => ({...p, dodge:(p.dodge||0)+0.05}) },
-            { id:'crit',    name:'暴擊之刃',   icon:Zap,       cost:150, unlockCost:500,  desc:'Crit+15%',    effect:p => ({...p, critChance:(p.critChance||0.1)+0.15}) },
+            { id:'wand_1',  name:'新手法杖',   icon:Wand2,     cost:0,   unlockCost:0,    desc:'ATK+5',        effect:p => ({...p, atk:p.atk+5}) },
+            { id:'robe_1',  name:'布衣',       icon:Sparkles,  cost:0,   unlockCost:0,    desc:'HP+20',        effect:p => ({...p, maxHp:p.maxHp+20, hp:p.hp+20}) },
+            { id:'ring_1',  name:'幸運戒指',   icon:Gem,       cost:0,   unlockCost:0,    desc:'EXP+10%',      effect:p => ({...p, expMult:(p.expMult||1)+0.1}) },
+            { id:'boots_1', name:'輕便鞋',     icon:Gem,       cost:0,   unlockCost:0,    desc:'Dodge+5%',     effect:p => ({...p, dodge:(p.dodge||0)+0.05}) },
+            { id:'crit',    name:'暴擊之刃',   icon:Zap,       cost:150, unlockCost:500,  desc:'Crit+15%',     effect:p => ({...p, critChance:(p.critChance||0.1)+0.15}) },
             { id:'life',    name:'吸血項鏈',   icon:Droplets,  cost:300, unlockCost:800,  desc:'Lifesteal+15%',effect:p => ({...p, lifesteal:(p.lifesteal||0)+0.15}) },
-            { id:'thorns', name:'反傷甲',      icon:Shield,    cost:250, unlockCost:600,  desc:'Thorns+20%',  effect:p => ({...p, thorns:(p.thorns||0)+0.2}) },
-            { id:'phoenix', name:'鳳凰灰燼',   icon:Flame,     cost:0,   unlockCost:2000, desc:'復活一次',   effect:p => ({...p, revive:true}) },
+            { id:'thorns', name:'反傷甲',      icon:Shield,    cost:250, unlockCost:600,  desc:'Thorns+20%',   effect:p => ({...p, thorns:(p.thorns||0)+0.2}) },
+            { id:'phoenix', name:'鳳凰灰燼',   icon:Flame,     cost:0,   unlockCost:2000, desc:'復活一次',     effect:p => ({...p, revive:true}) },
         ];
-
-        const THEMES = {
-            FOREST: { bg:'bg-gradient-to-b from-sky-300 to-blue-100', road:'from-slate-700 to-slate-900', decor:Trees },
-            DARK:   { bg:'bg-gradient-to-b from-slate-800 to-slate-950', road:'from-slate-700 to-black', decor:Moon },
-            SUNSET: { bg:'bg-gradient-to-b from-orange-400 to-red-600', road:'from-red-900 to-orange-900', decor:Flame },
-        };
-
         const AVATARS = {
             hero:   { id:'hero',   name:'蒼穹劍士', icon:Sword,  color:'text-cyan-400',  bg:'bg-cyan-500',   glow:'shadow-cyan-500/50' },
             heroine:{ id:'heroine',name:'緋紅魔導', icon:Wand2,  color:'text-rose-400',  bg:'bg-rose-500',   glow:'shadow-rose-500/50' }
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 共用鍵盤 UI 組件
+        // 共用鍵盤 UI
         // ───────────────────────────────────────────────────────────────
-        const KeyboardUI = ({ inputMode, userInput, currentQ, monster, onKey, disabled }) => {
-            const isConfused = monster?.type?.effect === 'confusion';
-            const isBlind    = monster?.type?.effect === 'blind';
+        const KeyboardUI = ({ inputMode, userInput, currentQ, monster, onKey, disabled, accentColor = '#8b5cf6' }) => {
             const keys = "QWERTYUIOPASDFGHJKLZXCVBNM".split('');
+            const isBlind = monster?.type?.effect === 'blind';
+            const isConfused = monster?.type?.effect === 'confusion';
 
-            if (inputMode === 'radical') return null; // radical uses options UI
+            if (inputMode === 'radical') return null;
 
             return (
                 <div className="w-full max-w-3xl mx-auto p-2">
-                    <div className="flex justify-center mb-3 space-x-2 min-h-[48px] flex-wrap">
+                    <div className="flex justify-center mb-3 space-x-2 min-h-[52px] flex-wrap">
                         {userInput.map((k, i) => (
-                            <div key={i} className="w-11 h-11 border-2 border-magic-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-magic-300 animate-float-up">
+                            <motion.div key={i} initial={{scale:0,y:-20}} animate={{scale:1,y:0}} className="w-12 h-12 border-2 rounded-lg flex items-center justify-center text-xl font-bold key-glow"
+                                style={{borderColor: accentColor, background:'rgba(0,0,0,0.5)', color:accentColor}}>
                                 {KEYBOARD_MAP[k]}
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                     <div className="keyboard-grid">
                         {keys.map(k => (
                             <button key={k} onClick={() => onKey(k)} disabled={disabled}
                                 className={`aspect-square rounded flex flex-col items-center justify-center text-xs transition-all active:scale-90
-                                    ${disabled ? 'bg-slate-800 border border-slate-700 opacity-40 cursor-not-allowed' :
-                                      'bg-slate-800 border border-slate-700 hover:bg-slate-700 active:bg-slate-600'}`}>
-                                <span className="text-slate-500">{k}</span>
-                                <span className={`font-bold text-magic-300 ${isBlind || isConfused ? 'opacity-30' : ''}`}>{KEYBOARD_MAP[k]}</span>
+                                    ${disabled ? 'bg-zinc-900 border border-zinc-800 opacity-40 cursor-not-allowed' :
+                                      'bg-zinc-900/80 border border-zinc-700/50 hover:bg-zinc-800 hover:border-zinc-600 active:bg-zinc-700'}`}>
+                                <span className="text-zinc-600 text-[10px]">{k}</span>
+                                <span className={`font-bold text-sm ${isBlind || isConfused ? 'opacity-30' : ''}`} style={{color: accentColor}}>{KEYBOARD_MAP[k]}</span>
                             </button>
                         ))}
                     </div>
@@ -357,7 +377,7 @@
         };
 
         // 選項式 UI (radical mode)
-        const OptionsUI = ({ currentQ, onSelect, disabled }) => {
+        const OptionsUI = ({ currentQ, onSelect, disabled, accentColor = '#8b5cf6' }) => {
             const options = useMemo(() => {
                 const correct = { label:`${KEYBOARD_MAP[currentQ.code[0]]} (${currentQ.code[0]})`, val: currentQ.code[0], isCorrect:true };
                 const decoys = generateDecoys(currentQ, 2).map(d => ({ label:`${KEYBOARD_MAP[d.code[0]]||'?'} (${d.code[0]})`, val:d.code[0], isCorrect:false }));
@@ -369,8 +389,9 @@
                     {options.map((o, i) => (
                         <button key={i} onClick={() => onSelect(o.val)} disabled={disabled}
                             className={`py-6 rounded-xl text-xl font-bold border-2 transition-all active:scale-95
-                                ${disabled ? 'bg-slate-800 border-slate-700 opacity-50 cursor-not-allowed' :
-                                  'bg-slate-800 border-magic-600 hover:bg-slate-700 text-magic-100'}`}>
+                                ${disabled ? 'bg-zinc-900 border-zinc-800 opacity-50 cursor-not-allowed' :
+                                  `border-2 hover:scale-105`}`}
+                            style={{borderColor: accentColor+'60', background: 'rgba(0,0,0,0.5)', color: accentColor}}>
                             {o.label}
                         </button>
                     ))}
@@ -379,7 +400,7 @@
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 🎮 RPG GAME (深淵試煉)
+        // 🎮 RPG GAME
         // ───────────────────────────────────────────────────────────────
         const RPGGame = ({ metaState, onGameEnd, goHome }) => {
             const baseStats = { hp:100+(metaState.upgrades.hp*META_UPGRADES.hp.effectVal), atk:20+(metaState.upgrades.atk*META_UPGRADES.atk.effectVal), expMult:1+(metaState.upgrades.exp*META_UPGRADES.exp.effectVal) };
@@ -402,8 +423,7 @@
             const [showStats, setShowStats] = useState(false);
             const [sessionStats, setSessionStats] = useState({ correct:0, wrong:0, maxCombo:0 });
 
-            const filteredQuestions = useMemo(() => QUESTIONS, []);
-            const currentQ = useMemo(() => filteredQuestions[Math.floor(Math.random()*filteredQuestions.length)], [qIndex]);
+            const currentQ = useMemo(() => QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)], [qIndex]);
 
             const spawnMonster = useCallback(() => {
                 const isBoss = player.floor % 5 === 0;
@@ -420,7 +440,6 @@
 
             useEffect(() => { spawnMonster(); }, []);
 
-            // Gauge timer
             useEffect(() => {
                 let interval;
                 if (turn === 'player') {
@@ -508,133 +527,151 @@
             };
 
             if (turn === 'lose') return (
-                <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-white p-8 z-50">
+                <div className="absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center text-white p-8 z-50">
                     <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" />
-                    <h2 className="text-4xl font-bold mb-2 text-red-500">挑戰結束</h2>
-                    <p className="text-xl mb-4">止步於第 {player.floor} 層</p>
-                    <div className="bg-slate-800 p-6 rounded-2xl mb-8"><p className="text-sm text-gold-400 mb-2">本次獲得</p><div className="flex items-center gap-2 text-3xl font-bold text-yellow-400"><LucideIcon icon={Coins}/> <span>{player.coinsGained}</span></div></div>
-                    <button onClick={()=>onGameEnd(player.coinsGained, sessionStats)} className="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-full font-bold">返回聖殿</button>
+                    <h2 className="text-4xl font-black mb-2 text-red-500 font-display">挑戰結束</h2>
+                    <p className="text-xl mb-4 text-zinc-400">止步於第 {player.floor} 層</p>
+                    <div className="bg-zinc-900 p-6 rounded-2xl mb-8 border border-zinc-800"><p className="text-sm text-gold-400 mb-2">本次獲得</p><div className="flex items-center gap-2 text-3xl font-black text-yellow-400"><LucideIcon icon={Coins}/> <span>{player.coinsGained}</span></div></div>
+                    <div className="grid grid-cols-2 gap-4 mb-8 text-center">
+                        <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800"><div className="text-2xl font-black text-green-400">{sessionStats.correct}</div><div className="text-xs text-zinc-500">答對</div></div>
+                        <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800"><div className="text-2xl font-black text-purple-400">{sessionStats.maxCombo}</div><div className="text-xs text-zinc-500">最高連擊</div></div>
+                    </div>
+                    <button onClick={()=>onGameEnd(player.coinsGained, sessionStats)} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold border border-zinc-700">返回聖殿</button>
                 </div>
             );
 
             if (turn === 'reward') return (
-                <div className="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center text-white p-4 z-50">
-                    <h2 className="text-3xl font-bold text-yellow-400 mb-8 animate-bounce">戰利品選擇</h2>
+                <div className="absolute inset-0 bg-zinc-950/95 backdrop-blur-xl flex flex-col items-center justify-center text-white p-4 z-50">
+                    <motion.h2 initial={{y:-20, opacity:0}} animate={{y:0, opacity:1}} className="text-3xl font-black text-yellow-400 mb-8 font-display animate-pulse">戰利品選擇</motion.h2>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-5xl w-full">
                         {rewards.map((r,i) => (
-                            <button key={i} onClick={() => { AudioEngine.correct(); const newP = r.effect(player); setPlayer({...newP, artifacts:[...newP.artifacts,{id:r.id,name:r.name,icon:r.icon,desc:r.desc}]}); setTimeout(()=>{setTurn('player'); spawnMonster();},300); }}
-                                className="bg-slate-800 border-2 border-magic-600 hover:scale-105 transition-transform p-4 rounded-xl flex flex-col items-center">
+                            <motion.button key={i} initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:i*0.08}}
+                                onClick={() => { AudioEngine.correct(); const newP = r.effect(player); setPlayer({...newP, artifacts:[...newP.artifacts,{id:r.id,name:r.name,icon:r.icon,desc:r.desc}]}); setTimeout(()=>{setTurn('player'); spawnMonster();},300); }}
+                                className="bg-zinc-900 border-2 border-purple-500/50 hover:border-purple-400 hover:scale-105 transition-all p-4 rounded-2xl flex flex-col items-center glass">
                                 <LucideIcon icon={r.icon} size={36} className="text-yellow-400 mb-3" />
                                 <h3 className="text-lg font-bold mb-1">{r.name}</h3>
-                                <p className="text-xs text-slate-400">{r.desc}</p>
-                            </button>
+                                <p className="text-xs text-zinc-500">{r.desc}</p>
+                            </motion.button>
                         ))}
                     </div>
                 </div>
             );
 
             return (
-                <div className={`h-full w-full flex flex-col bg-slate-950 text-white relative overflow-hidden ${anim==='damage'?'animate-damage-flash':''}`}>
-                    <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center z-10">
+                <div className={`h-full w-full flex flex-col bg-zinc-950 text-white relative overflow-hidden ${anim==='damage'?'animate-damage-flash':''}`}>
+                    {/* Top bar */}
+                    <div className="p-3 bg-zinc-900/90 border-b border-zinc-800/50 flex justify-between items-center z-10">
                         <div className="flex items-center gap-3 cursor-pointer" onClick={()=>setShowStats(!showStats)}>
-                            <div className="w-12 h-12 bg-magic-700 rounded-lg flex flex-col items-center justify-center border-2 border-magic-500">
-                                <span className="text-xs">LV</span><span className="font-bold text-xl">{player.level}</span>
+                            <div className="w-12 h-12 bg-purple-900/80 rounded-xl flex flex-col items-center justify-center border border-purple-500/40 shadow-lg shadow-purple-900/30">
+                                <span className="text-[10px] text-purple-300">LV</span><span className="font-black text-xl text-purple-200">{player.level}</span>
                             </div>
                             <div>
-                                <div className="text-xs text-slate-400 flex justify-between w-32"><span>F{player.floor}</span><span className="text-yellow-400 font-bold">Combo {player.combo}</span></div>
-                                <div className="w-32 h-3 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-red-500 transition-all" style={{width:`${(player.hp/player.maxHp)*100}%`}}/></div>
-                                <div className="text-[10px] text-right">{player.hp}/{player.maxHp}</div>
+                                <div className="flex justify-between w-36 text-[10px] text-zinc-500 mb-1"><span>F{player.floor}</span><span className="text-yellow-400 font-bold">Combo {player.combo}</span></div>
+                                <div className="w-36 h-3 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/50"><div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all" style={{width:`${(player.hp/player.maxHp)*100}%`}}/></div>
+                                <div className="text-[10px] text-right text-zinc-600">{player.hp}/{player.maxHp}</div>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1 text-gold-400 font-bold bg-slate-800 px-3 py-1 rounded-full text-sm"><LucideIcon icon={Coins} size={14}/> {player.gold}</div>
-                            <button onClick={goHome} className="p-2 bg-red-900/50 text-red-400 rounded hover:bg-red-900"><LucideIcon icon={X} size={18}/></button>
+                            <div className="flex items-center gap-1 text-gold-400 font-bold bg-zinc-900/80 px-3 py-1.5 rounded-full text-sm border border-gold-500/20">
+                                <LucideIcon icon={Coins} size={14}/> <span>{player.gold}</span>
+                            </div>
+                            <button onClick={goHome} className="p-2 bg-red-900/30 text-red-400/70 rounded-lg hover:bg-red-900/50 transition-colors border border-red-900/30"><LucideIcon icon={X} size={18}/></button>
                         </div>
                     </div>
-                    {showStats && <div className="absolute top-20 left-4 bg-slate-900/95 border border-slate-700 p-4 rounded-xl z-40 text-sm shadow-xl">
-                        <h4 className="font-bold text-magic-300 mb-2">屬性</h4>
-                        <p>⚔️ {player.atk} | ⚡ {Math.round(player.critChance*100)}% | 🩸 {Math.round((player.lifesteal||0)*100)}%</p>
-                        <h4 className="font-bold text-magic-300 mt-2 mb-2">遺物</h4>
-                        <div className="flex flex-wrap gap-1">{player.artifacts.map((a,i)=><div key={i} title={a.name} className="bg-slate-800 p-1.5 rounded border border-slate-600"><LucideIcon icon={a.icon} size={16} className="text-yellow-500"/></div>)}</div>
+
+                    {showStats && <div className="absolute top-20 left-4 bg-zinc-900/95 border border-zinc-700/50 p-4 rounded-2xl z-40 text-sm glass shadow-2xl">
+                        <h4 className="font-bold text-purple-300 mb-2">屬性</h4>
+                        <p className="text-zinc-400">⚔️ {player.atk} | ⚡ {Math.round(player.critChance*100)}% | 🩸 {Math.round((player.lifesteal||0)*100)}%</p>
+                        <h4 className="font-bold text-purple-300 mt-2 mb-2">遺物</h4>
+                        <div className="flex flex-wrap gap-1">{player.artifacts.map((a,i)=><div key={i} title={`${a.name}: ${a.desc}`} className="bg-zinc-800 p-1.5 rounded-lg border border-zinc-700"><LucideIcon icon={a.icon} size={14} className="text-yellow-500"/></div>)}</div>
                     </div>}
 
                     <div className="flex-1 relative flex flex-col items-center justify-center">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-magic-900/30 to-slate-950 -z-10"/>
-                        {/* Skills */}
+                        <div className="absolute inset-0 -z-10" style={{background:'radial-gradient(circle at 50% 60%, rgba(76,29,149,0.15) 0%, rgba(9,9,11,1) 70%)'}}/>
+                        {/* Skills bar */}
                         <div className="absolute top-4 flex gap-3 z-20">
                             {player.skills.map((s,i) => (
-                                <button key={s.id} onClick={() => { AudioEngine.skill(); if(s.id==='heal'){const v=Math.floor(player.maxHp*0.3); setPlayer(p=>({...p,hp:Math.min(p.maxHp,p.hp+v)})); setCombatLog(`回覆 ${v} HP`);} else if(s.id==='burst'){setPlayer(p=>({...p,bonusDmg:p.atk*2})); setCombatLog('下次傷害 200%！');} setPlayer(p=>({...p,skills:p.skills.map((sk,j)=>j===i?{...sk,currentCd:5}:sk)})); }}
-                                    disabled={s.currentCd>0} className={`w-13 h-13 rounded-full border-2 flex items-center justify-center relative transition-transform active:scale-95 ${s.currentCd>0?'bg-slate-800 border-slate-600 opacity-50 cursor-not-allowed':`${s.color} border-white shadow-lg`}`}>
-                                    <LucideIcon icon={s.icon} size={22} className="text-white"/>
-                                    {s.currentCd>0&&<div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center font-bold text-white">{s.currentCd}</div>}
+                                <button key={s.id} onClick={() => {
+                                    AudioEngine.skill();
+                                    if(s.id==='heal'){const v=Math.floor(player.maxHp*0.3); setPlayer(p=>({...p,hp:Math.min(p.maxHp,p.hp+v)})); setCombatLog(`回覆 ${v} HP`);}
+                                    else if(s.id==='burst'){setPlayer(p=>({...p,bonusDmg:p.atk*2})); setCombatLog('下次傷害 200%！');}
+                                    setPlayer(p=>({...p,skills:p.skills.map((sk,j)=>j===i?{...sk,currentCd:5}:sk)}));
+                                }} disabled={s.currentCd>0}
+                                    className={`w-13 h-13 rounded-xl border-2 flex items-center justify-center relative transition-all active:scale-90 ${s.currentCd>0?'bg-zinc-900 border-zinc-700 opacity-40 cursor-not-allowed':'border-white/20 shadow-lg'}`}
+                                    style={{background:'rgba(0,0,0,0.6)'}}>
+                                    <LucideIcon icon={s.icon} size={20} className="text-white"/>
+                                    {s.currentCd>0&&<div className="absolute inset-0 bg-black/70 rounded-xl flex items-center justify-center font-black text-white text-sm">{s.currentCd}</div>}
                                 </button>
                             ))}
                         </div>
+
                         {/* Monster */}
                         <motion.div animate={{y:[0,-10,0]}} transition={{repeat:Infinity,duration:3}} className="relative z-10 mt-8 mb-4">
-                            <div className="w-40 h-40 bg-slate-800 rounded-full border-4 border-magic-500 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)]">
-                                <LucideIcon icon={monster.type.icon} size={80} className={monster.type.color}/>
-                                <span className="absolute text-7xl font-serif font-black text-white drop-shadow-md">{currentQ.char}</span>
-                                {monster.frozen>0&&<div className="absolute inset-0 flex items-center justify-center bg-cyan-500/30 rounded-full"><LucideIcon icon={Snowflake} size={64} className="text-white animate-pulse"/></div>}
+                            <div className="w-40 h-40 rounded-full border-4 flex items-center justify-center shadow-2xl relative"
+                                style={{borderColor:'#8b5cf6', boxShadow:'0 0 40px rgba(139,92,246,0.3), inset 0 0 30px rgba(139,92,246,0.1)', background:'radial-gradient(circle, #1e1b4b 0%, #0f0f12 100%)'}}>
+                                <LucideIcon icon={monster.type.icon} size={72} className={monster.type.color}/>
+                                <span className="absolute inset-0 flex items-center justify-center text-6xl font-serif font-black text-white/90 drop-shadow-lg">{currentQ.char}</span>
+                                {monster.frozen>0&&<div className="absolute inset-0 flex items-center justify-center bg-cyan-500/20 rounded-full"><LucideIcon icon={Snowflake} size={56} className="text-cyan-300 animate-pulse"/></div>}
                             </div>
-                            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-32 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-600"><motion.div className="h-full bg-red-500" style={{width:`${gauge}%`}} transition={{ease:'linear',duration:0.2}}/></div>
-                            <div className="absolute -top-8 w-full text-center text-red-400 font-bold text-sm">{monster.name}</div>
+                            {/* HP bar */}
+                            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-44 h-2.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/50">
+                                <motion.div className="h-full bg-gradient-to-r from-purple-600 to-purple-400" style={{width:`${(monster.hp/monster.maxHp)*100}%`}} transition={{duration:0.2}}/>
+                            </div>
+                            <div className="absolute -top-10 w-full text-center text-sm font-bold text-red-400 drop-shadow-lg">{monster.name}</div>
                         </motion.div>
-                        <div className="text-center h-8 font-bold text-lg text-magic-200 mb-4">{combatLog}</div>
+
+                        {/* Combat log */}
+                        <motion.div key={combatLog} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="text-center font-bold text-lg text-purple-200/80 mb-2 h-8">{combatLog}</motion.div>
+
+                        {/* Combo display */}
+                        {player.combo >= 5 && (
+                            <motion.div initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} className="text-2xl font-black text-yellow-400 mb-2 font-display">
+                                {player.combo} COMBO
+                            </motion.div>
+                        )}
                     </div>
 
-                    <div className="bg-slate-900 border-t border-slate-800 p-4 rounded-t-3xl shadow-2xl relative z-20">
-                        <div className="text-center mb-3 text-slate-400 text-sm">
-                            輸入全碼：{currentQ.code} — 提示：{currentQ.hint}
+                    {/* Bottom keyboard panel */}
+                    <div className="bg-zinc-900/95 border-t border-zinc-800/50 p-4 rounded-t-3xl shadow-2xl relative z-20">
+                        <div className="text-center mb-3 text-zinc-500 text-sm">
+                            <span className="text-purple-300">全碼：{currentQ.code}</span> — 提示：{currentQ.hint}
                         </div>
-                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={monster} onKey={handleKey} disabled={turn!=='player'}/>
+                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={monster} onKey={handleKey} disabled={turn!=='player'} accentColor="#a78bfa"/>
                     </div>
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 🏃 RUNNER GAME (速成跑酷)
+        // 🏃 RUNNER GAME
         // ───────────────────────────────────────────────────────────────
         const RunnerGame = ({ chapter, goHome }) => {
             const [qIndex, setQIndex] = useState(0);
             const [gameState, setGameState] = useState('running');
             const [userInput, setUserInput] = useState([]);
             const [feedback, setFeedback] = useState(null);
-            const [message, setMessage] = useState(null);
             const [time, setTime] = useState(0);
             const [score, setScore] = useState(0);
             const [qStartTime, setQStartTime] = useState(null);
             const [sessionStats, setSessionStats] = useState({ correct:0, wrong:0, maxCombo:0 });
-            const [currentCombo, setCurrentCombo] = useState(0);
-            const theme = THEMES.FOREST;
+            const currentQ = useMemo(() => QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)], [qIndex]);
 
-            const filtered = useMemo(() => chapter ? QUESTIONS.filter(q=>q.mainCode===chapter) : QUESTIONS, [chapter]);
-            const currentQ = useMemo(() => filtered[Math.floor(Math.random()*filtered.length)], [qIndex]);
-
-            const charProgress = (qIndex / 10) * 80;
-            const charPos = gameState==='win' ? 90 : 10 + charProgress;
+            const charProgress = (qIndex / 10) * 75;
 
             useEffect(() => { const i = setInterval(() => setTime(t => t+1), 1000); return () => clearInterval(i); }, []);
-            useEffect(() => { if (gameState==='running') { const t = setTimeout(() => { setGameState('bullet_time'); setQStartTime(Date.now()); }, 2000); return () => clearTimeout(t); } }, [gameState, qIndex]);
+            useEffect(() => {
+                if (gameState==='running') { const t = setTimeout(() => { setGameState('bullet_time'); setQStartTime(Date.now()); }, 2500); return () => clearTimeout(t); }
+            }, [gameState, qIndex]);
 
             const processAnswer = useCallback(() => {
-                AudioEngine.correct();
-                setFeedback('correct');
+                AudioEngine.correct(); setFeedback('correct');
                 const speedBonus = Math.max(0, Math.floor(50-((Date.now()-qStartTime)/1000)*5));
                 setScore(s => s + 100 + speedBonus);
-                setCurrentCombo(c => { const n=c+1; setSessionStats(prev=>({...prev, correct:prev.correct+1, maxCombo:Math.max(prev.maxCombo,n)})); return n; });
-                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); setGameState('running'); }, 1000);
-            }, [qStartTime]);
+                setSessionStats(prev=>({...prev, correct:prev.correct+1, maxCombo:Math.max(prev.maxCombo,qIndex+1)}));
+                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); setGameState('running'); }, 800);
+            }, [qStartTime, qIndex]);
 
-            const handleWrong = () => {
-                AudioEngine.wrong();
-                setFeedback('wrong');
-                setMessage('再試一次！');
-                setCurrentCombo(0);
-                setSessionStats(prev => ({...prev, wrong:prev.wrong+1}));
-                setTimeout(() => { setFeedback(null); setMessage(null); }, 1000);
-            };
+            const handleWrong = () => { AudioEngine.wrong(); setFeedback('wrong'); setSessionStats(prev=>({...prev, wrong:prev.wrong+1})); setTimeout(() => { setFeedback(null); setUserInput([]); }, 600); };
 
             const handleKey = (key) => {
                 if (gameState !== 'bullet_time' || feedback === 'correct') return;
@@ -643,54 +680,68 @@
                 if (target.startsWith(next.join(''))) {
                     if (next.join('') === target) { processAnswer(); setUserInput([]); }
                     else { AudioEngine.click(); setUserInput(next); }
-                } else { handleWrong(); setUserInput([]); }
+                } else handleWrong();
             };
 
-            useEffect(() => {
-                const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); };
-                window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-            }, [gameState, userInput, feedback, currentQ]);
+            useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [gameState, userInput, feedback, currentQ]);
 
             return (
-                <div className={`h-full w-full flex flex-col ${theme.bg} overflow-hidden relative`}>
-                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-30 pointer-events-none">
-                        <div className="flex items-center space-x-2 pointer-events-auto">
-                            <button onClick={goHome} className="bg-white/80 p-2 rounded-full shadow-md"><LucideIcon icon={ArrowLeft} size={20}/></button>
-                            <div className="flex items-center space-x-2 bg-white/80 backdrop-blur px-3 py-1 rounded-full shadow-sm"><LucideIcon icon={Timer} className="text-blue-500" size={18}/><span className="font-bold text-slate-800 font-mono">{Math.floor(time/60).toString().padStart(2,'0')}:{(time%60).toString().padStart(2,'0')}</span></div>
-                            <div className="flex items-center space-x-2 bg-white/80 backdrop-blur px-3 py-1 rounded-full shadow-sm"><LucideIcon icon={Star} className="text-yellow-500" size={18}/><span className="font-bold text-slate-800">{score}</span></div>
+                <div className="h-full w-full flex flex-col bg-zinc-950 overflow-hidden relative">
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-20 pointer-events-none">
+                        <div className="flex items-center space-x-3 pointer-events-auto">
+                            <button onClick={goHome} className="bg-zinc-800/80 backdrop-blur p-2 rounded-xl border border-zinc-700/50 shadow-lg"><LucideIcon icon={ArrowLeft} size={20}/></button>
+                            <div className="flex items-center space-x-2 bg-zinc-800/80 backdrop-blur px-3 py-1.5 rounded-xl border border-zinc-700/50 shadow-lg"><LucideIcon icon={Timer} className="text-blue-400" size={18}/><span className="font-black text-white font-mono">{Math.floor(time/60).toString().padStart(2,'0')}:{(time%60).toString().padStart(2,'0')}</span></div>
+                            <div className="flex items-center space-x-2 bg-zinc-800/80 backdrop-blur px-3 py-1.5 rounded-xl border border-zinc-700/50 shadow-lg"><LucideIcon icon={Star} className="text-yellow-400" size={18}/><span className="font-black text-yellow-400">{score}</span></div>
                         </div>
                     </div>
-                    <div className="relative h-[55%] flex flex-col justify-end overflow-hidden">
-                        <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-b from-slate-700 to-slate-900 perspective-road flex justify-center">
-                            <div className="w-4 h-full bg-white/30"/>
+
+                    {/* Runner track */}
+                    <div className="relative h-[58%] flex flex-col justify-end overflow-hidden">
+                        {/* Speed lines */}
+                        <div className="absolute inset-0 overflow-hidden opacity-20">
+                            {[...Array(8)].map((_, i) => <div key={i} className="absolute h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent" style={{top:`${15+i*10}%`,left:'-10%',width:'120%',animation:`speedLine ${2+i*0.3}s linear infinite`,animationDelay:`${i*0.2}s`}}/>)}</div>
+                        <style>{`@keyframes speedLine { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
+
+                        {/* Ground */}
+                        <div className="absolute bottom-0 w-full h-1/2" style={{background:'linear-gradient(to bottom, #1e3a5f 0%, #0c1a2e 100%)'}}>
+                            {[...Array(20)].map((_, i) => <div key={i} className="absolute bottom-0 h-1 w-8 bg-yellow-400/20" style={{left:`${i*5}%`}}/>)}
                         </div>
-                        <div className="absolute bottom-10 right-[5%] z-10"><LucideIcon icon={Flag} size={48} className="text-red-500"/></div>
-                        <div className="absolute bottom-8 z-20 transition-all duration-1000 ease-in-out" style={{left:`${charPos}%`}}>
-                            <div className="relative transform -translate-x-1/2">
-                                <motion.div animate={{y:[0,-10,0]}} transition={{repeat:Infinity,duration:0.5}}>
-                                    <div style={{transform:'scaleX(-1)',display:'inline-block'}} className={`text-6xl filter drop-shadow-2xl ${feedback==='wrong'?'animate-shake grayscale':''}`}>{feedback==='wrong'?'😵':'🏃'}</div>
-                                </motion.div>
-                                <div className="w-16 h-4 bg-black/20 rounded-full mx-auto blur-sm mt-[-5px]"/>
-                            </div>
-                            <AnimatePresence>
-                                <motion.div key={qIndex} initial={{scale:0,y:50,opacity:0}} animate={{scale:gameState==='bullet_time'?1:0.2,y:gameState==='bullet_time'?-100:20,opacity:gameState==='bullet_time'?1:0}} transition={{type:'spring',damping:20}} className="absolute left-1/2 transform -translate-x-1/2 z-30 mb-12">
-                                    <div className="bg-white border-8 border-slate-800 rounded-2xl w-32 h-32 flex flex-col items-center justify-center shadow-2xl">
-                                        <span className="text-6xl font-serif font-black text-slate-900">{currentQ?.char}</span>
-                                        {gameState==='bullet_time'&&<motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="w-full flex flex-col items-center mt-2">
-                                            <p className="text-xs text-slate-400 mb-2">{currentQ.code} — {currentQ.hint}</p>
-                                            <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
-                                        </motion.div>}
+                        <div className="absolute bottom-10 right-[8%] z-10"><LucideIcon icon={Flag} size={48} className="text-red-500 drop-shadow-lg"/></div>
+
+                        {/* Character */}
+                        <div className="absolute bottom-8 z-20 transition-all duration-700 ease-out" style={{left:`${10+charProgress}%`}}>
+                            <motion.div animate={{y:[0,-8,0]}} transition={{repeat:Infinity,duration:0.4}} className="relative">
+                                <div className="text-5xl">{feedback==='wrong'?'💥':'🏃'}</div>
+                                <div className="w-12 h-3 bg-black/30 rounded-full mx-auto blur-sm mt-[-4px]"/>
+                            </motion.div>
+                        </div>
+
+                        {/* Question card */}
+                        <AnimatePresence>
+                            {gameState === 'bullet_time' && (
+                                <motion.div key={qIndex} initial={{scale:0.6, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.6, opacity:0}} transition={{type:'spring', damping:18}}
+                                    className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-30">
+                                    <div className="bg-zinc-900/95 backdrop-blur-xl border-2 border-yellow-500/40 rounded-3xl w-36 h-36 flex flex-col items-center justify-center shadow-2xl shadow-yellow-500/10">
+                                        <span className="text-5xl font-serif font-black text-white">{currentQ?.char}</span>
                                     </div>
                                 </motion.div>
-                            </AnimatePresence>
-                        </div>
+                            )}
+                        </AnimatePresence>
                     </div>
+
+                    {/* Keyboard area */}
+                    {gameState === 'bullet_time' && (
+                        <div className="flex-1 bg-zinc-900/80 backdrop-blur p-4">
+                            <div className="text-center text-yellow-400/60 text-xs mb-2">{currentQ.code} — {currentQ.hint}</div>
+                            <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#facc15"/>
+                        </div>
+                    )}
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 📖 SELF-LEARN GAME (自學練習)
+        // 📖 SELF-LEARN
         // ───────────────────────────────────────────────────────────────
         const SelfLearnGame = ({ chapter, goHome }) => {
             const [qIndex, setQIndex] = useState(0);
@@ -704,50 +755,47 @@
                 const target = getTargetCode(currentQ, 'cangjie');
                 const next = [...userInput, key];
                 if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) {
-                        AudioEngine.correct(); setFeedback('correct');
-                        setStats(s=>({...s, correct:s.correct+1}));
-                        setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 800);
-                    } else { AudioEngine.click(); setUserInput(next); }
-                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s=>({...s, wrong:s.wrong+1})); setTimeout(() => { setFeedback(null); setUserInput([]); }, 1000); }
+                    if (next.join('') === target) { AudioEngine.correct(); setFeedback('correct'); setStats(s=>({...s, correct:s.correct+1})); setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 600); }
+                    else { AudioEngine.click(); setUserInput(next); }
+                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s=>({...s, wrong:s.wrong+1})); setTimeout(() => { setFeedback(null); setUserInput([]); }, 800); }
             };
 
-            useEffect(() => {
-                const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); };
-                window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-            }, [userInput, currentQ]);
+            useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [userInput, currentQ]);
 
             const accuracy = stats.correct + stats.wrong > 0 ? Math.round((stats.correct/(stats.correct+stats.wrong))*100) : 0;
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-900 text-white relative">
-                    <div className="p-4 bg-slate-800/80 flex justify-between items-center border-b border-slate-700">
+                <div className="h-full w-full flex flex-col bg-zinc-950 text-white relative">
+                    <div className="p-4 bg-amber-950/30 border-b border-amber-800/30 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <button onClick={goHome} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft}/></button>
+                            <button onClick={goHome} className="bg-amber-900/30 p-2 rounded-xl hover:bg-amber-900/50 transition-colors border border-amber-700/30"><LucideIcon icon={ArrowLeft}/></button>
                             <div>
-                                <h2 className="font-bold text-lg">自學練習</h2>
-                                <p className="text-xs text-slate-400">第 {qIndex+1} 題 | 準確率 {accuracy}%</p>
+                                <h2 className="font-bold text-lg text-amber-200">自學練習</h2>
+                                <p className="text-xs text-amber-400/60">第 {qIndex+1} 題 | 準確率 {accuracy}%</p>
                             </div>
                         </div>
-                        <div className="flex gap-4 text-sm">
-                            <span className="text-green-400">✓ {stats.correct}</span>
-                            <span className="text-red-400">✗ {stats.wrong}</span>
+                        <div className="flex gap-3 text-sm">
+                            <span className="text-green-400 font-bold">✓ {stats.correct}</span>
+                            <span className="text-red-400 font-bold">✗ {stats.wrong}</span>
                         </div>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center p-8">
-                        <div className={`text-9xl font-serif font-black mb-8 transition-all ${feedback==='correct'?'text-green-400':feedback==='wrong'?'text-red-400':'text-white'}`}>{currentQ?.char}</div>
-                        <div className="text-center text-slate-400 mb-6">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                        <div className="flex justify-center mb-6 space-x-2 min-h-[52px] flex-wrap">
-                            {userInput.map((k,i) => <div key={i} className="w-12 h-12 border-2 border-magic-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-magic-300 animate-float-up">{KEYBOARD_MAP[k]}</div>)}
+                        <motion.div animate={{scale: feedback==='correct'?1.1:feedback==='wrong'?0.95:1}} transition={{duration:0.2}}
+                            className={`text-8xl font-serif font-black mb-6 transition-all ${feedback==='correct'?'text-green-400':feedback==='wrong'?'text-red-400':'text-white/90'}`}>
+                            {currentQ?.char}
+                        </motion.div>
+                        <div className="text-center text-amber-200/40 mb-4 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                        <div className="flex justify-center mb-4 space-x-2 min-h-[52px] flex-wrap">
+                            {userInput.map((k,i) => <motion.div key={i} initial={{scale:0}} animate={{scale:1}} className="w-12 h-12 border-2 border-amber-500/50 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-amber-300 key-glow">{KEYBOARD_MAP[k]}</motion.div>)}
                         </div>
-                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#f59e0b"/>
                     </div>
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // ⚡ SPEED GAME (速打模式)
+        // ⚡ SPEED GAME
         // ───────────────────────────────────────────────────────────────
         const SpeedGame = ({ chapter, goHome }) => {
             const [qIndex, setQIndex] = useState(0);
@@ -756,7 +804,7 @@
             const [timeLeft, setTimeLeft] = useState(60);
             const [score, setScore] = useState(0);
             const [wpm, setWpm] = useState(0);
-            const [gameState, setGameState] = useState('ready'); // ready | playing | done
+            const [gameState, setGameState] = useState('ready');
             const [stats, setStats] = useState({ correct:0, wrong:0 });
             const qStartRef = useRef(Date.now());
             const filtered = useMemo(() => chapter ? QUESTIONS.filter(q=>q.mainCode===chapter) : QUESTIONS, [chapter]);
@@ -771,14 +819,11 @@
 
             const processAnswer = () => {
                 const elapsed = (Date.now() - qStartRef.current) / 1000;
-                const wpmCalc = Math.round((score + 100) / (60 - timeLeft + elapsed) * 60);
-                setWpm(wpmCalc || 0);
+                setWpm(Math.round((score + 100) / (elapsed + 1) * 60) || 0);
                 setScore(s => s + 100);
                 setStats(s => ({...s, correct: s.correct+1}));
-                AudioEngine.correct();
-                setFeedback('correct');
-                qStartRef.current = Date.now();
-                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q => q+1); }, 400);
+                AudioEngine.correct(); setFeedback('correct'); qStartRef.current = Date.now();
+                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q => q+1); }, 300);
             };
 
             const handleKey = (key) => {
@@ -789,47 +834,46 @@
                 if (target.startsWith(next.join(''))) {
                     if (next.join('') === target) processAnswer();
                     else { AudioEngine.click(); setUserInput(next); }
-                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s => ({...s, wrong: s.wrong+1})); setUserInput([]); setTimeout(() => setFeedback(null), 600); }
+                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s => ({...s, wrong: s.wrong+1})); setUserInput([]); setTimeout(() => setFeedback(null), 500); }
             };
 
             useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [gameState, userInput, currentQ, feedback]);
 
             if (gameState === 'done') return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8">
-                    <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6"/>
-                    <h2 className="text-4xl font-bold mb-4">時間到！</h2>
-                    <div className="grid grid-cols-2 gap-6 mb-8 text-center">
-                        <div className="bg-slate-800 p-6 rounded-2xl"><div className="text-4xl font-black text-yellow-400">{score}</div><div className="text-sm text-slate-400">總分</div></div>
-                        <div className="bg-slate-800 p-6 rounded-2xl"><div className="text-4xl font-black text-cyan-400">{wpm}</div><div className="text-sm text-slate-400">WPM</div></div>
-                        <div className="bg-slate-800 p-6 rounded-2xl"><div className="text-4xl font-black text-green-400">{stats.correct}</div><div className="text-sm text-slate-400">答對</div></div>
-                        <div className="bg-slate-800 p-6 rounded-2xl"><div className="text-4xl font-black text-red-400">{stats.wrong}</div><div className="text-sm text-slate-400">答錯</div></div>
+                <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
+                    <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6" />
+                    <h2 className="text-4xl font-black mb-4 font-display">時間到！</h2>
+                    <div className="grid grid-cols-2 gap-5 mb-8">
+                        {[{v:score,l:'總分',c:'text-yellow-400'},{v:wpm,l:'WPM',c:'text-cyan-400'},{v:stats.correct,l:'答對',c:'text-green-400'},{v:stats.wrong,l:'答錯',c:'text-red-400'}].map(x =>
+                            <div key={x.l} className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 text-center"><div className={`text-3xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500 mt-1">{x.l}</div></div>
+                        )}
                     </div>
-                    <button onClick={goHome} className="bg-magic-600 hover:bg-magic-500 px-8 py-3 rounded-full font-bold">返回</button>
+                    <button onClick={goHome} className="bg-orange-600 hover:bg-orange-500 px-8 py-3 rounded-full font-bold border border-orange-500/50">返回</button>
                 </div>
             );
 
             return (
-                <div className={`h-full w-full flex flex-col bg-slate-900 text-white relative ${gameState==='ready'?'items-center justify-center':'justify-start'} pt-8`}>
-                    <div className="flex justify-between items-center px-6 mb-4">
-                        <button onClick={goHome} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft}/></button>
+                <div className="h-full w-full flex flex-col bg-zinc-950 text-white relative">
+                    <div className="flex justify-between items-center p-4 border-b border-zinc-800/50">
+                        <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 transition-colors border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
                         <div className="flex items-center gap-4">
-                            <div className={`text-3xl font-black font-mono ${timeLeft<=10?'text-red-400 animate-pulse':'text-yellow-400'}`}>{timeLeft}s</div>
-                            <div className="text-2xl font-bold text-yellow-400"><LucideIcon icon={Star}/> {score}</div>
+                            <div className={`text-3xl font-black font-mono ${timeLeft<=10?'text-red-400 animate-pulse':'text-orange-400'}`}>{timeLeft}s</div>
+                            <div className="text-xl font-bold text-yellow-400"><LucideIcon icon={Star}/> {score}</div>
                         </div>
                     </div>
                     {gameState==='ready' ? (
-                        <div className="text-center">
-                            <LucideIcon icon={Gauge} size={80} className="text-orange-400 mx-auto mb-4"/>
-                            <h2 className="text-3xl font-bold mb-2">速打模式</h2>
-                            <p className="text-slate-400 mb-6">60秒內盡量答對更多題目！</p>
-                            <button onClick={() => setGameState('playing')} className="bg-orange-600 hover:bg-orange-500 px-10 py-4 rounded-full font-bold text-xl animate-pulse">開始挑戰</button>
+                        <div className="flex-1 flex flex-col items-center justify-center">
+                            <LucideIcon icon={Gauge} size={80} className="text-orange-400 mb-4" />
+                            <h2 className="text-3xl font-black mb-2 font-display">速打模式</h2>
+                            <p className="text-zinc-500 mb-6">60秒內挑戰最高分數！</p>
+                            <button onClick={() => setGameState('playing')} className="bg-orange-600 hover:bg-orange-500 px-10 py-4 rounded-2xl font-bold text-xl border border-orange-500/30 animate-pulse shadow-lg shadow-orange-900/30">開始挑戰</button>
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-6">
-                            <div className="text-8xl font-serif font-black mb-6">{currentQ?.char}</div>
-                            <div className="text-center text-slate-400 mb-4">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                            <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-orange-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-orange-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                            <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                            <div className="text-7xl font-serif font-black mb-4 text-white/90">{currentQ?.char}</div>
+                            <div className="text-center text-zinc-500 mb-3 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                            <div className="flex justify-center mb-3 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-orange-500/50 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-orange-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                            <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#f97316"/>
                         </div>
                     )}
                 </div>
@@ -837,7 +881,7 @@
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 📝 VOCABULARY GAME (單字闖關)
+        // 🏰 VOCABULARY GAME
         // ───────────────────────────────────────────────────────────────
         const VocabularyGame = ({ chapter, goHome }) => {
             const TOTAL = 10;
@@ -853,93 +897,84 @@
             const currentQ = useMemo(() => filtered[qIndex % filtered.length], [qIndex]);
 
             const processAnswer = () => {
-                AudioEngine.correct();
-                setFeedback('correct');
+                AudioEngine.correct(); setFeedback('correct');
                 const streakBonus = Math.min(streak * 10, 50);
                 setScore(s => s + 100 + streakBonus);
                 setStreak(s => s+1);
                 setStats(s => ({...s, correct:s.correct+1}));
                 if (qIndex+1 >= TOTAL) { AudioEngine.win(); setGameState('win'); }
-                else setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 600);
+                else setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 500);
             };
 
             const handleWrong = () => {
-                AudioEngine.wrong();
-                setFeedback('wrong');
+                AudioEngine.wrong(); setFeedback('wrong');
                 setLives(l => { const n=l-1; if(n<=0) { AudioEngine.lose(); setGameState('lose'); } return n; });
                 setStreak(0);
                 setStats(s => ({...s, wrong:s.wrong+1}));
-                setTimeout(() => { setFeedback(null); setUserInput([]); }, 800);
+                setTimeout(() => { setFeedback(null); setUserInput([]); }, 600);
             };
 
             const handleKey = (key) => {
                 if (gameState !== 'playing' || feedback) return;
                 const target = getTargetCode(currentQ, 'cangjie');
                 const next = [...userInput, key];
-                if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) processAnswer();
-                    else { AudioEngine.click(); setUserInput(next); }
-                } else handleWrong();
+                if (target.startsWith(next.join(''))) { if (next.join('') === target) processAnswer(); else { AudioEngine.click(); setUserInput(next); } }
+                else handleWrong();
             };
 
             useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [gameState, userInput, currentQ, feedback]);
 
             if (gameState==='win') return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8">
-                    <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6 animate-bounce"/>
-                    <h2 className="text-4xl font-bold mb-2 text-green-400">過關！</h2>
-                    <p className="text-slate-400 mb-6">完成第 {qIndex} 題</p>
-                    <div className="grid grid-cols-3 gap-4 mb-8 text-center">
-                        <div className="bg-slate-800 p-4 rounded-xl"><div className="text-2xl font-black text-yellow-400">{score}</div><div className="text-xs text-slate-400">得分</div></div>
-                        <div className="bg-slate-800 p-4 rounded-xl"><div className="text-2xl font-black text-green-400">{stats.correct}</div><div className="text-xs text-slate-400">答對</div></div>
-                        <div className="bg-slate-800 p-4 rounded-xl"><div className="text-2xl font-black text-red-400">{stats.wrong}</div><div className="text-xs text-slate-400">答錯</div></div>
+                <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
+                    <LucideIcon icon={Trophy2} size={80} className="text-emerald-400 mb-6 animate-bounce" />
+                    <h2 className="text-4xl font-black mb-2 text-emerald-300 font-display">過關！</h2>
+                    <div className="grid grid-cols-3 gap-4 mb-8">
+                        {[{v:score,l:'得分',c:'text-yellow-400'},{v:stats.correct,l:'答對',c:'text-green-400'},{v:stats.wrong,l:'答錯',c:'text-red-400'}].map(x => <div key={x.l} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500">{x.l}</div></div>)}
                     </div>
-                    <button onClick={goHome} className="bg-magic-600 hover:bg-magic-500 px-8 py-3 rounded-full font-bold">返回</button>
+                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold border border-emerald-600/50">返回</button>
                 </div>
             );
 
             if (gameState==='lose') return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8">
-                    <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6"/>
-                    <h2 className="text-4xl font-bold mb-2 text-red-400">失敗</h2>
-                    <p className="text-slate-400 mb-6">生命耗盡</p>
-                    <button onClick={() => { setQIndex(0); setLives(3); setScore(0); setStreak(0); setStats({correct:0,wrong:0}); setGameState('playing'); }} className="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-full font-bold mr-4">重試</button>
-                    <button onClick={goHome} className="bg-magic-600 hover:bg-magic-500 px-8 py-3 rounded-full font-bold mt-2">返回</button>
+                <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
+                    <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" />
+                    <h2 className="text-4xl font-black mb-2 text-red-400 font-display">失敗</h2>
+                    <button onClick={() => { setQIndex(0); setLives(3); setScore(0); setStreak(0); setStats({correct:0,wrong:0}); setGameState('playing'); }} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold mr-4 border border-zinc-700">重試</button>
+                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold mt-2 border border-emerald-600/50">返回</button>
                 </div>
             );
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-900 text-white">
-                    <div className="p-4 bg-slate-800/80 flex justify-between items-center border-b border-slate-700">
+                <div className="h-full w-full flex flex-col bg-zinc-950 text-white">
+                    <div className="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-emerald-950/20">
                         <div className="flex items-center gap-3">
-                            <button onClick={goHome} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft}/></button>
-                            <span className="font-bold">單字闖關</span>
+                            <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                            <span className="font-bold text-emerald-200">單字闖關</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className="flex gap-1">{[...Array(3)].map((_,i) => <LucideIcon key={i} icon={Heart} size={18} className={i<lives?'text-red-400':'text-slate-700'}/>)}</div>
+                            <div className="flex gap-1.5">{[...Array(3)].map((_,i) => <LucideIcon key={i} icon={Heart} size={18} className={i<lives?'text-red-400':'text-zinc-700'}/>)}</div>
                             <div className="text-yellow-400 font-bold"><LucideIcon icon={Star}/> {score}</div>
-                            <div className="text-cyan-400 font-bold">第{qIndex+1}/{TOTAL}</div>
+                            <div className="text-emerald-400 font-bold text-sm">{qIndex+1}/{TOTAL}</div>
                         </div>
                     </div>
-                    <div className="flex-1 flex flex-col items-center justify-center p-8">
-                        <div className="text-8xl font-serif font-black mb-4">{currentQ?.char}</div>
-                        <div className="text-center text-slate-400 mb-4">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                        <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-teal-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-teal-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                    <div className="flex-1 flex flex-col items-center justify-center p-6">
+                        <div className="text-7xl font-serif font-black mb-4 text-emerald-100">{currentQ?.char}</div>
+                        <div className="text-center text-zinc-500 mb-3 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                        <div className="flex justify-center mb-3 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-emerald-500/50 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-emerald-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#34d399"/>
                     </div>
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // ⏱️ CHALLENGE GAME (限時挑戰)
+        // ⏱️ CHALLENGE GAME
         // ───────────────────────────────────────────────────────────────
         const ChallengeGame = ({ chapter, goHome }) => {
-            const TIME = 180; // 3 min
             const [qIndex, setQIndex] = useState(0);
             const [userInput, setUserInput] = useState([]);
             const [feedback, setFeedback] = useState(null);
-            const [timeLeft, setTimeLeft] = useState(TIME);
+            const [timeLeft, setTimeLeft] = useState(180);
             const [score, setScore] = useState(0);
             const [gameState, setGameState] = useState('ready');
             const [stats, setStats] = useState({ correct:0, wrong:0 });
@@ -953,22 +988,15 @@
                 return () => clearInterval(i);
             }, [gameState, timeLeft]);
 
-            const processAnswer = () => {
-                AudioEngine.correct(); setFeedback('correct');
-                setScore(s => s+100);
-                setStats(s => ({...s, correct:s.correct+1}));
-                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 300);
-            };
+            const processAnswer = () => { AudioEngine.correct(); setFeedback('correct'); setScore(s => s+100); setStats(s => ({...s, correct:s.correct+1})); setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 250); };
 
             const handleKey = (key) => {
-                if (gameState === 'ready') { setGameState('playing'); }
+                if (gameState === 'ready') setGameState('playing');
                 if (gameState !== 'playing' || feedback) return;
                 const target = getTargetCode(currentQ, 'cangjie');
                 const next = [...userInput, key];
-                if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) processAnswer();
-                    else { AudioEngine.click(); setUserInput(next); }
-                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s => ({...s, wrong:s.wrong+1})); setUserInput([]); setTimeout(() => setFeedback(null), 600); }
+                if (target.startsWith(next.join(''))) { if (next.join('') === target) processAnswer(); else { AudioEngine.click(); setUserInput(next); } }
+                else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s => ({...s, wrong:s.wrong+1})); setUserInput([]); setTimeout(() => setFeedback(null), 500); }
             };
 
             useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [gameState, userInput, currentQ, feedback]);
@@ -976,40 +1004,37 @@
             if (gameState==='done') {
                 const accuracy = stats.correct+stats.wrong > 0 ? Math.round((stats.correct/(stats.correct+stats.wrong))*100) : 0;
                 return (
-                    <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8">
-                        <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6"/>
-                        <h2 className="text-4xl font-bold mb-6">挑戰完成！</h2>
+                    <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
+                        <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6" />
+                        <h2 className="text-4xl font-black mb-6 font-display">挑戰完成！</h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-slate-800 p-4 rounded-xl text-center"><div className="text-3xl font-black text-yellow-400">{score}</div><div className="text-xs text-slate-400">總分</div></div>
-                            <div className="bg-slate-800 p-4 rounded-xl text-center"><div className="text-3xl font-black text-green-400">{stats.correct}</div><div className="text-xs text-slate-400">答對</div></div>
-                            <div className="bg-slate-800 p-4 rounded-xl text-center"><div className="text-3xl font-black text-red-400">{stats.wrong}</div><div className="text-xs text-slate-400">答錯</div></div>
-                            <div className="bg-slate-800 p-4 rounded-xl text-center"><div className="text-3xl font-black text-cyan-400">{accuracy}%</div><div className="text-xs text-slate-400">準確率</div></div>
+                            {[{v:score,l:'總分',c:'text-yellow-400'},{v:stats.correct,l:'答對',c:'text-green-400'},{v:stats.wrong,l:'答錯',c:'text-red-400'},{v:accuracy,l:'準確率',c:'text-cyan-400'}].map(x => <div key={x.l} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500">{x.l}</div></div>)}
                         </div>
-                        <button onClick={goHome} className="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-full font-bold">返回</button>
+                        <button onClick={goHome} className="bg-red-700 hover:bg-red-600 px-8 py-3 rounded-full font-bold border border-red-600/50">返回</button>
                     </div>
                 );
             }
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-900 text-white">
-                    <div className="p-4 bg-slate-800/80 flex justify-between items-center border-b border-slate-700">
-                        <button onClick={goHome} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft}/></button>
-                        <div className={`text-2xl font-black font-mono ${timeLeft<=30?'text-red-400 animate-pulse':'text-yellow-400'}`}>{Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}</div>
+                <div className="h-full w-full flex flex-col bg-zinc-950 text-white">
+                    <div className="p-4 border-b border-zinc-800/50 flex justify-between items-center bg-red-950/20">
+                        <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                        <div className={`text-2xl font-black font-mono ${timeLeft<=30?'text-red-400 animate-pulse':'text-red-400/80'}`}>{Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}</div>
                         <div className="text-xl font-bold text-yellow-400"><LucideIcon icon={Star}/> {score}</div>
                     </div>
                     {gameState==='ready' ? (
                         <div className="flex-1 flex flex-col items-center justify-center">
-                            <LucideIcon icon={Timer} size={80} className="text-red-400 mb-4"/>
-                            <h2 className="text-3xl font-bold mb-2">限時挑戰</h2>
-                            <p className="text-slate-400 mb-6">3分鐘內盡量答對更多題目</p>
-                            <button onClick={() => setGameState('playing')} className="bg-red-600 hover:bg-red-500 px-10 py-4 rounded-full font-bold text-xl animate-pulse">開始挑戰</button>
+                            <LucideIcon icon={Timer} size={80} className="text-red-400 mb-4" />
+                            <h2 className="text-3xl font-black mb-2 font-display">限時挑戰</h2>
+                            <p className="text-zinc-500 mb-6">3分鐘內盡量答對更多題目</p>
+                            <button onClick={() => setGameState('playing')} className="bg-red-600 hover:bg-red-500 px-10 py-4 rounded-2xl font-bold text-xl border border-red-500/30 animate-pulse shadow-lg shadow-red-900/30">開始挑戰</button>
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center p-6">
-                            <div className="text-8xl font-serif font-black mb-4">{currentQ?.char}</div>
-                            <div className="text-center text-slate-400 mb-4">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                            <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-red-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-red-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                            <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                            <div className="text-7xl font-serif font-black mb-4 text-red-100">{currentQ?.char}</div>
+                            <div className="text-center text-zinc-500 mb-3 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                            <div className="flex justify-center mb-3 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-red-500/50 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-red-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                            <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#f87171"/>
                         </div>
                     )}
                 </div>
@@ -1017,7 +1042,7 @@
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 🎧 DICTATION GAME (聽打模式) — 示範：顯示提示但不顯示字
+        // 🎧 DICTATION GAME
         // ───────────────────────────────────────────────────────────────
         const DictationGame = ({ chapter, goHome }) => {
             const [qIndex, setQIndex] = useState(0);
@@ -1025,34 +1050,19 @@
             const [feedback, setFeedback] = useState(null);
             const [showHint, setShowHint] = useState(false);
             const [score, setScore] = useState(0);
-            const [gameState, setGameState] = useState('playing');
             const [stats, setStats] = useState({ correct:0, wrong:0 });
             const filtered = useMemo(() => chapter ? QUESTIONS.filter(q=>q.mainCode===chapter) : QUESTIONS, [chapter]);
             const currentQ = useMemo(() => filtered[qIndex % filtered.length], [qIndex]);
 
-            const speak = (text) => {
-                if ('speechSynthesis' in window) {
-                    const u = new SpeechSynthesisUtterance(text);
-                    u.lang = 'zh-HK'; u.rate = 0.8;
-                    speechSynthesis.cancel(); speechSynthesis.speak(u);
-                }
-            };
+            const speak = (text) => { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'zh-HK'; u.rate = 0.8; speechSynthesis.cancel(); speechSynthesis.speak(u); } };
 
-            const processAnswer = () => {
-                AudioEngine.correct(); setFeedback('correct');
-                setScore(s => s+100);
-                setStats(s => ({...s, correct:s.correct+1}));
-                setTimeout(() => { setFeedback(null); setUserInput([]); setShowHint(false); setQIndex(q=>q+1); }, 800);
-            };
+            const processAnswer = () => { AudioEngine.correct(); setFeedback('correct'); setScore(s => s+100); setStats(s => ({...s, correct:s.correct+1})); setTimeout(() => { setFeedback(null); setUserInput([]); setShowHint(false); setQIndex(q=>q+1); }, 700); };
 
             const handleKey = (key) => {
-                if (gameState !== 'playing' || feedback) return;
                 const target = getTargetCode(currentQ, 'cangjie');
                 const next = [...userInput, key];
-                if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) processAnswer();
-                    else { AudioEngine.click(); setUserInput(next); }
-                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s => ({...s, wrong:s.wrong+1})); setUserInput([]); setTimeout(() => setFeedback(null), 800); }
+                if (target.startsWith(next.join(''))) { if (next.join('') === target) processAnswer(); else { AudioEngine.click(); setUserInput(next); } }
+                else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s => ({...s, wrong:s.wrong+1})); setUserInput([]); setTimeout(() => setFeedback(null), 700); }
             };
 
             useEffect(() => { speak(currentQ?.char); }, [qIndex]);
@@ -1060,32 +1070,34 @@
 
             return (
                 <div className="h-full w-full flex flex-col bg-indigo-950 text-white">
-                    <div className="p-4 bg-indigo-900/50 flex justify-between items-center border-b border-indigo-800">
+                    <div className="p-4 border-b border-indigo-800/30 flex justify-between items-center bg-indigo-900/20">
                         <div className="flex items-center gap-3">
-                            <button onClick={goHome} className="bg-indigo-800 p-2 rounded-full hover:bg-indigo-700"><LucideIcon icon={ArrowLeft}/></button>
-                            <span className="font-bold">聽打模式</span>
+                            <button onClick={goHome} className="bg-indigo-900/30 p-2 rounded-xl hover:bg-indigo-900/50 border border-indigo-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                            <span className="font-bold text-indigo-200">聽打模式</span>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 text-sm">
                             <div className="text-xl font-bold text-yellow-400"><LucideIcon icon={Star}/> {score}</div>
-                            <div className="text-green-400">✓{stats.correct}</div>
-                            <div className="text-red-400">✗{stats.wrong}</div>
+                            <span className="text-green-400">✓{stats.correct}</span>
+                            <span className="text-red-400">✗{stats.wrong}</span>
                         </div>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center p-8">
-                        <button onClick={() => speak(currentQ?.char)} className="mb-8 bg-indigo-700 hover:bg-indigo-600 px-6 py-3 rounded-full font-bold flex items-center gap-2"><LucideIcon icon={Headphones}/> 再聽一次</button>
-                        <div className="text-6xl font-serif font-black mb-6 text-indigo-300 opacity-50 blur-sm select-none">{currentQ?.char}</div>
-                        {!showHint && <button onClick={() => setShowHint(true)} className="mb-4 text-indigo-300 text-sm hover:text-white">顯示提示（扣分）</button>}
-                        {showHint && <div className="text-center text-slate-400 mb-4">提示：{currentQ?.hint}</div>}
-                        <div className="text-center text-slate-500 mb-4 text-sm">全碼長度：{currentQ?.code?.length} 碼</div>
-                        <div className="flex justify-center mb-6 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-indigo-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-indigo-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                        <button onClick={() => speak(currentQ?.char)} className="mb-8 bg-indigo-800/60 hover:bg-indigo-700/60 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 border border-indigo-600/40 transition-colors">
+                            <LucideIcon icon={Headphones}/> 再聽一次
+                        </button>
+                        <div className="text-6xl font-serif font-black mb-6 text-indigo-200/30 blur-sm select-none">{currentQ?.char}</div>
+                        {!showHint && <button onClick={() => setShowHint(true)} className="mb-3 text-indigo-300/50 text-sm hover:text-indigo-200 transition-colors">顯示提示</button>}
+                        {showHint && <div className="text-center text-indigo-200/50 mb-3 text-sm">提示：{currentQ?.hint}</div>}
+                        <div className="text-center text-indigo-200/30 mb-4 text-xs">全碼長度：{currentQ?.code?.length} 碼</div>
+                        <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-indigo-500/40 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-indigo-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#a5b4fc"/>
                     </div>
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // ⚔️ BATTLE GAME (對戰模式 — CPU 對手)
+        // ⚔️ BATTLE GAME
         // ───────────────────────────────────────────────────────────────
         const BattleGame = ({ chapter, goHome }) => {
             const [playerHP, setPlayerHP] = useState(100);
@@ -1105,101 +1117,88 @@
                     if (cpuHP <= 0) { setGameState('win'); AudioEngine.win(); return; }
                     const cpuCorrect = Math.random() > 0.35;
                     if (cpuCorrect) { AudioEngine.attack(); setCpuHP(h => Math.max(0, h-8)); setLog('CPU 命中！-8 HP'); }
-                    else { setLog('CPU 失手了！'); }
+                    else setLog('CPU 失手了！');
                     setTurn('player');
                 }, 800);
             }, [cpuHP]);
 
             const processAnswer = () => {
-                AudioEngine.correct();
-                setFeedback('correct');
-                setSessionStats(s => ({...s, correct:s.correct+1}));
-                setCpuHP(h => Math.max(0, h-15));
-                setLog('你命中！-15 HP');
+                AudioEngine.correct(); setFeedback('correct'); setSessionStats(s => ({...s, correct:s.correct+1}));
+                setCpuHP(h => Math.max(0, h-15)); setLog('你命中！-15 HP');
                 if (cpuHP <= 15) { setGameState('win'); AudioEngine.win(); }
                 else { setTurn('cpu'); cpuThink(); }
-                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 500);
+                setTimeout(() => { setFeedback(null); setUserInput([]); setQIndex(q=>q+1); }, 400);
             };
 
             const handleWrong = () => {
-                AudioEngine.wrong();
-                setFeedback('wrong');
-                setSessionStats(s => ({...s, wrong:s.wrong+1}));
-                setLog('你失手了！');
-                setPlayerHP(h => Math.max(0, h-12));
+                AudioEngine.wrong(); setFeedback('wrong'); setSessionStats(s => ({...s, wrong:s.wrong+1}));
+                setLog('你失手了！'); setPlayerHP(h => Math.max(0, h-12));
                 if (playerHP <= 12) { setGameState('lose'); AudioEngine.lose(); }
                 else { setTurn('cpu'); cpuThink(); }
-                setTimeout(() => { setFeedback(null); setUserInput([]); }, 500);
+                setTimeout(() => { setFeedback(null); setUserInput([]); }, 400);
             };
 
             const handleKey = (key) => {
                 if (gameState !== 'playing' || turn !== 'player' || feedback) return;
                 const target = getTargetCode(currentQ, 'cangjie');
                 const next = [...userInput, key];
-                if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) processAnswer();
-                    else { AudioEngine.click(); setUserInput(next); }
-                } else handleWrong();
+                if (target.startsWith(next.join(''))) { if (next.join('') === target) processAnswer(); else { AudioEngine.click(); setUserInput(next); } }
+                else handleWrong();
             };
 
             useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [gameState, turn, userInput, currentQ, feedback, cpuHP, playerHP]);
 
             if (gameState === 'win') return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8">
-                    <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6 animate-bounce"/>
-                    <h2 className="text-4xl font-bold mb-2 text-green-400">勝利！</h2>
-                    <p className="text-slate-400 mb-6">你戰勝了 CPU！</p>
-                    <div className="flex gap-6 mb-8">
-                        <div className="bg-slate-800 p-4 rounded-xl text-center"><div className="text-2xl font-black text-green-400">{sessionStats.correct}</div><div className="text-xs text-slate-400">答對</div></div>
-                        <div className="bg-slate-800 p-4 rounded-xl text-center"><div className="text-2xl font-black text-red-400">{sessionStats.wrong}</div><div className="text-xs text-slate-400">答錯</div></div>
-                    </div>
-                    <button onClick={goHome} className="bg-magic-600 hover:bg-magic-500 px-8 py-3 rounded-full font-bold">返回</button>
+                <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
+                    <LucideIcon icon={Trophy2} size={80} className="text-yellow-400 mb-6 animate-bounce" />
+                    <h2 className="text-4xl font-black mb-2 text-green-400 font-display">勝利！</h2>
+                    <div className="flex gap-4 mb-8">{[{v:sessionStats.correct,l:'答對',c:'text-green-400'},{v:sessionStats.wrong,l:'答錯',c:'text-red-400'}].map(x => <div key={x.l} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-zinc-500">{x.l}</div></div>)}</div>
+                    <button onClick={goHome} className="bg-rose-700 hover:bg-rose-600 px-8 py-3 rounded-full font-bold border border-rose-600/50">返回</button>
                 </div>
             );
 
             if (gameState === 'lose') return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-900 text-white p-8">
-                    <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6"/>
-                    <h2 className="text-4xl font-bold mb-2 text-red-400">失敗</h2>
-                    <p className="text-slate-400 mb-6">CPU 戰勝了你</p>
-                    <button onClick={goHome} className="bg-slate-700 hover:bg-slate-600 px-8 py-3 rounded-full font-bold">返回</button>
+                <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-white p-8">
+                    <LucideIcon icon={Skull} size={80} className="text-red-500 mb-6" />
+                    <h2 className="text-4xl font-black mb-2 text-red-400 font-display">失敗</h2>
+                    <button onClick={goHome} className="bg-zinc-800 hover:bg-zinc-700 px-8 py-3 rounded-full font-bold border border-zinc-700">返回</button>
                 </div>
             );
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-900 text-white">
-                    <div className="p-3 bg-slate-800/80 flex justify-between items-center border-b border-slate-700">
-                        <button onClick={goHome} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft}/></button>
-                        <div className="text-sm font-bold text-slate-400">對戰模式</div>
+                <div className="h-full w-full flex flex-col bg-zinc-950 text-white">
+                    <div className="p-3 border-b border-zinc-800/50 flex justify-between items-center bg-rose-950/20">
+                        <button onClick={goHome} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50"><LucideIcon icon={ArrowLeft}/></button>
+                        <div className="text-sm font-bold text-rose-300">對戰模式</div>
                         <div/>
                     </div>
-                    <div className="p-4 flex justify-between items-center">
-                        <div className="text-center">
-                            <div className="text-2xl mb-1">👤 你</div>
-                            <div className="w-40 h-4 bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-green-500 transition-all" style={{width:`${playerHP}%`}}/></div>
-                            <div className="text-xs mt-1">{playerHP}%</div>
+                    <div className="p-5 flex justify-between items-center">
+                        <div className="text-center flex-1">
+                            <div className="text-2xl mb-2">👤 你</div>
+                            <div className="w-36 h-4 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/50 mx-auto"><div className="h-full bg-gradient-to-r from-green-600 to-green-400 transition-all" style={{width:`${playerHP}%`}}/></div>
+                            <div className="text-xs mt-1 text-green-400">{playerHP}%</div>
                         </div>
-                        <div className="text-3xl font-black text-red-400">VS</div>
-                        <div className="text-center">
-                            <div className="text-2xl mb-1">🤖 CPU</div>
-                            <div className="w-40 h-4 bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-red-500 transition-all" style={{width:`${cpuHP}%`}}/></div>
-                            <div className="text-xs mt-1">{cpuHP}%</div>
+                        <div className="text-3xl font-black text-rose-500 px-6 font-display">VS</div>
+                        <div className="text-center flex-1">
+                            <div className="text-2xl mb-2">🤖 CPU</div>
+                            <div className="w-36 h-4 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/50 mx-auto"><div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all" style={{width:`${cpuHP}%`}}/></div>
+                            <div className="text-xs mt-1 text-red-400">{cpuHP}%</div>
                         </div>
                     </div>
-                    <div className="text-center text-lg font-bold text-yellow-400 mb-4 h-6">{log}</div>
+                    <div className="text-center text-base font-bold text-yellow-400 mb-3 h-6">{log}</div>
                     <div className="flex-1 flex flex-col items-center justify-center p-4">
-                        <div className="text-7xl font-serif font-black mb-4">{currentQ?.char}</div>
-                        <div className="text-center text-slate-400 mb-4">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                        <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-rose-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-rose-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={turn!=='player' || !!feedback}/>
-                        {turn==='cpu' && <div className="mt-4 text-slate-500 animate-pulse">CPU 思考中...</div>}
+                        <div className="text-6xl font-serif font-black mb-4 text-rose-100">{currentQ?.char}</div>
+                        <div className="text-center text-zinc-500 mb-3 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                        <div className="flex justify-center mb-3 space-x-2 min-h-[48px] flex-wrap">{userInput.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-rose-500/50 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-rose-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={turn!=='player' || !!feedback} accentColor="#fb7185"/>
+                        {turn==='cpu' && <div className="mt-3 text-rose-300/50 text-sm animate-pulse">CPU 思考中...</div>}
                     </div>
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 📜 STORY GAME (故事模式)
+        // 📜 STORY GAME
         // ───────────────────────────────────────────────────────────────
         const StoryGame = ({ chapter, goHome }) => {
             const STORY = [
@@ -1214,7 +1213,6 @@
             const [feedback, setFeedback] = useState(null);
             const [done, setDone] = useState(false);
             const [stats, setStats] = useState({ correct:0, wrong:0 });
-
             const currentQ = STORY[idx];
 
             const handleKey = (key) => {
@@ -1222,65 +1220,52 @@
                 const target = currentQ.code;
                 const next = [...input, key];
                 if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) {
-                        AudioEngine.correct(); setFeedback('correct');
-                        setStats(s=>({...s, correct:s.correct+1}));
-                        setTimeout(() => {
-                            if (idx+1 >= STORY.length) { setDone(true); }
-                            else { setInput([]); setFeedback(null); setIdx(i=>i+1); }
-                        }, 800);
-                    } else { AudioEngine.click(); setInput(next); }
-                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s=>({...s, wrong:s.wrong+1})); setInput([]); setTimeout(()=>setFeedback(null),800); }
+                    if (next.join('') === target) { AudioEngine.correct(); setFeedback('correct'); setStats(s=>({...s, correct:s.correct+1})); setTimeout(() => { if (idx+1 >= STORY.length) setDone(true); else { setInput([]); setFeedback(null); setIdx(i=>i+1); } }, 700); }
+                    else { AudioEngine.click(); setInput(next); }
+                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s=>({...s, wrong:s.wrong+1})); setInput([]); setTimeout(()=>setFeedback(null),700); }
             };
 
             useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [done, input, feedback, idx]);
 
             if (done) return (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-amber-950 text-white p-8">
-                    <LucideIcon icon={Scroll} size={80} className="text-amber-400 mb-6 animate-bounce"/>
-                    <h2 className="text-3xl font-bold mb-2 text-amber-300">故事完結</h2>
-                    <p className="text-slate-400 mb-6 italic">"勇敢的心，永不退縮。"</p>
-                    <div className="flex gap-6 mb-8">
-                        <div className="bg-amber-900/50 p-4 rounded-xl text-center"><div className="text-2xl font-black text-green-400">{stats.correct}</div><div className="text-xs text-slate-400">正確</div></div>
-                        <div className="bg-amber-900/50 p-4 rounded-xl text-center"><div className="text-2xl font-black text-red-400">{stats.wrong}</div><div className="text-xs text-slate-400">錯誤</div></div>
-                    </div>
-                    <button onClick={goHome} className="bg-amber-700 hover:bg-amber-600 px-8 py-3 rounded-full font-bold">返回</button>
+                    <LucideIcon icon={Scroll} size={80} className="text-amber-400 mb-6 animate-bounce" />
+                    <h2 className="text-3xl font-black mb-2 text-amber-200 font-display">故事完結</h2>
+                    <p className="text-amber-200/50 mb-6 italic">"勇敢的心，永不退縮。"</p>
+                    <div className="flex gap-4 mb-8">{[{v:stats.correct,l:'正確',c:'text-green-400'},{v:stats.wrong,l:'錯誤',c:'text-red-400'}].map(x => <div key={x.l} className="bg-amber-900/40 p-4 rounded-xl border border-amber-700/30 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-amber-200/50">{x.l}</div></div>)}</div>
+                    <button onClick={goHome} className="bg-amber-700 hover:bg-amber-600 px-8 py-3 rounded-full font-bold border border-amber-600/50">返回</button>
                 </div>
             );
 
             return (
                 <div className="h-full w-full flex flex-col bg-gradient-to-b from-amber-900 to-amber-950 text-white">
-                    <div className="p-4 bg-amber-900/50 flex justify-between items-center border-b border-amber-800">
-                        <button onClick={goHome} className="bg-amber-800 p-2 rounded-full hover:bg-amber-700"><LucideIcon icon={ArrowLeft}/></button>
-                        <span className="font-bold text-amber-300">故事模式</span>
+                    <div className="p-4 border-b border-amber-800/30 flex justify-between items-center bg-amber-900/20">
+                        <button onClick={goHome} className="bg-amber-900/30 p-2 rounded-xl hover:bg-amber-900/50 border border-amber-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                        <span className="font-bold text-amber-200">故事模式</span>
                         <span className="text-amber-400 text-sm">{idx+1}/{STORY.length}</span>
                     </div>
-                    <div className="p-6 bg-amber-900/30 border-b border-amber-800/50">
-                        <p className="text-lg italic text-amber-200 leading-relaxed">"{currentQ?.text}"</p>
+                    <div className="p-5 bg-amber-900/10 border-b border-amber-800/20">
+                        <p className="text-base italic text-amber-100/70 leading-relaxed">"{currentQ?.text}"</p>
                     </div>
-                    <div className="flex-1 flex flex-col items-center justify-center p-6">
-                        <div className="text-8xl font-serif font-black mb-6">{currentQ?.char}</div>
-                        <div className="text-center text-amber-300 mb-4 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                        <div className="flex justify-center mb-6 space-x-2 min-h-[48px] flex-wrap">{input.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-amber-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-amber-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                        <KeyboardUI inputMode="cangjie" userInput={input} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                    <div className="flex-1 flex flex-col items-center justify-center p-5">
+                        <div className="text-7xl font-serif font-black mb-5 text-amber-100">{currentQ?.char}</div>
+                        <div className="text-center text-amber-200/50 mb-3 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                        <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{input.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-amber-500/40 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-amber-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                        <KeyboardUI inputMode="cangjie" userInput={input} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#fbbf24"/>
                     </div>
                 </div>
             );
         };
 
         // ───────────────────────────────────────────────────────────────
-        // 📃 ARTICLE GAME (文章模式)
+        // 📃 ARTICLE GAME
         // ───────────────────────────────────────────────────────────────
         const ArticleGame = ({ chapter, goHome }) => {
             const ARTICLE = [
-                { char:'每', code:'UXXX', hint:'山XXX' },
-                { char:'日', code:'AM', hint:'日一' },
-                { char:'進', code:'NDHH', hint:'弓木竹竹' },
-                { char:'步', code:'YPU', hint:'卜心山' },
-                { char:'學', code:'HIO', hint:'竹戈人' },
-                { char:'習', code:'HNI', hint:'竹弓戈' },
-                { char:'打字', code:'QPAK', hint:'手心日大' },
-                { char:'技術', code:'TCIT', hint:'廿金戈廿' },
+                { char:'每', code:'UXXX', hint:'山XXX' },{ char:'日', code:'AM', hint:'日一' },
+                { char:'進', code:'NDHH', hint:'弓木竹竹' },{ char:'步', code:'YPU', hint:'卜心山' },
+                { char:'學', code:'HIO', hint:'竹戈戈' },{ char:'習', code:'HNI', hint:'竹弓戈' },
+                { char:'打', code:'QPA', hint:'手心日' },{ char:'字', code:'JND', hint:'十弓木' },
             ];
             const TOTAL = ARTICLE.length;
             const [idx, setIdx] = useState(0);
@@ -1288,7 +1273,6 @@
             const [feedback, setFeedback] = useState(null);
             const [done, setDone] = useState(false);
             const [stats, setStats] = useState({ correct:0, wrong:0 });
-
             const currentQ = ARTICLE[idx];
 
             const handleKey = (key) => {
@@ -1296,47 +1280,37 @@
                 const target = currentQ.code;
                 const next = [...input, key];
                 if (target.startsWith(next.join(''))) {
-                    if (next.join('') === target) {
-                        AudioEngine.correct(); setFeedback('correct');
-                        setStats(s=>({...s, correct:s.correct+1}));
-                        setTimeout(() => {
-                            if (idx+1 >= TOTAL) { setDone(true); }
-                            else { setInput([]); setFeedback(null); setIdx(i=>i+1); }
-                        }, 600);
-                    } else { AudioEngine.click(); setInput(next); }
-                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s=>({...s, wrong:s.wrong+1})); setInput([]); setTimeout(()=>setFeedback(null),800); }
+                    if (next.join('') === target) { AudioEngine.correct(); setFeedback('correct'); setStats(s=>({...s, correct:s.correct+1})); setTimeout(() => { if (idx+1 >= TOTAL) setDone(true); else { setInput([]); setFeedback(null); setIdx(i=>i+1); } }, 500); }
+                    else { AudioEngine.click(); setInput(next); }
+                } else { AudioEngine.wrong(); setFeedback('wrong'); setStats(s=>({...s, wrong:s.wrong+1})); setInput([]); setTimeout(()=>setFeedback(null),700); }
             };
 
             useEffect(() => { const h = e => { const k = e.key.toUpperCase(); if (/^[A-Z]$/.test(k)) handleKey(k); }; window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [done, input, feedback, idx]);
 
             if (done) return (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-emerald-950 text-white p-8">
-                    <LucideIcon icon={Book} size={80} className="text-emerald-400 mb-6 animate-bounce"/>
-                    <h2 className="text-3xl font-bold mb-2 text-emerald-300">文章完成！</h2>
-                    <div className="flex gap-6 mb-8">
-                        <div className="bg-emerald-900/50 p-4 rounded-xl text-center"><div className="text-2xl font-black text-green-400">{stats.correct}</div><div className="text-xs text-slate-400">正確</div></div>
-                        <div className="bg-emerald-900/50 p-4 rounded-xl text-center"><div className="text-2xl font-black text-red-400">{stats.wrong}</div><div className="text-xs text-slate-400">錯誤</div></div>
-                    </div>
-                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold">返回</button>
+                    <LucideIcon icon={Book} size={80} className="text-emerald-400 mb-6 animate-bounce" />
+                    <h2 className="text-3xl font-black mb-2 text-emerald-200 font-display">文章完成！</h2>
+                    <div className="flex gap-4 mb-8">{[{v:stats.correct,l:'正確',c:'text-green-400'},{v:stats.wrong,l:'錯誤',c:'text-red-400'}].map(x => <div key={x.l} className="bg-emerald-900/40 p-4 rounded-xl border border-emerald-700/30 text-center"><div className={`text-2xl font-black ${x.c}`}>{x.v}</div><div className="text-xs text-emerald-200/50">{x.l}</div></div>)}</div>
+                    <button onClick={goHome} className="bg-emerald-700 hover:bg-emerald-600 px-8 py-3 rounded-full font-bold border border-emerald-600/50">返回</button>
                 </div>
             );
 
             return (
                 <div className="h-full w-full flex flex-col bg-gradient-to-b from-emerald-900 to-emerald-950 text-white">
-                    <div className="p-4 bg-emerald-900/50 flex justify-between items-center border-b border-emerald-800">
-                        <button onClick={goHome} className="bg-emerald-800 p-2 rounded-full hover:bg-emerald-700"><LucideIcon icon={ArrowLeft}/></button>
-                        <span className="font-bold text-emerald-300">文章模式</span>
+                    <div className="p-4 border-b border-emerald-800/30 flex justify-between items-center bg-emerald-900/20">
+                        <button onClick={goHome} className="bg-emerald-900/30 p-2 rounded-xl hover:bg-emerald-900/50 border border-emerald-700/30"><LucideIcon icon={ArrowLeft}/></button>
+                        <span className="font-bold text-emerald-200">文章模式</span>
                         <span className="text-emerald-400 text-sm">{idx+1}/{TOTAL}</span>
                     </div>
-                    {/* Progress */}
                     <div className="flex gap-1 px-4 py-2 bg-emerald-950/50">
-                        {ARTICLE.map((_, i) => <div key={i} className={`h-2 flex-1 rounded-full ${i<idx?'bg-green-500':i===idx?'bg-yellow-400':'bg-slate-700'}`}/>)}
+                        {ARTICLE.map((_, i) => <div key={i} className={`h-2 flex-1 rounded-full transition-colors ${i<idx?'bg-emerald-500':i===idx?'bg-yellow-400 animate-pulse':'bg-zinc-700'}`}/>)}
                     </div>
-                    <div className="flex-1 flex flex-col items-center justify-center p-6">
-                        <div className="text-8xl font-serif font-black mb-6">{currentQ?.char}</div>
-                        <div className="text-center text-emerald-300 mb-4 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
-                        <div className="flex justify-center mb-6 space-x-2 min-h-[48px] flex-wrap">{input.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-emerald-500 rounded-lg flex items-center justify-center text-xl font-bold bg-slate-800 text-emerald-300">{KEYBOARD_MAP[k]}</div>)}</div>
-                        <KeyboardUI inputMode="cangjie" userInput={input} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback}/>
+                    <div className="flex-1 flex flex-col items-center justify-center p-5">
+                        <div className="text-7xl font-serif font-black mb-5 text-emerald-100">{currentQ?.char}</div>
+                        <div className="text-center text-emerald-200/50 mb-3 text-sm">全碼：{currentQ?.code} | 提示：{currentQ?.hint}</div>
+                        <div className="flex justify-center mb-4 space-x-2 min-h-[48px] flex-wrap">{input.map((k,i)=><div key={i} className="w-11 h-11 border-2 border-emerald-500/40 rounded-lg flex items-center justify-center text-xl font-bold bg-black/40 text-emerald-300">{KEYBOARD_MAP[k]}</div>)}</div>
+                        <KeyboardUI inputMode="cangjie" userInput={userInput} currentQ={currentQ} monster={{}} onKey={handleKey} disabled={!!feedback} accentColor="#4ade80"/>
                     </div>
                 </div>
             );
@@ -1386,92 +1360,175 @@
                 document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
             };
 
-            // ── 渲染各視圖 ──
+            // ── HOME ──
             if (view === 'home') return (
-                <div className="h-full flex flex-col items-center justify-center bg-slate-900 p-6 text-white">
-                    <div className="absolute top-4 left-4"><button onClick={()=>setView('dashboard')} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl"><LucideIcon icon={BarChart3} className="text-blue-400"/><span className="font-bold">儀表版</span></button></div>
-                    <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl text-center w-full max-w-md border border-slate-700">
-                        <LucideIcon icon={Rocket} size={64} className="text-magic-500 mx-auto mb-6 animate-float-slow"/>
-                        <h1 className="text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-magic-300 to-brand-300">速成王國 V50</h1>
-                        <p className="text-slate-400 mb-8">10種打字遊戲模式</p>
-                        <input className="w-full p-4 bg-slate-900 border border-slate-600 rounded-xl text-center text-lg mb-6 text-white focus:border-magic-500 outline-none" placeholder="召喚師之名" value={userName} onChange={e=>setUserName(e.target.value)}/>
-                        <button disabled={!userName} onClick={()=>{AudioEngine.click();setView('mode_select')}} className="w-full bg-magic-600 hover:bg-magic-500 text-white p-4 rounded-xl font-bold shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 mb-4"><LucideIcon icon={Play}/> 進入王國</button>
-                        <button onClick={handleExportSave} className="text-slate-500 hover:text-magic-300 text-sm flex items-center gap-1 mx-auto"><LucideIcon icon={Download} size={14}/> 備份存檔</button>
-                    </div>
+                <div className="h-full flex flex-col items-center justify-center anim-gradient p-6 relative overflow-hidden">
+                    {/* Floating particles */}
+                    {[...Array(12)].map((_, i) => (
+                        <motion.div key={i} className="absolute w-1 h-1 rounded-full bg-purple-500/30"
+                            style={{left:`${10+i*8}%`, top:`${20+Math.sin(i)*30}%`}}
+                            animate={{y:[0,-30,0], opacity:[0.3,0.8,0.3]}}
+                            transition={{repeat:Infinity, duration:3+i*0.5, delay:i*0.3}}/>
+                    ))}
+
+                    <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} transition={{duration:0.6}}
+                        className="bg-zinc-900/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl text-center w-full max-w-md border border-zinc-700/50 glass relative z-10">
+                        <motion.div animate={{y:[0,-8,0]}} transition={{repeat:Infinity,duration:3}} className="mb-6">
+                            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-600 to-purple-900 flex items-center justify-center shadow-lg shadow-purple-900/50 border border-purple-500/30">
+                                <LucideIcon icon={Rocket} size={40} className="text-white"/>
+                            </div>
+                        </motion.div>
+                        <h1 className="text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 font-display tracking-wider">速成王國</h1>
+                        <p className="text-zinc-500 mb-8 text-sm tracking-widest">TYPEQUEST KINGDOM V55</p>
+                        <input className="w-full p-4 bg-zinc-800/80 border border-zinc-600/50 rounded-2xl text-center text-lg mb-6 text-white placeholder-zinc-600 focus:border-purple-500 outline-none transition-colors glass"
+                            placeholder="召喚師之名" value={userName} onChange={e=>setUserName(e.target.value)}/>
+                        <button disabled={!userName} onClick={()=>{AudioEngine.click();setView('mode_select');}}
+                            className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg shadow-purple-900/30 flex items-center justify-center gap-3 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{background:'linear-gradient(135deg, #7c3aed, #5b21b6)'}}>
+                            <LucideIcon icon={Play}/> 進入王國
+                        </button>
+                        <button onClick={handleExportSave} className="text-zinc-600 hover:text-zinc-400 text-xs flex items-center gap-1 mx-auto mt-4 transition-colors">
+                            <LucideIcon icon={Download} size={12}/> 備份存檔
+                        </button>
+                    </motion.div>
                 </div>
             );
 
+            // ── DASHBOARD ──
             if (view === 'dashboard') {
                 const {totalCorrect,totalWrong,gamesPlayed,highestCombo} = metaState.stats;
                 const accuracy = totalCorrect+totalWrong>0 ? Math.round((totalCorrect/(totalCorrect+totalWrong))*100) : 0;
                 return (
-                    <div className="h-full bg-slate-50 p-6 overflow-y-auto">
-                        <div className="flex items-center gap-4 mb-8"><button onClick={()=>setView('home')} className="bg-white p-3 rounded-full shadow hover:bg-slate-100"><LucideIcon icon={ArrowLeft}/></button><h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><LucideIcon icon={BarChart3}/> 學習儀表版</h2></div>
-                        <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
-                            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between"><div><div className="text-sm text-slate-500 font-bold mb-1">總遊戲次數</div><div className="text-3xl font-black text-slate-800">{gamesPlayed}</div></div><div className="p-4 rounded-xl bg-blue-500"><LucideIcon icon={Activity}/></div></div>
-                            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between"><div><div className="text-sm text-slate-500 font-bold mb-1">準確率</div><div className={`text-3xl font-black ${accuracy>=80?'text-green-500':accuracy>=60?'text-yellow-500':'text-red-500'}`}>{accuracy}%</div></div><div className={`p-4 rounded-xl ${accuracy>=80?'bg-green-500':'bg-red-500'}`}><LucideIcon icon={Target}/></div></div>
-                            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between"><div><div className="text-sm text-slate-500 font-bold mb-1">累積答對</div><div className="text-3xl font-black text-slate-800">{totalCorrect}</div></div><div className="p-4 rounded-xl bg-indigo-500"><LucideIcon icon={CheckCircle}/></div></div>
-                            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-between"><div><div className="text-sm text-slate-500 font-bold mb-1">最高連擊</div><div className="text-3xl font-black text-slate-800">{highestCombo}</div></div><div className="p-4 rounded-xl bg-orange-500"><LucideIcon icon={Zap}/></div></div>
+                    <div className="h-full bg-zinc-950 p-6 overflow-y-auto">
+                        <div className="flex items-center gap-4 mb-8 max-w-4xl mx-auto">
+                            <button onClick={()=>setView('home')} className="bg-zinc-900 p-3 rounded-2xl border border-zinc-800 hover:bg-zinc-800 transition-colors shadow-lg"><LucideIcon icon={ArrowLeft}/></button>
+                            <h2 className="text-2xl font-black text-white font-display flex items-center gap-2"><LucideIcon icon={LayoutDashboard} className="text-blue-400"/> 學習儀表板</h2>
                         </div>
-                        <div className="mt-8 text-center text-slate-400 text-sm">數據僅儲存於本機</div>
+                        <div className="grid grid-cols-2 gap-5 max-w-4xl mx-auto">
+                            {[
+                                {v:gamesPlayed,l:'總遊戲次數',c:'text-blue-400',bg:'bg-blue-900/30',icon:Activity},
+                                {v:`${accuracy}%`,l:'準確率',c:accuracy>=80?'text-green-400':accuracy>=60?'text-yellow-400':'text-red-400',bg:accuracy>=80?'bg-green-900/30':'bg-red-900/30',icon:Target},
+                                {v:totalCorrect,l:'累積答對',c:'text-indigo-400',bg:'bg-indigo-900/30',icon:CheckCircle},
+                                {v:highestCombo,l:'最高連擊',c:'text-orange-400',bg:'bg-orange-900/30',icon:Zap},
+                            ].map(x => (
+                                <motion.div key={x.l} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className={`${x.bg} p-6 rounded-2xl border border-zinc-800/50 flex items-center justify-between`}>
+                                    <div><div className="text-sm text-zinc-500 font-bold mb-1">{x.l}</div><div className={`text-3xl font-black ${x.c}`}>{x.v}</div></div>
+                                    <div className={`p-4 rounded-xl`} style={{background:x.c.replace('text-','rgba(').replace('-400',',0.2)')}}><LucideIcon icon={x.icon} size={24} className={x.c}/></div>
+                                </motion.div>
+                            ))}
+                        </div>
+                        <div className="mt-8 text-center text-zinc-600 text-sm">數據僅儲存於本機</div>
                     </div>
                 );
             }
 
+            // ── MODE SELECT ──
             if (view === 'mode_select') return (
-                <div className="h-full bg-slate-950 p-6 overflow-y-auto">
-                    <div className="flex justify-between items-center mb-6 max-w-5xl mx-auto">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-magic-900 rounded-full flex items-center justify-center border border-magic-600"><LucideIcon icon={User} className="text-magic-300"/></div>
-                            <div><h2 className="text-xl font-bold text-white">{userName}</h2><div className="flex items-center gap-1 text-gold-400 text-sm"><LucideIcon icon={Coins} size={14}/> {metaState.coins}</div></div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={()=>setView('meta_shop')} className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-gold-400 font-bold flex items-center gap-2"><LucideIcon icon={ShoppingBag} size={16}/> 知識聖殿</button>
-                            <button onClick={()=>setView('home')} className="bg-slate-800 hover:bg-slate-700 p-2 rounded-full"><LucideIcon icon={Home}/></button>
+                <div className="h-full bg-zinc-950 overflow-y-auto">
+                    {/* Header */}
+                    <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-800/50 px-6 py-4">
+                        <div className="flex justify-between items-center max-w-5xl mx-auto">
+                            <div className="flex items-center gap-4">
+                                <div className="w-11 h-11 bg-gradient-to-br from-purple-600 to-purple-900 rounded-xl flex items-center justify-center border border-purple-500/30 shadow-lg shadow-purple-900/20">
+                                    <LucideIcon icon={User} size={20} className="text-purple-200"/>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white">{userName}</h2>
+                                    <div className="flex items-center gap-1 text-gold-400 text-sm font-bold">
+                                        <LucideIcon icon={Coins} size={13}/> {metaState.coins}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={()=>setView('dashboard')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-blue-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors">
+                                    <LucideIcon icon={BarChart3} size={16}/> 儀表板
+                                </button>
+                                <button onClick={()=>setView('meta_shop')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-gold-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors">
+                                    <LucideIcon icon={ShoppingBag} size={16}/> 知識聖殿
+                                </button>
+                                <button onClick={()=>setView('home')} className="bg-zinc-800/80 hover:bg-zinc-700 p-2 rounded-xl border border-zinc-700/50 transition-colors">
+                                    <LucideIcon icon={Home} size={18}/>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl mx-auto">
-                        {Object.values(GAME_MODES).map(mode => (
-                            <button key={mode.id} onClick={()=>{AudioEngine.click();setConfig({...config,mode:mode.id});setView('chapter_select');}}
-                                className={`p-4 rounded-2xl border-2 transition-all hover:scale-105 active:scale-95 flex flex-col items-center text-center gap-2 bg-slate-900 border-slate-700 hover:border-${mode.accent}-500 group`}>
-                                <div className={`p-3 rounded-xl bg-${mode.accent}-900/50`}><LucideIcon icon={mode.icon} size={32} className={mode.color}/></div>
-                                <h3 className={`font-bold text-sm ${mode.color} group-hover:scale-105 transition-transform`}>{mode.name}</h3>
-                                <p className="text-xs text-slate-500 leading-tight">{mode.desc}</p>
-                            </button>
-                        ))}
+
+                    {/* Mode grid */}
+                    <div className="p-6 max-w-5xl mx-auto">
+                        <h3 className="text-zinc-500 text-sm font-bold mb-5 tracking-widest uppercase">選擇模式</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            {Object.values(GAME_MODES).map((mode, i) => (
+                                <motion.button key={mode.id} initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}}
+                                    onClick={()=>{AudioEngine.click();setConfig({...config,mode:mode.id});setView('chapter_select');}}
+                                    className={`mode-card relative overflow-hidden rounded-2xl border-2 glass ${mode.accentBorder} group cursor-pointer`}>
+                                    {/* Background */}
+                                    <div className={`absolute inset-0 ${mode.bg} opacity-80`}/>
+                                    {/* SVG Hero */}
+                                    <div className="absolute inset-0 opacity-40" style={{background: mode.hero, backgroundSize:'cover'}}/>
+                                    {/* Shimmer effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-950/90 z-10"/>
+
+                                    <div className="relative z-20 p-4 flex flex-col items-center text-center h-full justify-between min-h-[140px]">
+                                        <div className={`p-3 rounded-xl ${mode.accentBg} border ${mode.accentBorder} mb-3`}>
+                                            <LucideIcon icon={mode.icon} size={28} className={mode.color}/>
+                                        </div>
+                                        <div>
+                                            <h3 className={`font-black text-base mb-1 ${mode.color} font-display`}>{mode.name}</h3>
+                                            <p className="text-[10px] text-zinc-500 leading-tight mb-2">{mode.desc}</p>
+                                            <div className="text-[9px] text-zinc-600 italic">{mode.tagline}</div>
+                                        </div>
+                                    </div>
+                                </motion.button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             );
 
+            // ── CHAPTER SELECT ──
             if (view === 'chapter_select') {
                 const currentMode = GAME_MODES[config.mode];
                 return (
-                    <div className="h-full bg-slate-950 p-6 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6 max-w-4xl mx-auto">
-                            <div className="flex items-center gap-4">
-                                <button onClick={goBack} className="bg-slate-800 p-2 rounded-full hover:bg-slate-700"><LucideIcon icon={ArrowLeft}/></button>
-                                <div className="flex items-center gap-2">
-                                    <LucideIcon icon={currentMode.icon} className={currentMode.color}/>
-                                    <h2 className="text-xl font-bold text-white">{currentMode.name}</h2>
+                    <div className="h-full bg-zinc-950 overflow-y-auto">
+                        {/* Mode hero banner */}
+                        <div className="relative overflow-hidden" style={{height:'180px'}}>
+                            <div className={`absolute inset-0 ${currentMode.bg} opacity-60`} style={{backgroundImage:currentMode.hero, backgroundSize:'cover'}}/>
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-zinc-950"/>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-center">
+                                    <div className={`p-4 rounded-2xl ${currentMode.accentBg} border ${currentMode.accentBorder} inline-block mb-3`}>
+                                        <LucideIcon icon={currentMode.icon} size={40} className={currentMode.color}/>
+                                    </div>
+                                    <h2 className={`text-3xl font-black font-display ${currentMode.color}`}>{currentMode.name}</h2>
+                                    <p className="text-zinc-400 text-sm mt-1">{currentMode.tagline}</p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-w-4xl mx-auto">
-                            <button onClick={()=>{setConfig({...config,chapter:null});setView('game');}} className="p-4 bg-magic-900 border-2 border-magic-500 rounded-xl hover:bg-magic-800 transition-all flex flex-col items-center gap-1 col-span-full mb-2">
-                                <span className="text-lg font-bold text-magic-300">🌐 隨機挑戰</span>
+                            <button onClick={goBack} className="absolute top-4 left-4 bg-zinc-900/80 backdrop-blur p-2 rounded-xl border border-zinc-700/50 hover:bg-zinc-800 transition-colors z-20">
+                                <LucideIcon icon={ArrowLeft}/>
                             </button>
-                            {CHAPTERS.map(ch => (
-                                <button key={ch.code} onClick={()=>{setConfig({...config,chapter:ch.code});setView('game');}}
-                                    className="p-3 bg-slate-800 rounded-xl border border-slate-700 hover:border-brand-500 hover:bg-slate-700 transition-all flex flex-col items-center gap-1">
-                                    <div className="text-2xl font-black text-slate-500">{ch.code}</div>
-                                    <div className="text-sm font-serif font-bold text-brand-400">{ch.name}</div>
+                        </div>
+
+                        <div className="p-6 max-w-4xl mx-auto">
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                <button onClick={()=>{setConfig({...config,chapter:null});setView('game');}}
+                                    className="col-span-full mb-2 p-4 bg-gradient-to-r from-purple-900/40 to-purple-800/20 border-2 border-purple-500/40 rounded-2xl hover:border-purple-400 transition-all flex flex-col items-center gap-1">
+                                    <span className="text-lg font-black text-purple-300">🌐 隨機挑戰</span>
+                                    <span className="text-xs text-zinc-500">所有題目隨機</span>
                                 </button>
-                            ))}
+                                {CHAPTERS.map(ch => (
+                                    <button key={ch.code} onClick={()=>{setConfig({...config,chapter:ch.code});setView('game');}}
+                                        className="p-3 bg-zinc-900/80 rounded-2xl border border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-800/80 transition-all flex flex-col items-center gap-1 glass">
+                                        <div className="text-2xl font-black text-zinc-600">{ch.code}</div>
+                                        <div className="text-sm font-serif font-bold" style={{color:currentMode.accentColor}}>{ch.name}</div>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 );
             }
 
+            // ── GAME ──
             if (view === 'game') {
                 const gameProps = { chapter: config.chapter, goHome: goBack, onGameEnd: handleGameEnd, metaState };
                 switch (config.mode) {
@@ -1489,7 +1546,7 @@
                 }
             }
 
-            // MetaShop
+            // ── META SHOP ──
             if (view === 'meta_shop') {
                 const buyUpgrade = (type) => {
                     const cfg = META_UPGRADES[type];
@@ -1507,23 +1564,74 @@
                     else AudioEngine.wrong();
                 };
                 return (
-                    <div className="h-full bg-slate-900 text-white p-6 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-8 sticky top-0 bg-slate-900/95 p-4 z-10 border-b border-slate-700">
-                            <div className="flex items-center gap-4"><button onClick={()=>setView('mode_select')} className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"><LucideIcon icon={ArrowLeft}/></button><h2 className="text-2xl font-bold text-magic-300">知識聖殿</h2></div>
-                            <div className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full border border-gold-500/50"><LucideIcon icon={Coins} className="text-gold-400"/><span className="font-bold text-xl text-gold-400">{metaState.coins}</span></div>
+                    <div className="h-full bg-zinc-950 text-white overflow-y-auto">
+                        <div className="sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-800/50 px-6 py-4 flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <button onClick={()=>setView('mode_select')} className="bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 border border-zinc-700/50 transition-colors"><LucideIcon icon={ArrowLeft}/></button>
+                                <h2 className="text-2xl font-black text-purple-300 font-display flex items-center gap-2"><LucideIcon icon={GraduationCap}/> 知識聖殿</h2>
+                            </div>
+                            <div className="flex items-center gap-2 bg-zinc-900 px-4 py-2 rounded-full border border-gold-500/30">
+                                <LucideIcon icon={Coins} className="text-gold-400"/><span className="font-black text-xl text-gold-400">{metaState.coins}</span>
+                            </div>
                         </div>
-                        <div className="max-w-5xl mx-auto space-y-10">
+
+                        <div className="max-w-5xl mx-auto p-6 space-y-12">
+                            {/* Upgrades */}
                             <section>
-                                <h3 className="text-xl font-bold mb-4 text-magic-100 flex items-center gap-2"><LucideIcon icon={GraduationCap}/> 基礎能力</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{Object.entries(META_UPGRADES).map(([key,cfg])=>{const lv=metaState.upgrades[key];const cost=Math.floor(cfg.baseCost*Math.pow(cfg.costMult,lv));const can=metaState.coins>=cost;return(<div key={key} className="bg-slate-800 p-5 rounded-xl border border-slate-700"><div className="flex items-center gap-3 mb-3"><div className="p-2 bg-magic-900 rounded-lg"><LucideIcon icon={cfg.icon} size={24} className="text-magic-300"/></div><div><div className="font-bold">{cfg.name}</div><div className="text-xs text-slate-400">Lv.{lv}</div></div></div><p className="text-sm text-slate-300 mb-3">{cfg.desc}</p><button onClick={()=>buyUpgrade(key)} disabled={!can} className={`w-full py-2 rounded-xl font-bold flex items-center justify-center gap-2 ${can?'bg-gold-600 hover:bg-gold-500 text-white':'bg-slate-700 text-slate-500 cursor-not-allowed'}`}><LucideIcon icon={Coins} size={14}/> {cost}</button></div>)})}</div>
+                                <h3 className="text-lg font-bold mb-4 text-purple-200 flex items-center gap-2"><LucideIcon icon={TrendingUp} size={20}/> 基礎能力</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{Object.entries(META_UPGRADES).map(([key,cfg])=>{
+                                    const lv=metaState.upgrades[key];
+                                    const cost=Math.floor(cfg.baseCost*Math.pow(cfg.costMult,lv));
+                                    const can=metaState.coins>=cost;
+                                    return(<div key={key} className="bg-zinc-900/80 p-5 rounded-2xl border border-zinc-800/50 glass">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="p-2 bg-purple-900/40 rounded-xl border border-purple-700/30"><LucideIcon icon={cfg.icon} size={22} className="text-purple-300"/></div>
+                                            <div><div className="font-bold">{cfg.name}</div><div className="text-xs text-zinc-500">Lv.{lv} → Lv.{lv+1}</div></div>
+                                        </div>
+                                        <p className="text-sm text-zinc-400 mb-3">{cfg.desc}</p>
+                                        <button onClick={()=>buyUpgrade(key)} disabled={!can}
+                                            className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${can?'bg-gradient-to-r from-yellow-600 to-yellow-500 text-black hover:from-yellow-500 hover:to-yellow-400':'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
+                                            <LucideIcon icon={Coins} size={14}/> {cost}
+                                        </button>
+                                    </div>);
+                                })}</div>
                             </section>
+
+                            {/* Skills */}
                             <section>
-                                <h3 className="text-xl font-bold mb-4 text-magic-100 flex items-center gap-2"><LucideIcon icon={Book}/> 技能學習</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{Object.values(MASTER_SKILL_POOL).filter(s=>s.cost>0).map(skill=>{const isUn=(metaState.unlockedSkills||[]).includes(skill.id);const can=metaState.coins>=skill.cost;return(<div key={skill.id} className={`p-4 rounded-xl border-2 flex flex-col items-center text-center ${isUn?'bg-magic-900/30 border-magic-500/50':'bg-slate-800 border-slate-700'}`}><div className={`p-2 rounded-full mb-2 ${skill.color} bg-opacity-20`}><LucideIcon icon={skill.icon} className={isUn?'text-white':'text-slate-400'}/></div><h4 className={`font-bold text-sm ${isUn?'text-white':'text-slate-500'}`}>{skill.name}</h4>{isUn?<div className="text-green-400 text-xs font-bold flex items-center mt-2"><LucideIcon icon={CheckCircle} size={12}/> 已學習</div>:<button onClick={()=>unlockSkill(skill.id,skill.cost)} disabled={!can} className={`mt-2 px-3 py-1 rounded-lg text-xs font-bold flex items-center ${can?'bg-gold-600 text-white':'bg-slate-700 text-slate-500'}`}><LucideIcon icon={Unlock} size={10}/> {skill.cost}</button>}</div>)})}</div>
+                                <h3 className="text-lg font-bold mb-4 text-purple-200 flex items-center gap-2"><LucideIcon icon={Sparkles} size={20}/> 技能學習</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{Object.values(MASTER_SKILL_POOL).filter(s=>s.cost>0).map(skill=>{
+                                    const isUn=(metaState.unlockedSkills||[]).includes(skill.id);
+                                    const can=metaState.coins>=skill.cost;
+                                    return(<div key={skill.id} className={`p-4 rounded-2xl border-2 flex flex-col items-center text-center glass ${isUn?'border-green-500/30 bg-green-900/10':'border-zinc-800/50 bg-zinc-900/50'}`}>
+                                        <div className={`p-3 rounded-full mb-2 ${skill.color}`} style={{opacity:isUn?1:0.5}}><LucideIcon icon={skill.icon} size={24} className={isUn?'text-white':'text-zinc-600'}/></div>
+                                        <h4 className={`font-bold text-sm ${isUn?'text-white':'text-zinc-600'}`}>{skill.name}</h4>
+                                        {isUn?<div className="text-green-400 text-xs font-bold flex items-center mt-2"><LucideIcon icon={CheckCircle} size={12}/> 已學習</div>:
+                                            <button onClick={()=>unlockSkill(skill.id,skill.cost)} disabled={!can}
+                                                className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center ${can?'bg-gradient-to-r from-yellow-600 to-yellow-500 text-black':'bg-zinc-800 text-zinc-600'}`}>
+                                                <LucideIcon icon={Unlock} size={10}/> {skill.cost}
+                                            </button>}
+                                    </div>);
+                                })}</div>
                             </section>
+
+                            {/* Artifacts */}
                             <section>
-                                <h3 className="text-xl font-bold mb-4 text-magic-100 flex items-center gap-2"><LucideIcon icon={Lock}/> 遺物</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{RPG_ARTIFACTS.filter(a=>a.unlockCost>0).map(art=>{const isUn=metaState.unlockedArtifacts.includes(art.id);const can=metaState.coins>=art.unlockCost;return(<div key={art.id} className={`p-4 rounded-xl border-2 flex flex-col items-center text-center ${isUn?'bg-magic-900/30 border-magic-500/50':'bg-slate-800 border-slate-700'}`}><div className="p-2 mb-2"><LucideIcon icon={art.icon} className={isUn?'text-magic-300':'text-slate-600'}/></div><h4 className={`font-bold text-sm ${isUn?'text-white':'text-slate-500'}`}>{art.name}</h4><p className="text-xs text-slate-400 mb-2">{art.desc}</p>{isUn?<div className="text-green-400 text-xs font-bold flex items-center"><LucideIcon icon={CheckCircle} size={12}/> 已解鎖</div>:<button onClick={()=>unlockArtifact(art.id,art.unlockCost)} disabled={!can} className={`mt-1 px-3 py-1 rounded-lg text-xs font-bold flex items ${can?'bg-gold-600 text-white':'bg-slate-700 text-slate-500'}`}><LucideIcon icon={Unlock} size={10}/> {art.unlockCost}</button>}</div>)})}</div>
+                                <h3 className="text-lg font-bold mb-4 text-purple-200 flex items-center gap-2"><LucideIcon icon={Gem} size={20}/> 遺物</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{RPG_ARTIFACTS.filter(a=>a.unlockCost>0).map(art=>{
+                                    const isUn=metaState.unlockedArtifacts.includes(art.id);
+                                    const can=metaState.coins>=art.unlockCost;
+                                    return(<div key={art.id} className={`p-4 rounded-2xl border-2 flex flex-col items-center text-center glass ${isUn?'border-purple-500/30 bg-purple-900/10':'border-zinc-800/50 bg-zinc-900/50'}`}>
+                                        <div className="p-2 mb-2"><LucideIcon icon={art.icon} size={28} className={isUn?'text-purple-300':'text-zinc-700'}/></div>
+                                        <h4 className={`font-bold text-sm ${isUn?'text-white':'text-zinc-600'}`}>{art.name}</h4>
+                                        <p className="text-xs text-zinc-500 mb-2">{art.desc}</p>
+                                        {isUn?<div className="text-green-400 text-xs font-bold flex items-center"><LucideIcon icon={CheckCircle} size={12}/> 已解鎖</div>:
+                                            <button onClick={()=>unlockArtifact(art.id,art.unlockCost)} disabled={!can}
+                                                className={`mt-1 px-3 py-1.5 rounded-lg text-xs font-bold flex items ${can?'bg-gradient-to-r from-yellow-600 to-yellow-500 text-black':'bg-zinc-800 text-zinc-600'}`}>
+                                                <LucideIcon icon={Unlock} size={10}/> {art.unlockCost}
+                                            </button>}
+                                    </div>);
+                                })}</div>
                             </section>
                         </div>
                     </div>
