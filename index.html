@@ -28,8 +28,8 @@
         html, body { height: 100%; margin: 0; font-family: 'Noto Sans TC', sans-serif; }
         .perspective-road { transform: perspective(500px) rotateX(40deg); transform-origin: 50% 100%; }
         .typing-char { transition: all 0.2s ease; }
-        .typing-char.correct { @apply text-green-400; transform: scale(1.1); }
-        .typing-char.wrong { @apply text-red-400 animate-shake; }
+        .typing-char.correct { color: #4ade80; transform: scale(1.1); }
+        .typing-char.wrong { color: #f87171; animation: shake 0.3s ease; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-2px, 0, 0); }
             20%, 80% { transform: translate3d(4px, 0, 0); }
@@ -42,6 +42,18 @@
         .animate-glow { animation: glow 2s ease-in-out infinite; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slideIn { animation: slideIn 0.3s ease-out; }
+        @keyframes comboFlash { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 0.8; } }
+        .combo-flash { animation: comboFlash 0.5s ease-out; }
+        @keyframes screenShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .screen-shake { animation: screenShake 0.3s ease; }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 10px 2px rgba(139, 92, 246, 0.6); } 50% { box-shadow: 0 0 25px 5px rgba(139, 92, 246, 0.9); } }
+        .pulse-glow { animation: pulseGlow 1s ease-in-out infinite; }
+        @keyframes progressPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .progress-pulse { animation: progressPulse 1s ease-in-out infinite; }
+        .combo-milestone { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .energy-bar-fill { transition: width 0.3s ease-out; }
+        .mode-card:hover { transform: scale(1.02); }
+        .mode-card { transition: transform 0.2s ease; }
     </style>
 </head>
 <body class="bg-gradient-to-b from-magic-950 to-magic-900 min-h-screen text-white overflow-hidden">
@@ -78,20 +90,17 @@
             GAME_START: 'game:start', GAME_END: 'game:end',
             QUESTION_SHOW: 'question:show', QUESTION_CORRECT: 'question:correct', QUESTION_WRONG: 'question:wrong',
             LEVEL_COMPLETE: 'level:complete', LEVEL_FAILED: 'level:failed',
-            DIFFICULTY_CHANGE: 'difficulty:change', DIFFICULTY_ADJUST: 'difficulty:adjust',
-            STATE_CHANGE: 'state:change',
+            DIFFICULTY_CHANGE: 'difficulty:change', COMBO_UPDATE: 'combo:update', COMBO_MILESTONE: 'combo:milestone',
+            MODE_CHANGE: 'mode:change', TIME_TICK: 'time:tick', SKILL_ACTIVATE: 'skill:activate',
         };
         
         // State Machine
         const StateMachine = {
             currentState: 'HOME',
             states: {
-                HOME: {}, MENU: {}, PLAYING: {}, LEVEL_COMPLETE: {}, SETTINGS: {},
+                HOME: {}, MENU: {}, MODE_SELECT: {}, PLAYING: {}, LEVEL_COMPLETE: {}, SETTINGS: {}, GAME_OVER: {},
             },
-            transition(to) {
-                this.currentState = to;
-                EventBus.emit(EVENTS.STATE_CHANGE, { from: this.currentState, to });
-            },
+            transition(to) { this.currentState = to; EventBus.emit(EVENTS.STATE_CHANGE, { from: this.currentState, to }); },
             getState() { return this.currentState; },
         };
         
@@ -129,6 +138,7 @@
             },
             getCurrentDifficulty() { return { level: this.currentLevel, ...DIFFICULTY_LEVELS[this.currentLevel] }; },
             reset() { this.metrics = { recentAccuracy: [], recentTimes: [], consecutiveErrors: 0, consecutiveSuccess: 0, frustrationLevel: 0 }; },
+            setLevel(lvl) { this.currentLevel = lvl; },
         };
         
         // Storage Manager
@@ -146,8 +156,8 @@
             _defaultPlayer() {
                 return {
                     id: 'p_' + Date.now(), name: '打字王', avatar: 'hero',
-                    progress: { totalStars: 0, completedLevels: [] },
-                    stats: { totalQuestions: 0, correctAnswers: 0, bestWPM: 0, longestStreak: 0 },
+                    progress: { totalStars: 0, completedLevels: [], highScores: {} },
+                    stats: { totalQuestions: 0, correctAnswers: 0, bestWPM: 0, longestStreak: 0, gamesPlayed: 0 },
                     badges: [], settings: { difficulty: 3, soundEnabled: true },
                 };
             },
@@ -161,7 +171,9 @@
             recordWrong() { this.session.wrongCount++; this.session.streak = 0; return { streak: 0 }; },
             getSessionSummary() {
                 const total = this.session.correctCount + this.session.wrongCount;
-                return { correct: this.session.correctCount, wrong: this.session.wrongCount, total, accuracy: total > 0 ? this.session.correctCount / total : 0, maxStreak: this.session.maxStreak };
+                const elapsed = (Date.now() - this.session.startTime) / 1000;
+                const wpm = elapsed > 0 ? Math.round((this.session.correctCount / elapsed) * 60) : 0;
+                return { correct: this.session.correctCount, wrong: this.session.wrongCount, total, accuracy: total > 0 ? this.session.correctCount / total : 0, maxStreak: this.session.maxStreak, wpm, elapsed };
             },
             savePlayer() { StorageManager.set('player', this.player); },
         };
@@ -169,10 +181,11 @@
         // Audio System
         const AudioSystem = {
             ctx: null, enabled: true, volume: 0.1,
-            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx?.state === 'suspended') this.ctx.resume(); },
             playTone(freq, type = 'sine', duration = 0.2, vol = 0.1) {
                 if (!this.enabled) return;
                 this.init();
+                if (!this.ctx) return;
                 const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
@@ -183,58 +196,106 @@
                 osc.start(); osc.stop(t + duration);
             },
             correct() { this.playTone(880, 'sine', 0.15, this.volume); setTimeout(() => this.playTone(1108, 'sine', 0.2, this.volume), 50); },
-            wrong() { this.playTone(150, 'triangle', 0.3, this.volume * 1.5, 100); },
+            wrong() { this.playTone(150, 'triangle', 0.3, this.volume * 1.5); },
             levelUp() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.25, this.volume), i * 80)); },
             click() { this.playTone(1200, 'sine', 0.03, 0.02); },
+            combo5() { this.playTone(660, 'square', 0.1, 0.15); setTimeout(() => this.playTone(880, 'square', 0.1, 0.15), 100); },
+            combo10() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.playTone(f, 'square', 0.15, 0.12), i * 80)); },
+            combo20() { [523, 659, 784, 1047, 1318].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.2, 0.15), i * 60)); },
         };
         
-        // Type Engine
-        const TypeEngine = {
-            questions: [], currentIndex: 0, currentQuestion: null,
-            isPlaying: false, questionStartTime: 0,
-            initLevel(questions) {
-                this.questions = [...questions];
-                this.currentIndex = 0;
-                this.isPlaying = true;
-                this._showNext();
+        // =============================================
+        // 評分系統 (Score System)
+        // =============================================
+        const ScoreSystem = {
+            getGrade(accuracy) {
+                if (accuracy >= 0.95) return 'S';
+                if (accuracy >= 0.9) return 'A';
+                if (accuracy >= 0.8) return 'B';
+                if (accuracy >= 0.7) return 'C';
+                if (accuracy >= 0.6) return 'D';
+                return 'F';
             },
-            _showNext() {
-                if (this.currentIndex >= this.questions.length) {
-                    this.isPlaying = false;
-                    EventBus.emit(EVENTS.LEVEL_COMPLETE, ProgressTracker.getSessionSummary());
-                    AudioSystem.levelUp();
-                    return;
+            getGradeColor(grade) {
+                const colors = { S: 'text-yellow-400', A: 'text-green-400', B: 'text-blue-400', C: 'text-purple-400', D: 'text-orange-400', F: 'text-red-400' };
+                return colors[grade] || 'text-white';
+            },
+            calculateScore(correct, wrong, maxStreak, timeBonus = 0) {
+                const baseScore = correct * 100;
+                const streakBonus = maxStreak * 50;
+                return baseScore + streakBonus + timeBonus;
+            },
+            getWPM(correct, elapsedSeconds) {
+                if (elapsedSeconds <= 0) return 0;
+                return Math.round((correct / elapsedSeconds) * 60);
+            },
+        };
+        
+        // =============================================
+        // Combo System
+        // =============================================
+        const ComboSystem = {
+            currentCombo: 0,
+            maxCombo: 50,
+            milestones: [5, 10, 20, 30, 50],
+            milestoneMessages: {
+                5: { text: '🔥 熱辣辣！', color: 'text-orange-400', sound: 'combo5' },
+                10: { text: '💥 火力全開！', color: 'text-yellow-400', sound: 'combo10' },
+                20: { text: '⚡ 雷神之怒！', color: 'text-blue-400', sound: 'combo20' },
+                30: { text: '🌟 傳奇！', color: 'text-purple-400', sound: 'combo20' },
+                50: { text: '👑 天下無敵！', color: 'text-yellow-300', sound: 'combo20' },
+            },
+            add() {
+                this.currentCombo++;
+                EventBus.emit(EVENTS.COMBO_UPDATE, { combo: this.currentCombo, max: this.maxCombo });
+                if (this.milestones.includes(this.currentCombo)) {
+                    const msg = this.milestoneMessages[this.currentCombo];
+                    EventBus.emit(EVENTS.COMBO_MILESTONE, { combo: this.currentCombo, message: msg.text, color: msg.color });
+                    if (AudioSystem[msg.sound]) AudioSystem[msg.sound]();
                 }
-                this.currentQuestion = this.questions[this.currentIndex];
-                this.questionStartTime = Date.now();
-                EventBus.emit(EVENTS.QUESTION_SHOW, { question: this.currentQuestion, index: this.currentIndex, total: this.questions.length });
+                return this.currentCombo;
             },
-            checkAnswer(input) {
-                if (!this.isPlaying) return null;
-                const time = Date.now() - this.questionStartTime;
-                const expected = this.currentQuestion?.code || '';
-                const correct = input.toUpperCase() === expected.toUpperCase();
-                if (correct) {
-                    AudioSystem.correct();
-                    ProgressTracker.recordCorrect();
-                    AdaptiveEngine.recordAnswer({ correct: true, time });
-                    this.currentIndex++;
-                    this._showNext();
-                } else {
-                    AudioSystem.wrong();
-                    ProgressTracker.recordWrong();
-                    AdaptiveEngine.recordAnswer({ correct: false, time });
-                    EventBus.emit(EVENTS.QUESTION_WRONG, { question: this.currentQuestion, attempts: 1 });
-                }
-                return { correct, expected, time };
+            reset() { this.currentCombo = 0; EventBus.emit(EVENTS.COMBO_UPDATE, { combo: 0, max: this.maxCombo }); },
+            getComboMultiplier() { return 1 + Math.floor(this.currentCombo / 10) * 0.5; },
+        };
+        
+        // =============================================
+        // 10種遊戲模式
+        // =============================================
+        const GAME_MODES = {
+            foundation: {
+                id: 'foundation', name: '基礎關卡', icon: '🏰', description: '線性關卡學習',
+                timed: false, hasHints: true, comboEnabled: true, challenges: []
             },
-            stop() { this.isPlaying = false; this.questions = []; this.currentQuestion = null; },
+            timeAttack: {
+                id: 'timeAttack', name: '限時挑戰', icon: '⏱️', description: '60秒盡量答多題',
+                timed: true, timeLimit: 60, hasHints: false, comboEnabled: true, challenges: ['scoreBased']
+            },
+            vocabulary: {
+                id: 'vocabulary', name: '詞彙學習', icon: '📖', description: '先記憶後輸入',
+                timed: false, hasHints: true, comboEnabled: false, memorizationPhase: true, challenges: []
+            },
+            sprint: {
+                id: 'sprint', name: '速打模式', icon: '🚀', description: '50題追求最快時間',
+                timed: false, targetCount: 50, hasHints: false, comboEnabled: true, challenges: ['speedBased']
+            },
+            challenge: {
+                id: 'challenge', name: '挑戰模式', icon: '🎯', description: '完成特定目標',
+                timed: false, hasHints: false, comboEnabled: true, challenges: ['perfect', 'combo10', 'accuracy90']
+            },
+            practice: {
+                id: 'practice', name: '練習模式', icon: '📝', description: '無壓力學習',
+                timed: false, infiniteHints: true, hasHints: true, comboEnabled: false, challenges: []
+            },
+            free: {
+                id: 'free', name: '自由練習', icon: '🎲', description: '自訂題目',
+                timed: false, customQuestions: true, hasHints: true, comboEnabled: false, challenges: []
+            },
         };
         
         // =============================================
         // 題庫數據
         // =============================================
-        
         const QUESTIONS = {
             'cangjie-l1': [
                 { id: 'q1', text: '日', code: 'A', hint: '日字部首' },
@@ -284,6 +345,30 @@
                 { id: 'q9', text: '菠蘿', code: 'ELMG' },
                 { id: 'q10', text: '草莓', code: 'ELHK' },
             ],
+            'animals-l1': [
+                { id: 'q1', text: '狗', code: 'HOK' },
+                { id: 'q2', text: '貓', code: 'HNF' },
+                { id: 'q3', text: '鳥', code: 'HAF' },
+                { id: 'q4', text: '魚', code: 'NWF' },
+                { id: 'q5', text: '馬', code: 'XHO' },
+                { id: 'q6', text: '牛', code: 'QK' },
+                { id: 'q7', text: '羊', code: 'UF' },
+                { id: 'q8', text: '豬', code: 'QHG' },
+                { id: 'q9', text: '蛇', code: 'NMI' },
+                { id: 'q10', text: '龍', code: 'LPHF' },
+            ],
+            'daily-l1': [
+                { id: 'q1', text: '你好', code: 'ONFHVI' },
+                { id: 'q2', text: '香港', code: 'ILKS' },
+                { id: 'q3', text: '老師', code: 'JKSJ' },
+                { id: 'q4', text: '學生', code: 'XND' },
+                { id: 'q5', text: '學校', code: 'XOU' },
+                { id: 'q6', text: '圖書館', code: 'BWKNR' },
+                { id: 'q7', text: '電腦', code: 'FKQU' },
+                { id: 'q8', text: '打字', code: 'DQLF' },
+                { id: 'q9', text: '遊戲', code: 'KBUC' },
+                { id: 'q10', text: '學習', code: 'HNGNI' },
+            ],
         };
         
         const LEVELS = [
@@ -291,17 +376,106 @@
             { id: 'cangjie-l2', name: '倉頡基礎 L2', description: '學習大、中、一、弓部首', icon: '📚', category: '倉頡', color: 'indigo', questions: 'cangjie-l2' },
             { id: 'cangjie-l3', name: '倉頡基礎 L3', description: '學習山、女、田、卜部首', icon: '🏔️', category: '倉頡', color: 'blue', questions: 'cangjie-l3' },
             { id: 'fruits-l1', name: '水果王國', description: '打字水果名稱', icon: '🍎', category: '詞彙', color: 'red', questions: 'fruits-l1' },
+            { id: 'animals-l1', name: '動物王國', description: '打字動物名稱', icon: '🐕', category: '詞彙', color: 'green', questions: 'animals-l1' },
+            { id: 'daily-l1', name: '日常用語', description: '打字日常用字', icon: '🏠', category: '詞彙', color: 'blue', questions: 'daily-l1' },
         ];
+        
+        // =============================================
+        // Type Engine（增強版）
+        // =============================================
+        const TypeEngine = {
+            questions: [], currentIndex: 0, currentQuestion: null,
+            isPlaying: false, questionStartTime: 0,
+            mode: 'foundation', modeConfig: {},
+            timerInterval: null, timeRemaining: 0,
+            initLevel(questions, mode = 'foundation', config = {}) {
+                this.questions = [...questions].sort(() => Math.random() - 0.5);
+                this.currentIndex = 0;
+                this.isPlaying = true;
+                this.mode = mode;
+                this.modeConfig = config;
+                this.questionStartTime = Date.now();
+                if (mode === 'timeAttack' && config.timeLimit) {
+                    this.timeRemaining = config.timeLimit;
+                    this._startTimer();
+                }
+                this._showNext();
+            },
+            _startTimer() {
+                this.timerInterval = setInterval(() => {
+                    this.timeRemaining--;
+                    EventBus.emit(EVENTS.TIME_TICK, { remaining: this.timeRemaining });
+                    if (this.timeRemaining <= 0) {
+                        this._handleTimeUp();
+                    }
+                }, 1000);
+            },
+            _handleTimeUp() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.isPlaying = false;
+                EventBus.emit(EVENTS.GAME_END, { reason: 'timeUp', summary: ProgressTracker.getSessionSummary() });
+            },
+            _showNext() {
+                if (this.currentIndex >= this.questions.length) {
+                    if (this.mode === 'sprint' && this.currentIndex < 50) {
+                        // 繼續補充題目
+                        this.questions = [...this.questions, ...this._getMoreQuestions(50 - this.currentIndex)];
+                        this.currentQuestion = this.questions[this.currentIndex];
+                        this.questionStartTime = Date.now();
+                        EventBus.emit(EVENTS.QUESTION_SHOW, { question: this.currentQuestion, index: this.currentIndex, total: this.questions.length });
+                        return;
+                    }
+                    this.isPlaying = false;
+                    if (this.timerInterval) clearInterval(this.timerInterval);
+                    AudioSystem.levelUp();
+                    EventBus.emit(EVENTS.LEVEL_COMPLETE, ProgressTracker.getSessionSummary());
+                    return;
+                }
+                this.currentQuestion = this.questions[this.currentIndex];
+                this.questionStartTime = Date.now();
+                EventBus.emit(EVENTS.QUESTION_SHOW, { question: this.currentQuestion, index: this.currentIndex, total: this.mode === 'sprint' ? 50 : this.questions.length });
+            },
+            _getMoreQuestions(count) {
+                const allQuestions = Object.values(QUESTIONS).flat();
+                return allQuestions.sort(() => Math.random() - 0.5).slice(0, count);
+            },
+            checkAnswer(input) {
+                if (!this.isPlaying) return null;
+                const time = Date.now() - this.questionStartTime;
+                const expected = this.currentQuestion?.code || '';
+                const correct = input.toUpperCase() === expected.toUpperCase();
+                if (correct) {
+                    AudioSystem.correct();
+                    const streakData = ProgressTracker.recordCorrect();
+                    if (this.modeConfig.comboEnabled !== false) ComboSystem.add();
+                    AdaptiveEngine.recordAnswer({ correct: true, time });
+                    this.currentIndex++;
+                    this._showNext();
+                } else {
+                    AudioSystem.wrong();
+                    ProgressTracker.recordWrong();
+                    if (this.modeConfig.comboEnabled !== false) ComboSystem.reset();
+                    AdaptiveEngine.recordAnswer({ correct: false, time });
+                    EventBus.emit(EVENTS.QUESTION_WRONG, { question: this.currentQuestion, attempts: 1 });
+                }
+                return { correct, expected, time };
+            },
+            stop() {
+                this.isPlaying = false;
+                this.questions = [];
+                this.currentQuestion = null;
+                if (this.timerInterval) clearInterval(this.timerInterval);
+            },
+        };
         
         // =============================================
         // UI 組件
         // =============================================
-        
         const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
         
         createApp({
             setup() {
-                const state = ref('HOME'); // HOME, MENU, PLAYING, LEVEL_COMPLETE
+                const state = ref('HOME');
                 const currentLevel = ref(null);
                 const currentQuestion = ref(null);
                 const questionIndex = ref(0);
@@ -311,11 +485,19 @@
                 const sessionSummary = ref(null);
                 const difficulty = ref(AdaptiveEngine.getCurrentDifficulty());
                 const showHint = ref(false);
-                const feedback = ref(null); // { type: 'correct'|'wrong', message: '' }
-                
+                const feedback = ref(null);
+                const combo = ref(0);
+                const comboMilestone = ref(null);
+                const timeRemaining = ref(0);
+                const selectedMode = ref(null);
                 const player = ref(ProgressTracker.init());
                 
-                // 監聽事件
+                // Vocab mode state
+                const vocabPhase = ref('input'); // 'memorize' | 'input'
+                const vocabTimer = ref(0);
+                const vocabQuestion = ref(null);
+                const showCode = ref(true);
+                
                 onMounted(() => {
                     EventBus.on(EVENTS.QUESTION_SHOW, (data) => {
                         currentQuestion.value = data.question;
@@ -329,6 +511,8 @@
                     
                     EventBus.on(EVENTS.QUESTION_WRONG, () => {
                         feedback.value = { type: 'wrong', message: '再試一次！' };
+                        document.querySelector('.game-container')?.classList.add('screen-shake');
+                        setTimeout(() => document.querySelector('.game-container')?.classList.remove('screen-shake'), 300);
                         setTimeout(() => { feedback.value = null; }, 1000);
                     });
                     
@@ -337,58 +521,87 @@
                         state.value = 'LEVEL_COMPLETE';
                     });
                     
-                    EventBus.on(EVENTS.DIFFICULTY_CHANGE, (data) => {
+                    EventBus.on(EVENTS.GAME_END, (data) => {
+                        if (data.reason === 'timeUp') {
+                            sessionSummary.value = data.summary;
+                            state.value = 'LEVEL_COMPLETE';
+                        }
+                    });
+                    
+                    EventBus.on(EVENTS.DIFFICULTY_CHANGE, () => {
                         difficulty.value = AdaptiveEngine.getCurrentDifficulty();
+                    });
+                    
+                    EventBus.on(EVENTS.COMBO_UPDATE, (data) => {
+                        combo.value = data.combo;
+                    });
+                    
+                    EventBus.on(EVENTS.COMBO_MILESTONE, (data) => {
+                        comboMilestone.value = data;
+                        setTimeout(() => { comboMilestone.value = null; }, 2000);
+                    });
+                    
+                    EventBus.on(EVENTS.TIME_TICK, (data) => {
+                        timeRemaining.value = data.remaining;
                     });
                 });
                 
-                // 開始關卡
-                const startLevel = (level) => {
+                const startLevel = (level, mode = 'foundation') => {
                     currentLevel.value = level;
                     const questions = QUESTIONS[level.questions] || [];
                     if (questions.length === 0) return;
                     
                     AdaptiveEngine.reset();
                     ProgressTracker.startSession();
-                    TypeEngine.initLevel(questions);
+                    ComboSystem.reset();
+                    
+                    const config = {
+                        comboEnabled: mode !== 'practice' && mode !== 'vocabulary',
+                    };
+                    
+                    if (mode === 'timeAttack') config.timeLimit = 60;
+                    
+                    TypeEngine.initLevel(questions, mode, config);
                     state.value = 'PLAYING';
+                    selectedMode.value = mode;
                 };
                 
-                // 提交答案
                 const submitAnswer = () => {
                     if (!userInput.value.trim()) return;
                     const result = TypeEngine.checkAnswer(userInput.value);
                     if (result?.correct) {
-                        feedback.value = { type: 'correct', message: '正確！' };
+                        feedback.value = { type: 'correct', message: '✓' };
+                        setTimeout(() => { feedback.value = null; }, 300);
                     }
                 };
                 
-                // 返回選單
                 const goToMenu = () => {
                     TypeEngine.stop();
                     state.value = 'MENU';
                     currentLevel.value = null;
+                    selectedMode.value = null;
                 };
                 
-                // 重新開始
                 const retryLevel = () => {
-                    if (currentLevel.value) startLevel(currentLevel.value);
+                    if (currentLevel.value && selectedMode.value) {
+                        startLevel(currentLevel.value, selectedMode.value);
+                    }
                 };
                 
-                // 獲取評級
-                const getGrade = (accuracy) => {
-                    if (accuracy >= 0.95) return 'S';
-                    if (accuracy >= 0.9) return 'A';
-                    if (accuracy >= 0.8) return 'B';
-                    if (accuracy >= 0.7) return 'C';
-                    return 'D';
+                const getGrade = (accuracy) => ScoreSystem.getGrade(accuracy);
+                const getGradeColor = (grade) => ScoreSystem.getGradeColor(grade);
+                
+                const selectMode = (modeId) => {
+                    selectedMode.value = modeId;
+                    state.value = 'MENU';
                 };
                 
                 return {
                     state, currentLevel, currentQuestion, questionIndex, questionTotal,
                     userInput, inputRef, sessionSummary, difficulty, showHint, feedback,
-                    player, LEVELS,
-                    startLevel, submitAnswer, goToMenu, retryLevel, getGrade,
+                    combo, comboMilestone, timeRemaining, selectedMode, player, LEVELS,
+                    startLevel, submitAnswer, goToMenu, retryLevel, getGrade, getGradeColor,
+                    selectMode, GAME_MODES,
                 };
             },
             template: `
@@ -401,26 +614,62 @@
                             速成打字王國
                         </h1>
                         <p class="text-xl text-purple-300 mb-8">TypeQuest Kingdom</p>
-                        <button 
-                            @click="state = 'MENU'"
-                            class="px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-xl text-xl font-bold transition-all transform hover:scale-105 animate-glow border-2 border-purple-400"
-                        >
-                            開始遊戲
-                        </button>
+                        <div class="flex flex-col gap-3">
+                            <button 
+                                @click="state = 'MODE_SELECT'"
+                                class="px-8 py-4 bg-purple-600 hover:bg-purple-500 rounded-xl text-xl font-bold transition-all transform hover:scale-105 animate-glow border-2 border-purple-400"
+                            >
+                                🎮 開始遊戲
+                            </button>
+                            <button 
+                                @click="state = 'SETTINGS'"
+                                class="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-lg transition-all"
+                            >
+                                ⚙️ 設定
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- MODE SELECT -->
+                    <div v-if="state === 'MODE_SELECT'" class="w-full max-w-4xl animate-slideIn">
+                        <div class="text-center mb-8">
+                            <h2 class="text-3xl font-bold mb-2">🎯 選擇模式</h2>
+                            <p class="text-purple-300">你想點樣玩？</p>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button
+                                v-for="mode in GAME_MODES"
+                                :key="mode.id"
+                                @click="selectMode(mode.id)"
+                                class="mode-card p-4 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 text-center"
+                            >
+                                <div class="text-4xl mb-2">{{ mode.icon }}</div>
+                                <h3 class="font-bold text-lg">{{ mode.name }}</h3>
+                                <p class="text-purple-300 text-xs mt-1">{{ mode.description }}</p>
+                            </button>
+                        </div>
+                        <div class="mt-8 text-center">
+                            <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                ← 返回
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- MENU -->
                     <div v-if="state === 'MENU'" class="w-full max-w-4xl animate-slideIn">
-                        <div class="text-center mb-8">
+                        <div class="text-center mb-4">
                             <h2 class="text-3xl font-bold mb-2">🎮 選擇關卡</h2>
-                            <p class="text-purple-300">難度：{{ difficulty.name }}級</p>
+                            <p class="text-purple-300">
+                                模式：{{ GAME_MODES[selectedMode]?.name || '基礎' }} | 
+                                難度：{{ difficulty.name }}級
+                            </p>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <button
                                 v-for="level in LEVELS"
                                 :key="level.id"
-                                @click="startLevel(level)"
+                                @click="startLevel(level, selectedMode || 'foundation')"
                                 class="p-6 bg-gradient-to-br from-magic-800 to-magic-900 rounded-xl border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-102 text-left group"
                             >
                                 <div class="flex items-center gap-4">
@@ -434,35 +683,74 @@
                             </button>
                         </div>
                         
-                        <div class="mt-8 text-center">
-                            <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                ← 返回
+                        <div class="mt-8 flex justify-center gap-4">
+                            <button @click="state = 'MODE_SELECT'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                ← 換模式
+                            </button>
+                            <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg">
+                                🏠 主頁
                             </button>
                         </div>
                     </div>
                     
                     <!-- PLAYING -->
                     <div v-if="state === 'PLAYING'" class="w-full max-w-2xl animate-slideIn">
-                        <!-- 進度條 -->
-                        <div class="mb-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>{{ currentLevel?.name }}</span>
-                                <span>{{ questionIndex + 1 }} / {{ questionTotal }}</span>
+                        <!-- 頂部狀態列 -->
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="text-purple-300">
+                                <span class="text-lg">{{ currentLevel?.name }}</span>
                             </div>
-                            <div class="h-2 bg-magic-800 rounded-full overflow-hidden">
+                            <div class="flex items-center gap-4">
+                                <div v-if="timeRemaining > 0" class="text-xl font-bold" :class="timeRemaining <= 10 ? 'text-red-400' : 'text-yellow-400'">
+                                    ⏱️ {{ timeRemaining }}s
+                                </div>
+                                <div class="text-xl font-bold text-purple-300">
+                                    {{ questionIndex + 1 }} / {{ questionTotal }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 進度條 -->
+                        <div class="h-2 bg-magic-800 rounded-full overflow-hidden mb-4">
+                            <div 
+                                class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                                :class="{ 'progress-pulse': combo >= 10 }"
+                                :style="{ width: ((questionIndex / questionTotal) * 100) + '%' }"
+                            ></div>
+                        </div>
+                        
+                        <!-- Combo & 能量條 -->
+                        <div v-if="selectedMode !== 'practice' && selectedMode !== 'vocabulary'" class="mb-4">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-bold" :class="combo >= 10 ? 'combo-milestone' : 'text-purple-300'">
+                                    {{ combo >= 5 ? '🔥' : '' }} Combo: {{ combo }}
+                                </span>
+                                <span class="text-purple-400">{{ ScoreSystem.getComboMultiplier().toFixed(1) }}x</span>
+                            </div>
+                            <div class="h-3 bg-magic-800 rounded-full overflow-hidden">
                                 <div 
-                                    class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                                    :style="{ width: ((questionIndex / questionTotal) * 100) + '%' }"
+                                    class="h-full bg-gradient-to-r from-yellow-500 to-orange-500 energy-bar-fill"
+                                    :style="{ width: Math.min(100, (combo / 30) * 100) + '%' }"
                                 ></div>
                             </div>
                         </div>
                         
-                        <!-- 題目卡片 -->
-                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-8 border-2 border-purple-500/30">
+                        <!-- Combo 里程碑訊息 -->
+                        <div v-if="comboMilestone" 
+                            class="text-center text-2xl font-bold mb-4 animate-slideIn"
+                            :class="comboMilestone.color"
+                        >
+                            {{ comboMilestone.message }}
+                        </div>
+                        
+                        <!-- 遊戲區域 -->
+                        <div class="game-container bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-8 border-2 border-purple-500/30">
                             <!-- 題目顯示 -->
                             <div class="text-center mb-6">
                                 <div class="text-6xl font-bold mb-2 text-purple-300">{{ currentQuestion?.text }}</div>
-                                <div v-if="showHint" class="text-lg text-purple-400">提示：{{ currentQuestion?.hint }}</div>
+                                <div v-if="showHint || selectedMode === 'practice'" class="text-lg text-purple-400 mt-2">
+                                    💡 提示：{{ currentQuestion?.hint || currentQuestion?.code || '無' }}
+                                </div>
                             </div>
                             
                             <!-- 反饋 -->
@@ -489,13 +777,16 @@
                             
                             <!-- 按鈕 -->
                             <div class="flex gap-4">
-                                <button @click="showHint = !showHint" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg">
-                                    {{ showHint ? '隱藏提示' : '顯示提示' }}
+                                <button v-if="selectedMode !== 'timeAttack' && selectedMode !== 'sprint'" 
+                                    @click="showHint = !showHint" 
+                                    class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                                >
+                                    {{ showHint ? '隱藏提示' : '💡提示' }}
                                 </button>
-                                <button @click="submitAnswer" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold">
-                                    確認
+                                <button @click="submitAnswer" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold text-lg">
+                                    確認 ✓
                                 </button>
-                                <button @click="goToMenu" class="py-3 px-4 bg-red-900/50 hover:bg-red-800/50 rounded-lg">
+                                <button @click="goToMenu" class="py-3 px-4 bg-red-900/50 hover:bg-red-800/50 rounded-lg text-xl">
                                     ✕
                                 </button>
                             </div>
@@ -503,26 +794,36 @@
                         
                         <!-- 難度提示 -->
                         <div class="mt-4 text-center text-purple-400 text-sm">
-                            難度：{{ difficulty.name }}級 | 連擊：{{ sessionSummary?.maxStreak || 0 }}
+                            難度：{{ difficulty.name }}級 | 
+                            <span v-if="combo > 0" :class="combo >= 10 ? 'text-yellow-400 font-bold' : ''">
+                                連擊：{{ combo }}
+                            </span>
+                            <span v-else>連擊：0</span>
                         </div>
                     </div>
                     
                     <!-- LEVEL_COMPLETE -->
                     <div v-if="state === 'LEVEL_COMPLETE'" class="w-full max-w-md text-center animate-slideIn">
                         <div class="text-6xl mb-4">🎉</div>
-                        <h2 class="text-3xl font-bold mb-4">關卡完成！</h2>
+                        <h2 class="text-3xl font-bold mb-2">
+                            {{ timeRemaining <= 0 && selectedMode === 'timeAttack' ? '時間到！' : '關卡完成！' }}
+                        </h2>
                         
                         <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30 mb-6">
-                            <div class="text-6xl font-bold text-yellow-400 mb-2">{{ getGrade(sessionSummary?.accuracy || 0) }}</div>
+                            <div class="text-6xl font-bold mb-2" :class="getGradeColor(getGrade(sessionSummary?.accuracy || 0))">
+                                {{ getGrade(sessionSummary?.accuracy || 0) }}
+                            </div>
                             <div class="grid grid-cols-2 gap-4 text-left mt-4">
                                 <div class="text-purple-300">正確</div>
-                                <div class="font-bold">{{ sessionSummary?.correct || 0 }} 題</div>
+                                <div class="font-bold text-green-400">{{ sessionSummary?.correct || 0 }} 題</div>
                                 <div class="text-purple-300">錯誤</div>
-                                <div class="font-bold">{{ sessionSummary?.wrong || 0 }} 題</div>
+                                <div class="font-bold text-red-400">{{ sessionSummary?.wrong || 0 }} 題</div>
                                 <div class="text-purple-300">準確率</div>
                                 <div class="font-bold">{{ Math.round((sessionSummary?.accuracy || 0) * 100) }}%</div>
                                 <div class="text-purple-300">最高連擊</div>
-                                <div class="font-bold">{{ sessionSummary?.maxStreak || 0 }}</div>
+                                <div class="font-bold text-yellow-400">{{ sessionSummary?.maxStreak || 0 }}</div>
+                                <div v-if="sessionSummary?.wpm" class="text-purple-300">WPM</div>
+                                <div v-if="sessionSummary?.wpm" class="font-bold text-blue-400">{{ sessionSummary.wpm }}</div>
                             </div>
                         </div>
                         
@@ -535,9 +836,53 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- SETTINGS -->
+                    <div v-if="state === 'SETTINGS'" class="w-full max-w-md animate-slideIn">
+                        <div class="bg-gradient-to-br from-magic-800 to-magic-900 rounded-2xl p-6 border-2 border-purple-500/30">
+                            <h2 class="text-2xl font-bold mb-6 text-center">⚙️ 設定</h2>
+                            
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span>難度等級</span>
+                                    <select 
+                                        v-model="difficulty.level"
+                                        @change="AdaptiveEngine.setLevel(difficulty.level)"
+                                        class="px-4 py-2 bg-magic-950 rounded-lg border border-purple-500"
+                                    >
+                                        <option v-for="(d, idx) in [1,2,3,4,5]" :key="idx" :value="idx+1">
+                                            {{ ['輕鬆','簡單','普通','困難','專家'][idx] }}
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex justify-between items-center">
+                                    <span>音效</span>
+                                    <button 
+                                        @click="AudioSystem.enabled = !AudioSystem.enabled"
+                                        class="px-4 py-2 rounded-lg"
+                                        :class="AudioSystem.enabled ? 'bg-green-600' : 'bg-gray-600'"
+                                    >
+                                        {{ AudioSystem.enabled ? '開' : '關' }}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-center">
+                                <button @click="state = 'HOME'" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                    ← 返回
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `,
         }).mount('#app');
+        
+        // 暴露到全域
+        window.AdaptiveEngine = AdaptiveEngine;
+        window.AudioSystem = AudioSystem;
+        window.ScoreSystem = ScoreSystem;
     </script>
 </body>
 </html>
