@@ -1015,8 +1015,30 @@
                     const result = TypeEngine.checkAnswer(userInput.value);
                     if (result?.correct) {
                         feedback.value = { type: 'correct', message: '✓' };
-                        setTimeout(() => { feedback.value = null; }, 300);
+                        setTimeout(() => { feedback.value = null; }, 800);
+                        // Boss damage hook
+                        if (isBossMode.value) {
+                            const dmg = 10 + (combo.value * 2);
+                            BossSystem.damageBoss(dmg);
+                            bossHP.value = BossSystem.bossHP;
+                            bossMaxHP.value = BossSystem.bossMaxHP;
+                            bossPlayerHP.value = BossSystem.playerHP;
+                            bossPhase.value = BossSystem.currentPhase;
+                            bossPhaseName.value = BossSystem.bossData.phases[BossSystem.currentPhase]?.name || '';
+                        }
+                    } else {
+                        feedback.value = { type: 'wrong', message: '✗' };
+                        setTimeout(() => { feedback.value = null; }, 800);
+                        // Boss mode: player takes damage on wrong answer
+                        if (isBossMode.value) {
+                            BossSystem.playerTakeDamage(10);
+                            bossPlayerHP.value = BossSystem.playerHP;
+                            if (BossSystem.playerHP <= 0) {
+                                state.value = 'GAME_OVER';
+                            }
+                        }
                     }
+                    userInput.value = '';
                 };
                 
                 
