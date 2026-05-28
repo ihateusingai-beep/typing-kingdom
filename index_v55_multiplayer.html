@@ -128,7 +128,7 @@
             UserCircle2, Wand2, Clock, Brain, Crosshair, Swords, Scroll, Map, List,
             Headphones, GaugeCircle, Trophy2, FlameKindling, TrendingUp, Eye, Sparkle,
             Castle, Compass, Swords as SwordsIcon, Footprints, Mic, FileText, PenTool,
-            VolumeX, Wifi, WifiOff, PlayCircle, LayoutDashboard, Copy
+            VolumeX, Wifi, WifiOff, PlayCircle, LayoutDashboard
         } = icons;
 
         const LucideIcon = ({ icon, size = 24, className = "" }) => {
@@ -1355,7 +1355,7 @@
 
             useEffect(() => {
                 // Connect to server
-                const s = io('https://intranet-disabled-leave-analyze.trycloudflare.com', {
+                const s = io('https://gst-eyes-bubble-distinguished.trycloudflare.com', {
                     transports: ['websocket', 'polling']
                 });
                 setSocket(s);
@@ -1379,14 +1379,12 @@
                 });
                 s.on('game_start', (data) => {
                     setMultiplayerState(prev => ({ ...prev, questions: data.questions, gameStarted: true }));
-                    setView('multiplayer_battle');
                 });
                 s.on('answer_result', (data) => {
                     // Update leaderboard during game
                 });
                 s.on('game_end', (data) => {
                     setMultiplayerState(prev => ({ ...prev, rankings: data.rankings, gameStarted: false }));
-                    setView('multiplayer_lobby');
                 });
                 s.on('error', (data) => {
                     alert(data.message);
@@ -1440,31 +1438,12 @@
                                         <input id="roomCodeInput" className="w-full p-4 bg-zinc-800 border border-zinc-600 rounded-xl text-center text-white placeholder-zinc-500 mb-4" placeholder="輸入房間代碼"/>
                                         <button onPointerDown={() => { const code = document.getElementById('roomCodeInput').value; if(code) joinRoom(code, userName); }} className="w-full py-4 rounded-xl font-bold text-lg bg-zinc-700 hover:bg-zinc-600 text-white">加入</button>
                                     </div>
-                                    <div className="glass-strong p-4 rounded-2xl">
-                                        <h4 className="text-sm font-bold text-zinc-400 mb-3 flex items-center gap-2"><LucideIcon icon={Trophy} size={14}/> 當前排行榜</h4>
-                                        <div id="lobbyLeaderboard" className="text-zinc-500 text-sm">載入中...</div>
-                                        <button onPointerDown={()=>{
-                                            fetch('https://intranet-disabled-leave-analyze.trycloudflare.com/api/leaderboard')
-                                            .then(r=>r.json())
-                                            .then(data=>{
-                                                const el = document.getElementById('lobbyLeaderboard');
-                                                if(data.length){
-                                                    el.innerHTML = data.slice(0,5).map((p,i)=>`<div class="flex justify-between py-1 ${i===0?'text-yellow-400':'text-zinc-300'}"><span>${i+1}. ${p.nickname}</span><span>${p.total_score}分</span></div>`).join('');
-                                                } else {
-                                                    el.innerHTML = '<div class="text-zinc-600">暫無數據</div>';
-                                                }
-                                            });
-                                        }} className="mt-3 w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold">重新整理排行榜</button>
-                                    </div>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
                                     <div className="glass-strong p-6 rounded-2xl text-center">
                                         <div className="text-sm text-zinc-400 mb-2">房間代碼</div>
-                                        <div className="flex items-center justify-center gap-3 mb-4">
-                                            <div className="text-3xl font-black text-purple-400 font-mono tracking-wider">{roomId}</div>
-                                            <button onPointerDown={()=>{navigator.clipboard.writeText(roomId); AudioEngine.click();}} className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-zinc-400"><LucideIcon icon={Copy} size={18}/></button>
-                                        </div>
+                                        <div className="text-3xl font-black text-purple-400 font-mono tracking-wider mb-4">{roomId}</div>
                                         <div className="text-sm text-zinc-400 mb-4">玩家 {players.length}</div>
                                         <div className="flex flex-wrap gap-2 justify-center mb-6">
                                             {players.map((p, i) => (
@@ -1475,7 +1454,7 @@
                                             <button onPointerDown={toggleReady} className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg animate-pulse">準備完成！</button>
                                         ) : (
                                             <div className="text-center text-white">
-                                                <div className="text-2xl font-bold text-yellow-400 animate-pulse">等待其他玩家...</div>
+                                                <div className="text-2xl font-bold text-yellow-400 animate-pulse">遊戲進行中！</div>
                                             </div>
                                         )}
                                     </div>
@@ -1501,120 +1480,30 @@
 
             // Multiplayer Battle View
             if (view === 'multiplayer_battle') {
-                const { questions, myProgress, players, gameStarted } = multiplayerState;
-                const [countdown, setCountdown] = useState(3);
-                const [gameTimer, setGameTimer] = useState(60);
-                const [myScore, setMyScore] = useState(0);
-                const [lastResult, setLastResult] = useState(null);
-                const [playerScores, setPlayerScores] = useState({});
-
-                // Countdown before game starts
-                useEffect(() => {
-                    if (!gameStarted) return;
-                    const timer = setInterval(() => {
-                        setCountdown(prev => {
-                            if (prev <= 1) {
-                                clearInterval(timer);
-                                // Start game timer
-                                const gameInterval = setInterval(() => {
-                                    setGameTimer(t => {
-                                        if (t <= 1) {
-                                            clearInterval(gameInterval);
-                                            return 0;
-                                        }
-                                        return t - 1;
-                                    });
-                                }, 1000);
-                                return 0;
-                            }
-                            return prev - 1;
-                        });
-                    }, 1000);
-                    return () => clearInterval(timer);
-                }, [gameStarted]);
-
-                const handleSubmit = (word) => {
-                    const timeMs = 5000; // Simplified
-                    const correct = questions[myProgress] === word.toLowerCase();
-                    if (correct) {
-                        AudioEngine.correct();
-                        setMyScore(s => s + 100);
-                    } else {
-                        AudioEngine.wrong();
-                    }
-                    setLastResult(correct ? 'correct' : 'wrong');
-                    setTimeout(() => setLastResult(null), 500);
-                    submitAnswer(word.toLowerCase(), timeMs);
-                };
-
-                const timerDisplay = Math.floor(gameTimer / 60) + ':' + String(gameTimer % 60).padStart(2, '0');
-
+                const { questions, myProgress, players } = multiplayerState;
                 return (
                     <div className="h-full bg-battle flex flex-col items-center justify-center p-6">
-                        <div className="w-full max-w-3xl">
-                            {/* Header Stats */}
-                            <div className="flex justify-between items-center mb-8">
-                                <div className="flex items-center gap-2">
-                                    <LucideIcon icon={Timer} className="text-rose-400"/>
-                                    <span className={`text-3xl font-black font-mono ${gameTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>{timerDisplay}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <LucideIcon icon={Target} className="text-purple-400"/>
-                                    <span className="text-2xl font-black text-white">{myScore}</span>
-                                </div>
+                        <div className="w-full max-w-2xl">
+                            <div className="text-center mb-8">
+                                <h2 className="text-3xl font-black text-rose-400 font-display">打字對戰</h2>
+                                <div className="text-lg text-zinc-400 mt-2">題目 {myProgress + 1} / {questions.length}</div>
                             </div>
-
-                            {/* Countdown or Question */}
-                            {countdown > 0 ? (
-                                <div className="text-center">
-                                    <div className="text-9xl font-black text-rose-400 animate-pulse">{countdown}</div>
-                                    <div className="text-2xl text-zinc-400 mt-4">準備好！</div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="glass-strong p-8 rounded-2xl text-center mb-6">
-                                        <div className={`text-4xl font-black text-white mb-8 tracking-wider ${lastResult === 'correct' ? 'text-green-400' : lastResult === 'wrong' ? 'text-red-400 animate-shake' : ''}`}>
-                                            {questions[myProgress] || '...'}
-                                        </div>
-                                        <input autoFocus 
-                                            className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'}`}
-                                            placeholder="輸入答案..."
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && e.target.value.trim()) {
-                                                    handleSubmit(e.target.value.trim());
-                                                    e.target.value = '';
-                                                }
-                                            }}
-                                        />
-                                        <div className="mt-4 text-zinc-500 text-sm">按 Enter 提交</div>
-                                    </div>
-
-                                    {/* Progress */}
-                                    <div className="mb-6">
-                                        <div className="flex justify-between text-sm text-zinc-400 mb-2">
-                                            <span>你的進度</span>
-                                            <span>{myProgress + 1} / {questions.length}</span>
-                                        </div>
-                                        <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-purple-600 to-rose-600 transition-all duration-300" style={{width: `${((myProgress + 1) / questions.length) * 100}%`}}/>
-                                        </div>
-                                    </div>
-
-                                    {/* Players mini-leaderboard */}
-                                    <div className="glass-strong p-4 rounded-2xl">
-                                        <h4 className="text-sm font-bold text-zinc-400 mb-3 flex items-center gap-2"><LucideIcon icon={TrendingUp} size={14}/> 實時排名</h4>
-                                        <div className="space-y-2">
-                                            {[...players].sort((a, b) => (playerScores[b] || 0) - (playerScores[a] || 0)).map((p, i) => (
-                                                <div key={i} className="flex items-center gap-3">
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-yellow-500 text-black' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
-                                                    <div className="flex-1 text-white font-bold">{p}</div>
-                                                    <div className="text-purple-400 font-mono">{playerScores[p] || 0}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
+                            <div className="glass-strong p-8 rounded-2xl text-center">
+                                <div className="text-4xl font-black text-white mb-8 tracking-wider">{questions[myProgress] || '...'}</div>
+                                <input autoFocus className="w-full p-4 bg-zinc-800 border-2 border-purple-500 rounded-xl text-center text-2xl text-white outline-none" placeholder="輸入答案..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && e.target.value.trim()) {
+                                            submitAnswer(e.target.value.trim().toLowerCase(), 5000);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                                {players.map((p, i) => (
+                                    <div key={i} className="px-4 py-2 bg-zinc-800/80 rounded-full text-white text-sm">{p}</div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 );
@@ -1727,16 +1616,6 @@
                                 </button>
                                 <button aria-label="技能商店" onPointerDown={()=>setView('meta_shop')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-gold-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={ShoppingBag} size={16}/> 知識聖殿
-                                </button>
-                                <button aria-label="排行榜" onPointerDown={()=>{
-                                    fetch('https://intranet-disabled-leave-analyze.trycloudflare.com/api/leaderboard')
-                                    .then(r=>r.json())
-                                    .then(data=>{
-                                        const msg = data.length ? data.slice(0,5).map((p,i)=>`${i+1}. ${p.nickname} - ${p.total_score}分`).join('\n') : '暫無數據';
-                                        alert('🏆 排行榜\n' + msg);
-                                    }).catch(()=>alert('無法載入排行榜'));
-                                }} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-yellow-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
-                                    <LucideIcon icon={Trophy} size={16}/> 排行榜
                                 </button>
                                 <button aria-label="首頁" onPointerDown={()=>setView('home')} className="bg-zinc-800/80 hover:bg-zinc-700 p-3 rounded-xl border border-zinc-700/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={Home} size={18}/>
                                 </button>
