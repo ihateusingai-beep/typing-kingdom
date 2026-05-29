@@ -1822,9 +1822,9 @@ try {
                                             className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none transition-colors ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'}`}
                                             placeholder="輸入答案後按 Enter..."
                                             onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && e.target.value.trim()) {
-                                                    handleSubmit(e.target.value.trim());
-                                                    e.target.value = '';
+                                                if (e.key === 'Enter' && inputRef.current && inputRef.current.value.trim()) {
+                                                    handleSubmit(inputRef.current.value.trim());
+                                                    inputRef.current.value = '';
                                                 }
                                             }}
                                         />
