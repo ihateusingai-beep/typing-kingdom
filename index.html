@@ -1359,6 +1359,7 @@ const [metaState, setMetaState] = useState({
 
             // Multiplayer Socket
             const [socket, setSocket] = useState(null);
+            const [serverOnline, setServerOnline] = useState(true);
             const [multiplayerState, setMultiplayerState] = useState({
                 connected: false,
                 inRoom: false,
@@ -1379,9 +1380,14 @@ const [metaState, setMetaState] = useState({
                 setSocket(s);
                 s.on('connect', () => {
                     setMultiplayerState(prev => ({ ...prev, connected: true }));
+                    setServerOnline(true);
+                });
+                s.on('connect_error', () => {
+                    setServerOnline(false);
                 });
                 s.on('disconnect', () => {
                     setMultiplayerState(prev => ({ ...prev, connected: false, inRoom: false }));
+                    setServerOnline(false);
                 });
                 s.on('room_created', (data) => {
                     setMultiplayerState(prev => ({ ...prev, roomId: data.roomId, inRoom: true }));
@@ -1570,6 +1576,12 @@ const [metaState, setMetaState] = useState({
 
                 return (
                     <div className="h-full bg-battle flex flex-col items-center justify-center p-6">
+                        {/* Offline Banner */}
+                        {!serverOnline && (
+                            <div className="w-full max-w-3xl mb-6 p-4 bg-red-900/80 border border-red-500/50 rounded-xl text-center" aria-label="伺服器狀態">
+                                <span className="text-red-300 font-bold text-lg">⚠️ 伺服器已斷開，請稍後再試</span>
+                            </div>
+                        )}
                         <div className="w-full max-w-3xl">
                             {/* Header Stats */}
                             <div className="flex justify-between items-center mb-8">
@@ -1595,8 +1607,8 @@ const [metaState, setMetaState] = useState({
                                         <div className={`text-4xl font-black text-white mb-8 tracking-wider ${lastResult === 'correct' ? 'text-green-400' : lastResult === 'wrong' ? 'text-red-400 animate-shake' : ''}`}>
                                             {questions[myProgress] || '...'}
                                         </div>
-                                        <input autoFocus 
-                                            className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'}`}
+                                        <input autoFocus disabled={!serverOnline} 
+                                            className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'} ${!serverOnline ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             placeholder="輸入答案..."
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && e.target.value.trim()) {
