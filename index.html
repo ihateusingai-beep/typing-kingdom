@@ -1774,6 +1774,15 @@ const [metaState, setMetaState] = useState({
                                 <button aria-label="首頁" onPointerDown={()=>setView('home')} className="bg-zinc-800/80 hover:bg-zinc-700 p-3 rounded-xl border border-zinc-700/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={Home} size={18}/></button>
                             </div>
                         </div>
+                        {/* Debug info - server status */}
+                        <div className="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between text-xs text-zinc-600">
+                            <div className="flex items-center gap-2">
+                                <span>🔌 伺服器: {serverOnline ? '在線' : '離線'}</span>
+                            </div>
+                            <div className="text-zinc-700 font-mono">
+                                {(window.TYPING_KINGDOM_SERVER_URL || window.TYPING_KINGDOM_API_URL || '').replace(/^https?:\/\//, '') || 'localhost:3000'}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Mode grid */}
