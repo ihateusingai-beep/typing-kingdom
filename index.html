@@ -1561,7 +1561,9 @@ const [metaState, setMetaState] = useState({
 
                 const handleSubmit = (word) => {
                     const timeMs = 5000; // Simplified
-                    const correct = questions[myProgress] === word.toLowerCase();
+                    const currentQ = questions[myProgress];
+                    const correctAnswer = currentQ?.text || '';
+                    const correct = correctAnswer === word;
                     if (correct) {
                         AudioEngine.correct();
                         setMyScore(s => s + 100);
@@ -1570,7 +1572,7 @@ const [metaState, setMetaState] = useState({
                     }
                     setLastResult(correct ? 'correct' : 'wrong');
                     setTimeout(() => setLastResult(null), 500);
-                    submitAnswer(word.toLowerCase(), timeMs);
+                    submitAnswer(word, timeMs);
                 };
 
                 const timerDisplay = Math.floor(gameTimer / 60) + ':' + String(gameTimer % 60).padStart(2, '0');
@@ -1606,7 +1608,7 @@ const [metaState, setMetaState] = useState({
                                 <>
                                     <div className="glass-strong p-8 rounded-2xl text-center mb-6">
                                         <div className={`text-4xl font-black text-white mb-8 tracking-wider ${lastResult === 'correct' ? 'text-green-400' : lastResult === 'wrong' ? 'text-red-400 animate-shake' : ''}`}>
-                                            {questions[myProgress] || '...'}
+                                            {questions[myProgress]?.text || '...'}
                                         </div>
                                         <input autoFocus disabled={!serverOnline} 
                                             className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'} ${!serverOnline ? 'opacity-50 cursor-not-allowed' : ''}`}
