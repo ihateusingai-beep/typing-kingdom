@@ -11,6 +11,7 @@
     <meta property="og:type" content="website">
     <title>速成王國 | TypeQuest Kingdom V55</title>
     <meta name="author" content="Ken Cheng">
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1979,5 +1980,6 @@ const [metaState, setMetaState] = useState({
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App/>);
     </script>
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>
