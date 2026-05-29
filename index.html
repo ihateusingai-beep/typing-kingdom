@@ -1755,8 +1755,10 @@ try {
                     } else {
                         setLocalProgress(next);
                     }
-                    e.target.value = '';
-                    if (inputRef.current) inputRef.current.focus();
+                    if (inputRef.current) {
+                        inputRef.current.value = '';
+                        inputRef.current.focus();
+                    }
                 };
 
                 const timerMin = Math.floor(gameTimer / 60);
