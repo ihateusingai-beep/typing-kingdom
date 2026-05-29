@@ -1432,10 +1432,23 @@
 
             // Load saved meta on mount
             useEffect(() => {
-                try {
-                    const s = localStorage.getItem('speedy_adventure_meta');
-                    if (s) { const p = JSON.parse(s); setMetaState(prev=>({...prev,...p.metaState,stats:{...prev.stats,...(p.metaState?.stats||{})}})); setUserName(p.userName||''); }
-                } catch(e) {}
+try {
+                const s = localStorage.getItem('speedy_adventure_meta');
+                if (s) { const p = JSON.parse(s); setMetaState(prev=>({...prev,...p.metaState,stats:{...prev.stats,...(p.metaState?.stats||{})}})); setUserName(p.userName||''); }
+            } catch(e) {}
+            // Cloud load meta_state from server if player exists
+            const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+            const storedName = (() => { try { return JSON.parse(localStorage.getItem('speedy_adventure_meta')||'{}').userName||''; } catch(e) { return ''; } })();
+            if (serverOnline && storedName) {
+                fetch(`${API_URL}/api/player/${encodeURIComponent(storedName)}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (data && data.meta_state) {
+                            setMetaState(prev => ({ ...prev, ...data.meta_state, stats: { ...prev.stats, ...(data.meta_state.stats||{}) } }));
+                        }
+                    })
+                    .catch(() => {});
+            }
             }, []);
             useEffect(() => { try { localStorage.setItem('speedy_adventure_meta', JSON.stringify({metaState, userName})); } catch(e) {} }, [metaState, userName]);
             useEffect(() => { try { localStorage.setItem('audioMuted', String(audioMuted)); AudioEngine.muted = audioMuted; } catch(e) {} }, [audioMuted]);
@@ -1885,7 +1898,30 @@
                         game_mode: config?.mode || 'rpg',
                         category: config?.chapter || null
                     })
-                }).catch(() => {}); // silently fail — localStorage is backup
+                    .catch(() => {}); // silently fail — localStorage is backup
+
+                // Cloud save meta_state to server (fire and forget)
+                if (userName && serverOnline) {
+                    fetch(`${API_URL}/api/player/${encodeURIComponent(userName)}/meta_state`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            meta_state: {
+                                coins: metaState.coins + (coinsEarned||0),
+                                upgrades: metaState.upgrades,
+                                unlockedArtifacts: metaState.unlockedArtifacts,
+                                unlockedSkills: metaState.unlockedSkills,
+                                stats: {
+                                    totalCorrect: metaState.stats.totalCorrect + (sessionStats?.correct||0),
+                                    totalWrong: metaState.stats.totalWrong + (sessionStats?.wrong||0),
+                                    gamesPlayed: metaState.stats.gamesPlayed + 1,
+                                    highestCombo: Math.max(metaState.stats.highestCombo, (sessionStats?.maxCombo||0))
+                                },
+                                avatar: metaState.avatar
+                            }
+                        })
+                    }).catch(() => {});
+                }
 
                 goHome();
             };
