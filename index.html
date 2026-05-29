@@ -193,6 +193,14 @@
             { code:'U',name:'山' },{ code:'V',name:'女' },{ code:'W',name:'田' },{ code:'Y',name:'卜' },
             { code:'X',name:'難' }
         ];
+        // P1a: Category groups for chapter filtering
+        const CATEGORY_GROUPS = [
+            { id:'all',       name:'全部',      icon:'🎲', color:'#a78bfa', bg:'from-purple-900/60 to-purple-800/30', border:'border-purple-500/40', codes:null },
+            { id:'cangjie',   name:'倉頡基礎',   icon:'🔤', color:'#8b5cf6', bg:'from-violet-900/60 to-violet-800/30', border:'border-violet-500/40', codes:['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y'] },
+            { id:'fruits',    name:'水果',       icon:'🍎', color:'#ef4444', bg:'from-red-900/60 to-red-800/30',    border:'border-red-500/40',    codes:null },
+            { id:'animals',   name:'動物',       icon:'🐕', color:'#22c55e', bg:'from-green-900/60 to-green-800/30', border:'border-green-500/40',  codes:null },
+            { id:'daily',     name:'日常用字',   icon:'🏠', color:'#3b82f6', bg:'from-blue-900/60 to-blue-800/30',   border:'border-blue-500/40',   codes:null },
+        ];
         const QUESTIONS = [
             { mainCode:'A',char:'晤',code:'AMMR',hint:'日一一口' },{ mainCode:'A',char:'旦',code:'AM',hint:'日一' },
             { mainCode:'A',char:'暗',code:'AYTA',hint:'日卜廿日' },{ mainCode:'A',char:'時',code:'AGDI',hint:'日土木戈' },
@@ -1336,7 +1344,8 @@
             const [view, setView] = useState('home');
             const [userName, setUserName] = useState('');
             const [config, setConfig] = useState({ mode:null, chapter:null });
-const [metaState, setMetaState] = useState({
+            const [selectedCategory, setSelectedCategory] = useState('all'); // P1a: category filter
+            const [metaState, setMetaState] = useState({
                 coins:0, upgrades:{hp:0,atk:0,exp:0},
                 unlockedArtifacts:['wand_1','robe_1','ring_1','boots_1'],
                 unlockedSkills:['heal','burst'],
@@ -1655,7 +1664,7 @@ const [metaState, setMetaState] = useState({
             }
 
             const goHome = () => setView('mode_select');
-            const goBack = () => { setView('mode_select'); setConfig({mode:null, chapter:null}); };
+            const goBack = () => { setView('mode_select'); setConfig({mode:null, chapter:null}); setSelectedCategory('all'); };
 
             const handleGameEnd = (coinsEarned, sessionStats) => {
                 setMetaState(prev => ({
@@ -1860,6 +1869,10 @@ const [metaState, setMetaState] = useState({
             // ── CHAPTER SELECT ──
             if (view === 'chapter_select') {
                 const currentMode = GAME_MODES[config.mode];
+                const activeCat = CATEGORY_GROUPS.find(c => c.id === selectedCategory) || CATEGORY_GROUPS[0];
+                const filteredChapters = activeCat.codes
+                    ? CHAPTERS.filter(ch => activeCat.codes.includes(ch.code))
+                    : CHAPTERS;
                 return (
                     <div className="h-full bg-zinc-950 overflow-y-auto">
                         {/* Mode hero banner */}
@@ -1881,19 +1894,44 @@ const [metaState, setMetaState] = useState({
                         </div>
 
                         <div className="p-6 max-w-4xl mx-auto">
+                            {/* P1a: Category selector tabs */}
+                            <div className="flex flex-wrap gap-2 mb-5 justify-center">
+                                {CATEGORY_GROUPS.map(cat => (
+                                    <button key={cat.id} aria-label={`選擇類別 ${cat.name}`}
+                                        onPointerDown={()=>{AudioEngine.click();setSelectedCategory(cat.id);}}
+                                        className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 border transition-all min-h-[44px]
+                                            ${selectedCategory === cat.id
+                                                ? `bg-gradient-to-r ${cat.bg} border-${cat.color} text-white shadow-lg`
+                                                : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                                            }`}
+                                        style={selectedCategory === cat.id ? {borderColor: cat.color} : {}}
+                                    >
+                                        <span>{cat.icon}</span>
+                                        <span>{cat.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Chapter grid filtered by category */}
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                <button aria-label="取消選擇" onPointerDown={()=>{setConfig({...config,chapter:null});setView(\'game\');}}
+                                <button aria-label="取消選擇" onPointerDown={()=>{setConfig({...config,chapter:null});setView('game');}}
                                     className="col-span-full mb-2 p-4 bg-gradient-to-r from-purple-900/40 to-purple-800/20 border-2 border-purple-500/40 rounded-2xl hover:border-purple-400 transition-all flex flex-col items-center gap-1">
                                     <span className="text-lg font-black text-purple-300">🌐 隨機挑戰</span>
                                     <span className="text-xs text-zinc-500">所有題目隨機</span>
                                 </button>
-                                {CHAPTERS.map(ch => (
-                                    <button aria-label={`選擇章節 ${ch.code}`} onPointerDown={()=>{setConfig({...config,chapter:ch.code});setView(\'game\');}}
+                                {filteredChapters.map(ch => (
+                                    <button aria-label={`選擇章節 ${ch.code}`} onPointerDown={()=>{setConfig({...config,chapter:ch.code});setView('game');}}
                                         className="p-3 bg-zinc-900/80 rounded-2xl border border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-800/80 transition-all flex flex-col items-center gap-1 glass">
                                         <div className="text-2xl font-black text-zinc-600">{ch.code}</div>
                                         <div className="text-sm font-serif font-bold" style={{color:currentMode.accentColor}}>{ch.name}</div>
                                     </button>
                                 ))}
+                                {filteredChapters.length === 0 && (
+                                    <div className="col-span-full text-center py-8 text-zinc-600">
+                                        <div className="text-4xl mb-2">🔜</div>
+                                        <p className="text-sm">敬請期待</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
