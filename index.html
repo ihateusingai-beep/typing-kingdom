@@ -1667,6 +1667,26 @@ const [metaState, setMetaState] = useState({
                         highestCombo: Math.max(prev.stats.highestCombo, (sessionStats?.maxCombo||0))
                     }
                 }));
+
+                // Cloud Save — submit to server (fire and forget)
+                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+                const total = (sessionStats?.correct||0) + (sessionStats?.wrong||0);
+                const accuracy = total > 0 ? Math.round((sessionStats.correct / total) * 100) : 0;
+                const wpm = sessionStats?.wpm || 0;
+                const score = (sessionStats?.correct||0) * 10 + (sessionStats?.maxCombo||0) * 5;
+                fetch(`${API_URL}/api/game_record`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nickname: userName,
+                        wpm,
+                        accuracy,
+                        score,
+                        game_mode: config?.mode || 'rpg',
+                        category: config?.chapter || null
+                    })
+                }).catch(() => {}); // silently fail — localStorage is backup
+
                 goHome();
             };
 
@@ -1699,7 +1719,21 @@ const [metaState, setMetaState] = useState({
                         <p className="text-zinc-500 mb-8 text-sm tracking-widest">TYPEQUEST KINGDOM V55</p>
                         <input className="w-full p-4 bg-zinc-800/80 border border-zinc-600/50 rounded-2xl text-center text-lg mb-6 text-white placeholder-zinc-600 focus:border-purple-500 outline-none transition-colors glass"
                             placeholder="召喚師之名" value={userName} onChange={e=>setUserName(e.target.value)}/>
-                        <button aria-label="開始遊戲" disabled={!userName} onPointerDown={()=>{AudioEngine.click();setView(\'mode_select\');}}
+                        <button aria-label="開始遊戲" disabled={!userName} onPointerDown={()=>{
+                            AudioEngine.click();
+                            // Cloud load: fetch player stats from server in background
+                            if(userName) {
+                                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+                                fetch(`${API_URL}/api/player/${encodeURIComponent(userName)}`).then(r=>r.json()).then(serverStats=>{
+                                    if(serverStats && serverStats.id) {
+                                        // Show cloud badge if player has cloud data
+                                        const cloudBadge = document.getElementById('cloudBadge');
+                                        if(cloudBadge) cloudBadge.style.display = serverStats.games_played > 0 ? 'inline-flex' : 'none';
+                                    }
+                                }).catch(()=>{});
+                            }
+                            setView('mode_select');
+                        }}
                             className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg shadow-purple-900/30 flex items-center justify-center gap-3 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             style={{background:'linear-gradient(135deg, #7c3aed, #5b21b6)'}}>
                             <LucideIcon icon={Play}/> 進入王國
