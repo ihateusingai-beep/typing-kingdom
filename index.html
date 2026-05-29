@@ -1721,13 +1721,15 @@
                     setLastResult(correct ? 'correct' : 'wrong');
                     setTimeout(() => setLastResult(null), 500);
                     submitAnswer(word, timeMs);
-                    setQStartTime(Date.now()); // Reset timer for next question
+                    setQStartTime(Date.now());
                     const next = localProgress + 1;
                     if (next >= localQuestions.length) {
                         setGamePhase('done');
                     } else {
                         setLocalProgress(next);
                     }
+                    e.target.value = '';
+                    if (inputRef.current) inputRef.current.focus();
                 };
 
                 const timerMin = Math.floor(gameTimer / 60);
