@@ -1478,7 +1478,7 @@ const [metaState, setMetaState] = useState({
                                                 } else {
                                                     el.innerHTML = '<div class="text-zinc-600">暫無數據</div>';
                                                 }
-                                            });
+                                            }).catch(e => console.warn('載入排行榜失敗:', e.message));
                                         }} className="mt-3 w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold">重新整理排行榜</button>
                                     </div>
                                 </div>
@@ -1766,7 +1766,7 @@ const [metaState, setMetaState] = useState({
                                     .then(data=>{
                                         const msg = data.length ? data.slice(0,5).map((p,i)=>`${i+1}. ${p.nickname} - ${p.total_score}分`).join('\n') : '暫無數據';
                                         alert('🏆 排行榜\n' + msg);
-                                    }).catch(()=>alert('無法載入排行榜'));
+                                    }).catch(e => console.warn('載入排行榜失敗:', e.message));
                                 }} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-yellow-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={Trophy} size={16}/> 排行榜
                                 </button>
