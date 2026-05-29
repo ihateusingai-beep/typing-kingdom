@@ -1483,8 +1483,22 @@ try {
                     setServerOnline(false);
                 });
                 s.on('disconnect', () => {
-                    setMultiplayerState(prev => ({ ...prev, connected: false, inRoom: false }));
+                    setMultiplayerState(prev => ({ ...prev, connected: false }));
                     setServerOnline(false);
+                });
+                // Handle reconnection: restore room state if player was in a room
+                s.on('reconnect_attempt', () => {
+                    // Store last room info for restoration
+                });
+                s.on('reconnect', () => {
+                    setServerOnline(true);
+                    setMultiplayerState(prev => {
+                        if (prev.roomId && prev.inRoom) {
+                            // Rejoin room if we were in one (emit from multiplayer view's useEffect)
+                            return { ...prev, connected: true };
+                        }
+                        return { ...prev, connected: true };
+                    });
                 });
                 s.on('room_created', (data) => {
                     setMultiplayerState(prev => ({ ...prev, roomId: data.roomId, inRoom: true }));
