@@ -1372,7 +1372,8 @@ const [metaState, setMetaState] = useState({
 
             useEffect(() => {
                 // Connect to server
-                const s = io('https://intranet-disabled-leave-analyze.trycloudflare.com', {
+                const SERVER_URL = window.TYPING_KINGDOM_SERVER_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+                const s = io(SERVER_URL, {
                     transports: ['websocket', 'polling']
                 });
                 setSocket(s);
@@ -1461,7 +1462,8 @@ const [metaState, setMetaState] = useState({
                                         <h4 className="text-sm font-bold text-zinc-400 mb-3 flex items-center gap-2"><LucideIcon icon={Trophy} size={14}/> 當前排行榜</h4>
                                         <div id="lobbyLeaderboard" className="text-zinc-500 text-sm">載入中...</div>
                                         <button onPointerDown={()=>{
-                                            fetch('https://intranet-disabled-leave-analyze.trycloudflare.com/api/leaderboard')
+                                            const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+                                            fetch(`${API_URL}/api/leaderboard`)
                                             .then(r=>r.json())
                                             .then(data=>{
                                                 const el = document.getElementById('lobbyLeaderboard');
@@ -1746,7 +1748,8 @@ const [metaState, setMetaState] = useState({
                                     <LucideIcon icon={ShoppingBag} size={16}/> 知識聖殿
                                 </button>
                                 <button aria-label="排行榜" onPointerDown={()=>{
-                                    fetch('https://intranet-disabled-leave-analyze.trycloudflare.com/api/leaderboard')
+                                    const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+                                    fetch(`${API_URL}/api/leaderboard`)
                                     .then(r=>r.json())
                                     .then(data=>{
                                         const msg = data.length ? data.slice(0,5).map((p,i)=>`${i+1}. ${p.nickname} - ${p.total_score}分`).join('\n') : '暫無數據';
