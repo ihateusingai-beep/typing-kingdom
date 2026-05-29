@@ -1348,7 +1348,7 @@
             const [activeTab, setActiveTab] = useState('all');
 
             useEffect(() => {
-                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://subsequent-having-hansen-generate.trycloudflare.com' : 'http://localhost:3000');
+                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://locally-ultram-fall-mile.trycloudflare.com' : 'http://localhost:3000');
                 Promise.all([
                     fetch(`${API_URL}/api/leaderboard`).then(r => r.ok ? r.json() : []).catch(() => []),
                     fetch(`${API_URL}/api/leaderboard/weekly`).then(r => r.ok ? r.json() : []).catch(() => [])
@@ -1437,7 +1437,7 @@ try {
                 if (s) { const p = JSON.parse(s); setMetaState(prev=>({...prev,...p.metaState,stats:{...prev.stats,...(p.metaState?.stats||{})}})); setUserName(p.userName||''); }
             } catch(e) {}
             // Cloud load meta_state from server if player exists
-            const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://subsequent-having-hansen-generate.trycloudflare.com' : 'http://localhost:3000');
+            const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://locally-ultram-fall-mile.trycloudflare.com' : 'http://localhost:3000');
             const storedName = (() => { try { return JSON.parse(localStorage.getItem('speedy_adventure_meta')||'{}').userName||''; } catch(e) { return ''; } })();
             if (serverOnline && storedName) {
                 fetch(`${API_URL}/api/player/${encodeURIComponent(storedName)}`)
@@ -1470,7 +1470,7 @@ try {
 
             useEffect(() => {
                 // Connect to server
-                const SERVER_URL = window.TYPING_KINGDOM_SERVER_URL || (window.location.protocol === 'https:' ? 'https://subsequent-having-hansen-generate.trycloudflare.com' : 'http://localhost:3000');
+                const SERVER_URL = window.TYPING_KINGDOM_SERVER_URL || (window.location.protocol === 'https:' ? 'https://locally-ultram-fall-mile.trycloudflare.com' : 'http://localhost:3000');
                 const s = io(SERVER_URL, {
                     transports: ['websocket', 'polling']
                 });
@@ -1898,7 +1898,7 @@ try {
                 }));
 
                 // Cloud Save — submit to server (fire and forget)
-                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://subsequent-having-hansen-generate.trycloudflare.com' : 'http://localhost:3000');
+                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://locally-ultram-fall-mile.trycloudflare.com' : 'http://localhost:3000');
                 const total = (sessionStats?.correct||0) + (sessionStats?.wrong||0);
                 const accuracy = total > 0 ? Math.round((sessionStats.correct / total) * 100) : 0;
                 const wpm = sessionStats?.wpm || 0;
@@ -1975,7 +1975,7 @@ try {
                             AudioEngine.click();
                             // Cloud load: fetch player stats from server in background
                             if(userName) {
-                                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://subsequent-having-hansen-generate.trycloudflare.com' : 'http://localhost:3000');
+                                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://locally-ultram-fall-mile.trycloudflare.com' : 'http://localhost:3000');
                                 fetch(`${API_URL}/api/player/${encodeURIComponent(userName)}`).then(r=>r.json()).then(serverStats=>{
                                     if(serverStats && serverStats.id) {
                                         // Show cloud badge if player has cloud data
