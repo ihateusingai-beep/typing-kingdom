@@ -133,7 +133,7 @@
             Eye as EyeIcon, Save, Upload, Download, X, Coins, GraduationCap, Lock, Unlock,
             ShoppingBag, Tent, BedDouble, Dumbbell, Gem, Gauge, EyeOff, MicOff, Shuffle,
             Snowflake, BarChart3, Activity, Target, Dices, Book, Gavel, FlaskConical,
-            UserCircle2, Wand2, Clock, Brain, Crosshair, Swords, Scroll, Map, List,
+            UserCircle2, Wand2, Clock, Brain, Crosshair, Swords, Scroll, Map, List, X,
             Headphones, GaugeCircle, Trophy2, FlameKindling, TrendingUp, Eye, Sparkle,
             Castle, Compass, Swords as SwordsIcon, Footprints, Mic, FileText, PenTool,
             VolumeX, Wifi, WifiOff, PlayCircle, LayoutDashboard, Copy
@@ -1340,6 +1340,80 @@
         // ───────────────────────────────────────────────────────────────
         // 🏠 APP 主體
         // ───────────────────────────────────────────────────────────────
+
+        // ── LEADERBOARD MODAL (P1b) ──
+        const LeaderboardModal = ({ onClose }) => {
+            const [entries, setEntries] = useState({ all: [], weekly: [] });
+            const [loading, setLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('all');
+
+            useEffect(() => {
+                const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
+                Promise.all([
+                    fetch(`${API_URL}/api/leaderboard`).then(r => r.ok ? r.json() : []).catch(() => []),
+                    fetch(`${API_URL}/api/leaderboard/weekly`).then(r => r.ok ? r.json() : []).catch(() => [])
+                ]).then(([all, weekly]) => {
+                    setEntries({ all, weekly });
+                    setLoading(false);
+                });
+            }, []);
+
+            const tab = activeTab === 'weekly' ? entries.weekly : entries.all;
+            const medals = ['🥇','🥈','🥉'];
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+                    <div className="bg-gradient-to-b from-zinc-900 to-zinc-950 rounded-3xl border border-zinc-700 w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                        <div className="p-6 pb-4 border-b border-zinc-800">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-2xl font-black text-yellow-400 flex items-center gap-2">
+                                    <LucideIcon icon={Trophy} size={24} className="text-yellow-400"/> 排行榜
+                                </h2>
+                                <button onPointerDown={onClose} className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 transition-colors">
+                                    <LucideIcon icon={X} size={18}/>
+                                </button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onPointerDown={() => setActiveTab('all')} className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${activeTab === 'all' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}`}>🏆 全部時間</button>
+                                <button onPointerDown={() => setActiveTab('weekly')} className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${activeTab === 'weekly' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' : 'bg-zinc-800 text-zinc-400 border border-zinc-700'}`}>📅 本週</button>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            {loading ? (
+                                <div className="text-center py-12 text-zinc-500">載入中...</div>
+                            ) : tab.length === 0 ? (
+                                <div className="text-center py-12 text-zinc-600">
+                                    <div className="text-5xl mb-3">📭</div>
+                                    <p className="text-zinc-500 font-bold">暫時沒有數據</p>
+                                    <p className="text-zinc-600 text-sm mt-1">快啲去玩遊戲啦！</p>
+                                </div>
+                            ) : tab.map((p, i) => (
+                                <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${i === 0 ? 'bg-yellow-500/10 border-yellow-500/30' : i === 1 ? 'bg-zinc-800/60 border-zinc-600/40' : i === 2 ? 'bg-orange-500/10 border-orange-500/30' : 'bg-zinc-900/40 border-zinc-800/40'}`}>
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-zinc-400 text-black' : i === 2 ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-500'}`}>
+                                        {i < 3 ? medals[i] : i + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-black text-white truncate">{p.nickname}</div>
+                                        <div className="text-xs text-zinc-500">{p.games_played || 1} 場</div>
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                        <div className="font-black text-yellow-400">{Number(p.total_score || p.weekly_score || 0).toLocaleString()}</div>
+                                        <div className="text-xs text-zinc-500">分</div>
+                                    </div>
+                                    {p.highest_wpm > 0 && (
+                                        <div className="text-right flex-shrink-0">
+                                            <div className="font-black text-blue-400">{p.highest_wpm}</div>
+                                            <div className="text-xs text-zinc-500">WPM</div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [view, setView] = useState('home');
             const [userName, setUserName] = useState('');
@@ -1477,19 +1551,7 @@
                                     <div className="glass-strong p-4 rounded-2xl">
                                         <h4 className="text-sm font-bold text-zinc-400 mb-3 flex items-center gap-2"><LucideIcon icon={Trophy} size={14}/> 當前排行榜</h4>
                                         <div id="lobbyLeaderboard" className="text-zinc-500 text-sm">載入中...</div>
-                                        <button onPointerDown={()=>{
-                                            const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
-                                            fetch(`${API_URL}/api/leaderboard`)
-                                            .then(r=>r.json())
-                                            .then(data=>{
-                                                const el = document.getElementById('lobbyLeaderboard');
-                                                if(data.length){
-                                                    el.innerHTML = data.slice(0,5).map((p,i)=>`<div class="flex justify-between py-1 ${i===0?'text-yellow-400':'text-zinc-300'}"><span>${i+1}. ${p.nickname}</span><span>${p.total_score}分</span></div>`).join('');
-                                                } else {
-                                                    el.innerHTML = '<div class="text-zinc-600">暫無數據</div>';
-                                                }
-                                            }).catch(e => console.warn('載入排行榜失敗:', e.message));
-                                        }} className="mt-3 w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold">重新整理排行榜</button>
+                                        <button onPointerDown={()=>{AudioEngine.click();setView('leaderboard');}} className="mt-3 w-full py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold">查看完整排行榜</button>
                                     </div>
                                 </div>
                             ) : (
@@ -1534,45 +1596,92 @@
                 );
             }
 
-            // Multiplayer Battle View
+            // Multiplayer Battle View (P2 — fixed)
             if (view === 'multiplayer_battle') {
-                const { questions, myProgress, players, gameStarted } = multiplayerState;
-                const [countdown, setCountdown] = useState(3);
+                // Use local state for game so it doesn't depend on stale multiplayerState
+                const [localProgress, setLocalProgress] = useState(0);
+                const [localQuestions, setLocalQuestions] = useState([]);
+                const [gamePhase, setGamePhase] = useState('waiting'); // waiting | countdown | playing | done
                 const [gameTimer, setGameTimer] = useState(60);
                 const [myScore, setMyScore] = useState(0);
-                const [lastResult, setLastResult] = useState(null);
+                const [lastResult, setLastResult] = useState(null); // null | 'correct' | 'wrong'
                 const [playerScores, setPlayerScores] = useState({});
+                const [rankings, setRankings] = useState([]);
+                const inputRef = useRef(null);
 
-                // Countdown before game starts
+                const { connected, inRoom, roomId } = multiplayerState;
+                const currentQ = localQuestions[localProgress];
+                const myNickname = userName;
+
+                // Sync questions when game_start arrives
                 useEffect(() => {
-                    if (!gameStarted) return;
-                    const timer = setInterval(() => {
-                        setCountdown(prev => {
-                            if (prev <= 1) {
-                                clearInterval(timer);
-                                // Start game timer
-                                const gameInterval = setInterval(() => {
-                                    setGameTimer(t => {
-                                        if (t <= 1) {
-                                            clearInterval(gameInterval);
-                                            return 0;
-                                        }
-                                        return t - 1;
-                                    });
-                                }, 1000);
-                                return 0;
-                            }
-                            return prev - 1;
-                        });
+                    if (multiplayerState.questions && multiplayerState.questions.length > 0 && gamePhase === 'waiting') {
+                        setLocalQuestions(multiplayerState.questions);
+                        setLocalProgress(0);
+                        setGamePhase('countdown');
+                        setMyScore(0);
+                        setPlayerScores({});
+                        setRankings([]);
+                        setGameTimer(60);
+                    }
+                }, [multiplayerState.questions]);
+
+                // Countdown sequence
+                useEffect(() => {
+                    if (gamePhase !== 'countdown') return;
+                    let count = 3;
+                    const interval = setInterval(() => {
+                        count--;
+                        if (count <= 0) {
+                            clearInterval(interval);
+                            setGamePhase('playing');
+                            // Start game timer
+                            const timerInterval = setInterval(() => {
+                                setGameTimer(t => {
+                                    if (t <= 1) {
+                                        clearInterval(timerInterval);
+                                        setGamePhase('done');
+                                        return 0;
+                                    }
+                                    return t - 1;
+                                });
+                            }, 1000);
+                        }
                     }, 1000);
-                    return () => clearInterval(timer);
-                }, [gameStarted]);
+                    return () => clearInterval(interval);
+                }, [gamePhase]);
+
+                // Listen for answer_result from server
+                useEffect(() => {
+                    if (!socket) return;
+                    const handleAnswerResult = (data) => {
+                        if (data.correct) {
+                            AudioEngine.correct();
+                        } else {
+                            AudioEngine.wrong();
+                        }
+                        setPlayerScores(prev => ({
+                            ...prev,
+                            [data.nickname || 'unknown']: (prev[data.nickname || 'unknown'] || 0) + (data.correct ? 1 : 0)
+                        }));
+                    };
+                    const handleGameEnd = (data) => {
+                        setRankings(data.rankings || []);
+                        setGamePhase('done');
+                    };
+                    socket.on('answer_result', handleAnswerResult);
+                    socket.on('game_end', handleGameEnd);
+                    return () => {
+                        socket.off('answer_result', handleAnswerResult);
+                        socket.off('game_end', handleGameEnd);
+                    };
+                }, [socket]);
 
                 const handleSubmit = (word) => {
-                    const timeMs = 5000; // Simplified
-                    const currentQ = questions[myProgress];
-                    const correctAnswer = currentQ?.text || '';
-                    const correct = correctAnswer === word;
+                    if (gamePhase !== 'playing' || !currentQ) return;
+                    const startTime = multiplayerState.qStartTime || Date.now();
+                    const timeMs = Date.now() - startTime;
+                    const correct = currentQ.text === word;
                     if (correct) {
                         AudioEngine.correct();
                         setMyScore(s => s + 100);
@@ -1582,21 +1691,33 @@
                     setLastResult(correct ? 'correct' : 'wrong');
                     setTimeout(() => setLastResult(null), 500);
                     submitAnswer(word, timeMs);
+                    const next = localProgress + 1;
+                    if (next >= localQuestions.length) {
+                        setGamePhase('done');
+                    } else {
+                        setLocalProgress(next);
+                    }
                 };
 
-                const timerDisplay = Math.floor(gameTimer / 60) + ':' + String(gameTimer % 60).padStart(2, '0');
+                const timerMin = Math.floor(gameTimer / 60);
+                const timerSec = gameTimer % 60;
+                const timerDisplay = `${timerMin}:${String(timerSec).padStart(2, '0')}`;
+
+                // Sort players by score for live ranking
+                const sortedPlayers = Object.entries(playerScores).sort((a, b) => b[1] - a[1]);
 
                 return (
                     <div className="h-full bg-battle flex flex-col items-center justify-center p-6">
                         {/* Offline Banner */}
                         {!serverOnline && (
-                            <div className="w-full max-w-3xl mb-6 p-4 bg-red-900/80 border border-red-500/50 rounded-xl text-center" aria-label="伺服器狀態">
-                                <span className="text-red-300 font-bold text-lg">⚠️ 伺服器已斷開，請稍後再試</span>
+                            <div className="w-full max-w-3xl mb-4 p-3 bg-red-900/80 border border-red-500/50 rounded-xl text-center">
+                                <span className="text-red-300 font-bold text-sm">⚠️ 伺服器已斷開連接</span>
                             </div>
                         )}
+
                         <div className="w-full max-w-3xl">
-                            {/* Header Stats */}
-                            <div className="flex justify-between items-center mb-8">
+                            {/* Header */}
+                            <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-2">
                                     <LucideIcon icon={Timer} className="text-rose-400"/>
                                     <span className={`text-3xl font-black font-mono ${gameTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>{timerDisplay}</span>
@@ -1605,23 +1726,39 @@
                                     <LucideIcon icon={Target} className="text-purple-400"/>
                                     <span className="text-2xl font-black text-white">{myScore}</span>
                                 </div>
+                                <button onPointerDown={() => { leaveRoom(); setGamePhase('waiting'); setView('multiplayer_lobby'); }} className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-sm font-bold border border-zinc-700">離開</button>
                             </div>
 
-                            {/* Countdown or Question */}
-                            {countdown > 0 ? (
-                                <div className="text-center">
-                                    <div className="text-9xl font-black text-rose-400 animate-pulse">{countdown}</div>
+                            {/* Waiting for players */}
+                            {gamePhase === 'waiting' && (
+                                <div className="text-center py-16">
+                                    <div className="text-5xl mb-4 animate-pulse">⏳</div>
+                                    <h2 className="text-2xl font-black text-white mb-2">等待其他玩家...</h2>
+                                    <p className="text-zinc-400">伺服器分配題目中</p>
+                                </div>
+                            )}
+
+                            {/* Countdown */}
+                            {gamePhase === 'countdown' && (
+                                <div className="text-center py-16">
+                                    <div className="text-9xl font-black text-rose-400 animate-pulse">
+                                        {[3,2,1].find(n => n > (3 - (Date.now() % 3000 / 1000))) || 'GO!']}
+                                    </div>
                                     <div className="text-2xl text-zinc-400 mt-4">準備好！</div>
                                 </div>
-                            ) : (
+                            )}
+
+                            {/* Playing */}
+                            {gamePhase === 'playing' && currentQ && (
                                 <>
                                     <div className="glass-strong p-8 rounded-2xl text-center mb-6">
-                                        <div className={`text-4xl font-black text-white mb-8 tracking-wider ${lastResult === 'correct' ? 'text-green-400' : lastResult === 'wrong' ? 'text-red-400 animate-shake' : ''}`}>
-                                            {questions[myProgress]?.text || '...'}
+                                        <div className={`text-3xl font-black text-white mb-2 tracking-wider ${lastResult === 'correct' ? 'text-green-400' : lastResult === 'wrong' ? 'text-red-400' : ''}`}>
+                                            {currentQ.text || '...'}
                                         </div>
-                                        <input autoFocus disabled={!serverOnline} 
-                                            className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'} ${!serverOnline ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            placeholder="輸入答案..."
+                                        <div className="text-sm text-zinc-500 mb-6">倉頡：{currentQ.code || currentQ.hint || '—'}</div>
+                                        <input ref={inputRef} autoFocus
+                                            className={`w-full p-4 bg-zinc-800 border-2 rounded-xl text-center text-2xl text-white outline-none transition-colors ${lastResult === 'correct' ? 'border-green-500' : lastResult === 'wrong' ? 'border-red-500 animate-shake' : 'border-purple-500'}`}
+                                            placeholder="輸入答案後按 Enter..."
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && e.target.value.trim()) {
                                                     handleSubmit(e.target.value.trim());
@@ -1632,31 +1769,52 @@
                                         <div className="mt-4 text-zinc-500 text-sm">按 Enter 提交</div>
                                     </div>
 
-                                    {/* Progress */}
-                                    <div className="mb-6">
+                                    {/* Progress bar */}
+                                    <div className="mb-4">
                                         <div className="flex justify-between text-sm text-zinc-400 mb-2">
                                             <span>你的進度</span>
-                                            <span>{myProgress + 1} / {questions.length}</span>
+                                            <span>{localProgress + 1} / {localQuestions.length}</span>
                                         </div>
                                         <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-purple-600 to-rose-600 transition-all duration-300" style={{width: `${((myProgress + 1) / questions.length) * 100}%`}}/>
+                                            <div className="h-full bg-gradient-to-r from-purple-600 to-rose-600 transition-all duration-300" style={{width: `${((localProgress + 1) / localQuestions.length) * 100}%`}}/>
                                         </div>
                                     </div>
 
-                                    {/* Players mini-leaderboard */}
+                                    {/* Live ranking */}
                                     <div className="glass-strong p-4 rounded-2xl">
                                         <h4 className="text-sm font-bold text-zinc-400 mb-3 flex items-center gap-2"><LucideIcon icon={TrendingUp} size={14}/> 實時排名</h4>
-                                        <div className="space-y-2">
-                                            {[...players].sort((a, b) => (playerScores[b] || 0) - (playerScores[a] || 0)).map((p, i) => (
-                                                <div key={i} className="flex items-center gap-3">
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-yellow-500 text-black' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
-                                                    <div className="flex-1 text-white font-bold">{p}</div>
-                                                    <div className="text-purple-400 font-mono">{playerScores[p] || 0}</div>
+                                        {sortedPlayers.length === 0 ? (
+                                            <div className="text-zinc-600 text-sm">等待玩家回答...</div>
+                                        ) : sortedPlayers.map(([nick, correct], i) => (
+                                            <div key={i} className="flex items-center gap-3 py-1.5">
+                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-yellow-500 text-black' : 'bg-zinc-700 text-zinc-300'}`}>{i + 1}</div>
+                                                <div className={`flex-1 font-bold ${nick === myNickname ? 'text-purple-400' : 'text-white'}`}>{nick}{nick === myNickname ? ' (你)' : ''}</div>
+                                                <div className="text-purple-400 font-mono text-sm">{correct} 題</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Done */}
+                            {gamePhase === 'done' && (
+                                <div className="text-center py-8">
+                                    <h2 className="text-3xl font-black text-yellow-400 mb-2">🏆 比賽結束！</h2>
+                                    {rankings.length > 0 ? (
+                                        <div className="glass-strong p-6 rounded-2xl mt-4 text-left max-w-sm mx-auto">
+                                            {rankings.map((r, i) => (
+                                                <div key={i} className={`flex items-center gap-4 py-3 border-b border-zinc-800 last:border-0 ${i === 0 ? 'text-yellow-400' : 'text-zinc-300'}`}>
+                                                    <div className="text-2xl font-black w-8">{i + 1}</div>
+                                                    <div className="flex-1 font-black">{r.nickname}</div>
+                                                    <div className="text-sm">{r.wpm} WPM</div>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                </>
+                                    ) : (
+                                        <div className="text-zinc-400 mt-4">結算中...</div>
+                                    )}
+                                    <button onPointerDown={() => { setView('multiplayer_lobby'); }} className="mt-8 px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-rose-600 text-white font-black text-lg shadow-lg">返回大廳</button>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -1805,15 +1963,7 @@
                                 <button aria-label="技能商店" onPointerDown={()=>setView('meta_shop')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-gold-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={ShoppingBag} size={16}/> 知識聖殿
                                 </button>
-                                <button aria-label="排行榜" onPointerDown={()=>{
-                                    const API_URL = window.TYPING_KINGDOM_API_URL || (window.location.protocol === 'https:' ? 'https://intranet-disabled-leave-analyze.trycloudflare.com' : 'http://localhost:3000');
-                                    fetch(`${API_URL}/api/leaderboard`)
-                                    .then(r=>r.json())
-                                    .then(data=>{
-                                        const msg = data.length ? data.slice(0,5).map((p,i)=>`${i+1}. ${p.nickname} - ${p.total_score}分`).join('\n') : '暫無數據';
-                                        alert('🏆 排行榜\n' + msg);
-                                    }).catch(e => console.warn('載入排行榜失敗:', e.message));
-                                }} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-yellow-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
+                                <button aria-label="排行榜" onPointerDown={() => { AudioEngine.click(); setView('leaderboard'); }} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-yellow-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={Trophy} size={16}/> 排行榜
                                 </button>
                                 <button aria-label={audioMuted ? '開啟音效' : '靜音'} onPointerDown={toggleSound} className="bg-zinc-800/80 hover:bg-zinc-700 p-3 rounded-xl border border-zinc-700/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">{audioMuted ? '🔇' : '🔊'}</button>
@@ -2048,7 +2198,10 @@
                 );
             }
 
-            return null;
+            // ── LEADERBOARD MODAL ──
+            if (view === 'leaderboard') {
+                return <LeaderboardModal onClose={() => setView('mode_select')} />;
+            }
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
