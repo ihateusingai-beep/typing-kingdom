@@ -177,7 +177,20 @@
             heal()    { this.tone(400,'sine',0.5,0.08,800); },
             freeze()  { this.tone(800,'sine',0.4,0.08); setTimeout(()=>this.tone(400,'sine',0.4,0.08),100); },
             skill()   { this.tone(300,'sine',0.35,0.08,600); },
-            powerUp() { this.tone(440,'sine',0.08,0.08); setTimeout(()=>this.tone(554,'sine',0.08,0.08),60); setTimeout(()=>this.tone(659,'sine',0.15,0.08),120); }
+            powerUp() { this.tone(440,'sine',0.08,0.08); setTimeout(()=>this.tone(554,'sine',0.08,0.08),60); setTimeout(()=>this.tone(659,'sine',0.15,0.08),120); },
+            // TTS for student voice feedback (uses Web Speech API)
+            speak(text, lang='zh-HK') { try { if(this.muted) return; const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=0.85; u.pitch=1.1; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){} },
+            comboTTS(combo) {
+                if (combo >= 20) this.speak('火力全開');
+                else if (combo >= 15) this.speak('熱辣辣');
+                else if (combo >= 10) this.speak('強烈連擊');
+                else if (combo >= 5) this.speak('好犀利');
+            },
+            correctTTS() { this.speak('正確'); },
+            victoryTTS() { this.speak('勝利'); },
+            defeatTTS() { this.speak('下次再試'); },
+            levelUpTTS() { this.speak('升級'); },
+            skillTTS(skillName) { this.speak(skillName === 'heal' ? '治療' : '爆發'); }
         };
 
         // ───────────────────────────────────────────────────────────────
@@ -356,8 +369,10 @@
             { id:'phoenix', name:'鳳凰灰燼',   icon:Flame,     cost:0,   unlockCost:2000, desc:'復活一次',     effect:p => ({...p, revive:true}) },
         ];
         const AVATARS = {
-            hero:   { id:'hero',   name:'蒼穹劍士', icon:Sword,  color:'text-cyan-400',  bg:'bg-cyan-500',   glow:'shadow-cyan-500/50' },
-            heroine:{ id:'heroine',name:'緋紅魔導', icon:Wand2,  color:'text-rose-400',  bg:'bg-rose-500',   glow:'shadow-rose-500/50' }
+            hero:   { id:'hero',   name:'蒼穹劍士', icon:Sword,  color:'text-cyan-400',  bg:'bg-cyan-500',   glow:'shadow-cyan-500/50', assetPath:null },
+            heroine:{ id:'heroine',name:'緋紅魔導', icon:Wand2,  color:'text-rose-400',  bg:'bg-rose-500',   glow:'shadow-rose-500/50', assetPath:null },
+            knight: { id:'knight', name:'張鈞保',   icon:Sword,  color:'text-amber-400', bg:'bg-amber-600',  glow:'shadow-amber-500/50', assetPath:'https://raw.githubusercontent.com/ihateusingai-beep/typing-kingdom/main/assets/knight_idle.png' },
+            mage:   { id:'mage',   name:'祝卓鋒',   icon:Wand2,  color:'text-violet-400',bg:'bg-violet-600', glow:'shadow-violet-500/50', assetPath:'https://raw.githubusercontent.com/ihateusingai-beep/typing-kingdom/main/assets/mage_idle.png' }
         };
 
         // ───────────────────────────────────────────────────────────────
@@ -491,7 +506,7 @@
                     setAnim(null);
                     if (player.hp - dmg <= 0) {
                         if (player.revive) { setPlayer(p => ({...p, hp:p.maxHp, revive:false})); setCombatLog("鳳凰灰燼觸發！"); }
-                        else { setTurn('lose'); AudioEngine.lose(); }
+                        else { setTurn('lose'); AudioEngine.lose(); AudioEngine.defeatTTS(); }
                     }
                 }, 300);
             };
@@ -507,7 +522,9 @@
                 const newCombo = player.combo + 1;
                 let log = `${isCrit?'會心！':''} -${dmg}`;
                 let bonusHp = 0, bonusShield = 0;
-                if (newCombo > 0 && newCombo % 10 === 0) { bonusHp = Math.floor(player.maxHp*0.05); bonusShield = 10; AudioEngine.powerUp(); log = `連擊獎勵！+${bonusHp}HP +${bonusShield}盾`; }
+                if (newCombo > 0 && newCombo % 10 === 0) { bonusHp = Math.floor(player.maxHp*0.05); bonusShield = 10; AudioEngine.powerUp(); AudioEngine.comboTTS(newCombo); log = `連擊獎勵！+${bonusHp}HP +${bonusShield}盾`; }
+                else if (newCombo >= 5) { AudioEngine.comboTTS(newCombo); }
+                AudioEngine.correctTTS();
                 setPlayer(p => ({ ...p, bonusDmg:0, combo:newCombo, hp:Math.min(p.maxHp,p.hp+bonusHp), shield:p.shield+bonusShield }));
                 setMonster(m => ({...m, hp: Math.max(0, m.hp-dmg)}));
                 setCombatLog(log);
@@ -517,6 +534,7 @@
 
             const handleVictory = () => {
                 AudioEngine.levelUp();
+                AudioEngine.victoryTTS();
                 const expGain = Math.floor((50+player.floor*10)*baseStats.expMult);
                 const coinGain = 15 + Math.floor(player.floor*3);
                 let newExp = player.exp + expGain;
@@ -524,7 +542,7 @@
                 let newMaxExp = player.maxExp;
                 let leveledUp = false;
                 if (newExp >= player.maxExp) { newExp -= player.maxExp; newLevel++; newMaxExp = Math.floor(newMaxExp*1.2); leveledUp = true; }
-                if (leveledUp) { AudioEngine.powerUp(); setLevelUpFlash(true); setTimeout(() => setLevelUpFlash(false), 1200); }
+                if (leveledUp) { AudioEngine.powerUp(); AudioEngine.levelUpTTS(); setLevelUpFlash(true); setTimeout(() => setLevelUpFlash(false), 1200); }
                 setPlayer(p => ({...p, exp:newExp, level:newLevel, maxExp:newMaxExp, maxHp:leveledUp?p.maxHp+10:p.maxHp, atk:leveledUp?p.atk+2:p.atk, hp:leveledUp?p.maxHp:p.hp, floor:p.floor+1, coinsGained:p.coinsGained+coinGain, gold:p.gold+coinGain }));
                 const pool = RPG_ARTIFACTS.filter(a => a.unlockCost===0 || metaState.unlockedArtifacts.includes(a.id)).sort(()=>0.5-Math.random()).slice(0,5);
                 setRewards(pool);
@@ -614,7 +632,7 @@
                         {/* Skills bar */}
                         <div className="absolute top-4 flex gap-3 z-20">
                             {player.skills.map((s,i) => (
-                                <button aria-label={`技能: ${s.id}`} onPointerDown={() => { AudioEngine.skill(); if(s.id==='heal'){const v=Math.floor(player.maxHp*0.3); setPlayer(p=>({...p,hp:Math.min(p.maxHp,p.hp+v)})); setCombatLog(`回覆 ${v} HP`);}
+                                <button aria-label={`技能: ${s.id}`} onPointerDown={() => { AudioEngine.skill(); AudioEngine.skillTTS(s.id); if(s.id==='heal'){const v=Math.floor(player.maxHp*0.3); setPlayer(p=>({...p,hp:Math.min(p.maxHp,p.hp+v)})); setCombatLog(`回覆 ${v} HP`);}
                                     else if(s.id==='burst'){setPlayer(p=>({...p,bonusDmg:p.atk*2})); setCombatLog('下次傷害 200%！');}
                                     setPlayer(p=>({...p,skills:p.skills.map((sk,j)=>j===i?{...sk,currentCd:5}:sk)}));
                                 }} disabled={s.currentCd>0}
@@ -1914,7 +1932,7 @@ try {
                         game_mode: config?.mode || 'rpg',
                         category: config?.chapter || null
                     })
-                    .catch(() => {}); // silently fail — localStorage is backup
+                }).catch(() => {}); // silently fail — localStorage is backup
 
                 // Cloud save meta_state to server (fire and forget)
                 if (userName && serverOnline) {
@@ -1947,6 +1965,29 @@ try {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href=url; a.download='typing_kingdom_backup.json';
                 document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            };
+
+            const handleImportSave = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        try {
+                            const data = JSON.parse(ev.target.result);
+                            if (data.metaState && data.userName) {
+                                setMetaState(prev => ({...prev, ...data.metaState, stats: {...prev.stats, ...(data.metaState.stats||{})}}));
+                                setUserName(data.userName);
+                                AudioEngine.levelUp();
+                            }
+                        } catch(err) { AudioEngine.wrong(); }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
             };
 
             // ── HOME ──
@@ -1992,6 +2033,8 @@ try {
                         </button>
                         <button aria-label="匯出存檔" onPointerDown={handleExportSave} className="text-zinc-600 hover:text-zinc-400 text-xs flex items-center gap-1 mx-auto mt-4 transition-colors min-h-[44px]"><LucideIcon icon={Download} size={12}/> 備份存檔
                         </button>
+                        <button aria-label="匯入存檔" onPointerDown={handleImportSave} className="text-zinc-600 hover:text-zinc-400 text-xs flex items-center gap-1 mx-auto mt-2 transition-colors min-h-[44px]"><LucideIcon icon={Upload} size={12}/> 恢復存檔
+                        </button>
                     </motion.div>
                 </div>
             );
@@ -2006,6 +2049,17 @@ try {
                             <button aria-label="返回" onPointerDown={()=>setView('home')} className="bg-zinc-900 p-3 rounded-2xl border border-zinc-800 hover:bg-zinc-800 transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
                             <h2 className="text-2xl font-black text-white font-display flex items-center gap-2"><LucideIcon icon={LayoutDashboard} className="text-blue-400"/> 學習儀表板</h2>
                         </div>
+                        {serverOnline && serverStats && serverStats.games_played > 0 && (
+                            <div className="mb-6 max-w-4xl mx-auto">
+                                <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/30 border border-blue-600/40 rounded-2xl p-5 flex items-center gap-4">
+                                    <div className="p-3 bg-blue-600/30 rounded-xl"><LucideIcon icon={Cloud} size={24} className="text-blue-400"/></div>
+                                    <div>
+                                        <div className="text-blue-300 font-bold text-sm">☁️ 雲端數據</div>
+                                        <div className="text-zinc-400 text-xs mt-1">雲端遊戲: {serverStats.games_played}次 | 最高WPM: {serverStats.highest_wpm} | 總分: {serverStats.total_score}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 gap-5 max-w-4xl mx-auto">
                             {[
                                 {v:gamesPlayed,l:'總遊戲次數',c:'text-blue-400',bg:'bg-blue-900/30',icon:Activity},
@@ -2020,6 +2074,37 @@ try {
                             ))}
                         </div>
                         <div className="mt-8 text-center text-zinc-600 text-sm">數據僅儲存於本機</div>
+                    </div>
+                );
+            }
+
+            // ── AVATAR SELECT ──
+            if (view === 'avatar_select') {
+                return (
+                    <div className="h-full bg-zinc-950 text-white overflow-y-auto p-6">
+                        <div className="flex items-center gap-4 mb-8 max-w-4xl mx-auto">
+                            <button aria-label="返回" onPointerDown={()=>setView('mode_select')} className="bg-zinc-900 p-3 rounded-2xl border border-zinc-800 hover:bg-zinc-800 transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"><LucideIcon icon={ArrowLeft}/></button>
+                            <h2 className="text-2xl font-black text-white font-display flex items-center gap-2"><LucideIcon icon={Sword} className="text-amber-400"/> 角色選擇</h2>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
+                            {Object.values(AVATARS).map(av => (
+                                <motion.button key={av.id} whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                                    onPointerDown={()=>{AudioEngine.click(); setMetaState(prev=>({...prev, avatar:av.id})); setView('mode_select');}}
+                                    className={`relative overflow-hidden rounded-2xl border-2 p-6 text-left transition-all ${metaState.avatar===av.id ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-500/20':'border-zinc-700 bg-zinc-900 hover:border-zinc-500'}`}>
+                                    {av.assetPath ? (
+                                        <img src={av.assetPath} alt={av.name} className="w-32 h-32 object-contain mx-auto mb-4 rounded-xl" onError={e=>{e.target.style.display='none';}}
+                                            onLoad={e=>{e.target.style.opacity='1';}} style={{opacity:0, transition:'opacity 0.3s'}} onLoad={e=>e.target.style.opacity='1'}/>
+                                    ) : (
+                                        <div className="w-32 h-32 mx-auto mb-4 rounded-2xl bg-zinc-800 flex items-center justify-center">
+                                            <LucideIcon icon={av.icon} size={64} className={av.color}/>
+                                        </div>
+                                    )}
+                                    <div className={`text-xl font-black mb-1 ${av.color}`}>{av.name}</div>
+                                    {metaState.avatar===av.id && <div className="text-amber-400 text-sm font-bold">✓ 已選擇</div>}
+                                </motion.button>
+                            ))}
+                        </div>
+                        <p className="text-center text-zinc-600 text-xs mt-8">選擇的角色將用於所有單人模式</p>
                     </div>
                 );
             }
@@ -2042,6 +2127,9 @@ try {
                                 </div>
                             </div>
                             <div className="flex gap-2">
+                                <button aria-label="角色選擇" onPointerDown={()=>setView('avatar_select')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-amber-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
+                                    <LucideIcon icon={AVATARS[metaState.avatar]?.icon||Sword} size={16}/> {(AVATARS[metaState.avatar]?.name||'選擇角色')}
+                                </button>
                                 <button aria-label="數據面板" onPointerDown={()=>setView('dashboard')} className="bg-zinc-800/80 hover:bg-zinc-700 px-4 py-2 rounded-xl text-blue-400 font-bold flex items-center gap-2 border border-zinc-700/50 transition-colors min-h-[44px]">
                                     <LucideIcon icon={BarChart3} size={16}/> 儀表板
                                 </button>
