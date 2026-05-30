@@ -444,7 +444,7 @@
         // 🎮 RPG GAME
         // ───────────────────────────────────────────────────────────────
         const RPGGame = ({ metaState, onGameEnd, goHome }) => {
-            const baseStats = { hp:100+(metaState.upgrades.hp*META_UPGRADES.hp.effectVal), atk:20+(metaState.upgrades.atk*META_UPGRADES.atk.effectVal), expMult:1+(metaState.upgrades.exp*META_UPGRADES.exp.effectVal) };
+            const baseStats = { hp:150+(metaState.upgrades.hp*META_UPGRADES.hp.effectVal), atk:20+(metaState.upgrades.atk*META_UPGRADES.atk.effectVal), expMult:1+(metaState.upgrades.exp*META_UPGRADES.exp.effectVal) };
             const [player, setPlayer] = useState({
                 hp:baseStats.hp, maxHp:baseStats.hp, atk:baseStats.atk, level:1, exp:0, maxExp:100,
                 critChance:0.1, critMult:1.5, lifesteal:0, thorns:0, dodge:0, shield:0,
@@ -489,11 +489,11 @@
                         if (monster.frozen > 0) { setMonster(m => ({...m, frozen: m.frozen-0.2})); return; }
                         setGauge(prev => {
                             if (prev >= 100) {
-                                const dmg = Math.floor((10+player.floor*2)*monster.type.atkMod);
+                                const dmg = Math.floor((10+player.floor*1.5)*monster.type.atkMod);
                                 handleDamage(dmg, `${monster.type.name} 攻擊！`);
                                 return 0;
                             }
-                            return prev + (2.5 * monster.type.speedMod);
+                            return prev + (2.0 * monster.type.speedMod);
                         });
                     }, 200);
                 }
@@ -529,7 +529,7 @@
                 const newCombo = player.combo + 1;
                 let log = `${isCrit?'會心！':''} -${dmg}`;
                 let bonusHp = 0, bonusShield = 0;
-                if (newCombo > 0 && newCombo % 10 === 0) { bonusHp = Math.floor(player.maxHp*0.05); bonusShield = 10; AudioEngine.powerUp(); AudioEngine.comboTTS(newCombo); log = `連擊獎勵！+${bonusHp}HP +${bonusShield}盾`; }
+                if (newCombo > 0 && newCombo % 10 === 0) { bonusHp = Math.floor(player.maxHp*0.10); bonusShield = 15; AudioEngine.powerUp(); AudioEngine.comboTTS(newCombo); log = `連擊獎勵！+${bonusHp}HP +${bonusShield}盾`; }
                 else if (newCombo >= 5) { AudioEngine.comboTTS(newCombo); }
                 AudioEngine.correctTTS();
                 setPlayer(p => ({ ...p, bonusDmg:0, combo:newCombo, hp:Math.min(p.maxHp,p.hp+bonusHp), shield:p.shield+bonusShield }));
